@@ -1,6 +1,9 @@
+import json
+import csv
 from botocore.vendored import requests
 from random import randint
-import json
+
+s3 = boto3.client('s3')
 
 def random_entry(any_list):
     """Pulls random entry from a list argument given to it"""
@@ -11,7 +14,11 @@ def random_entry(any_list):
 
 def lambda_handler(event, context):
     """Pulls data file from S3 bucket provided as an env var and passes list to random_entry function"""
-    response = requests.get(event['S3BucketName'])
+    csv_file = s3.get_object(Bucket='S3_BUCKET_NAME', Key=key)
+    csv_response = csv_file['Body'].read()
+
+    return csv_response
+
     imported_list = json.loads(response.text)
     word = random_entry(imported_list)
 

@@ -4,6 +4,8 @@ Description: An app that texts you an HSK vocab word each day and a link to exam
 Parameters:
   S3BucketName:
     Type: String
+  S3BucketKey:
+    Type: String
   SnsTopicName:
     Type: String
 
@@ -35,3 +37,4 @@ Resources:
       Environment:
         Variables:
           S3_BUCKET_NAME: !Ref S3BucketName
+          S3_BUCKET_KEY: !Ref S3BucketKey
