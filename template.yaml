@@ -25,13 +25,13 @@ Resources:
       # Events:
       #   Type: AWS::Events::Rule
       #   Properties: 
-      #     Description: String
+      #     Description: A daily CloudWatch Event that triggers TextFunction.
       #     EventPattern: JSON object
-      #     Name: String
-      #     ScheduleExpression: String
-      #     State: String
+      #     Name: DailyEvent
+      #     ScheduleExpression: "cron(0 20 * * ? *)"
+      #     State: ENABLED
       #     Targets:
-      #       - Target
+      #       - TextFunction
 
   VocabRandomEntry:
     # Comment
