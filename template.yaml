@@ -6,7 +6,7 @@ Parameters:
     Type: String
   S3BucketKey:
     Type: String
-  SnsTopicName:
+  SnsTopicArn:
     Type: String
 
 Resources:
@@ -21,9 +21,17 @@ Resources:
       Description: A function that calls the VocabRandomEntry function and sends a text with response contents.
       Environment:
         Variables:
-          SNS_TOPIC_NAME: !Ref SnsTopicName
-      Events:
-        #CloudWatch Events
+          SNS_TOPIC_ARN: !Ref SnsTopicArn
+      # Events:
+      #   Type: AWS::Events::Rule
+      #   Properties: 
+      #     Description: String
+      #     EventPattern: JSON object
+      #     Name: String
+      #     ScheduleExpression: String
+      #     State: String
+      #     Targets:
+      #       - Target
 
   VocabRandomEntry:
     # Comment
