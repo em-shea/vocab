@@ -1,8 +1,8 @@
-import io
-import boto3
 import json
+import io
 import csv
 import os
+import boto3
 from botocore.vendored import requests
 from random import randint
 
@@ -22,11 +22,12 @@ def lambda_handler(event, context):
     stream = io.StringIO(csv_response.decode("utf-8"))
     
     reader = csv.DictReader(stream)
+    vocab_list = []
     for row in reader:
-        print(row)
+        vocab_list.append(dict(row))
+    print(vocab_list)
 
-    imported_list = json.loads(response.text)
-    word = random_entry(imported_list)
+    word = random_entry(vocab_list)
 
     return {
         'statusCode': 200,
