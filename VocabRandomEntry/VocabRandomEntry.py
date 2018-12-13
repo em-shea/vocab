@@ -10,8 +10,8 @@ def random_entry(any_list):
     return random_selection
 
 def lambda_handler(event, context):
-    """Takes S3 file provided by other Lambda function, converts to python and feeds to random_entry function"""
-    response = requests.get(event["file"])
+    """Pulls data file from S3 bucket provided as an env var and passes list to random_entry function"""
+    response = requests.get(event['S3BucketName'])
     imported_list = json.loads(response.text)
     word = random_entry(imported_list)
 
