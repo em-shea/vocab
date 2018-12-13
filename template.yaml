@@ -1,0 +1,37 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: 'AWS::Serverless-2016-10-31'
+Description: An app that texts you an HSK vocab word each day and a link to example sentences.
+Parameters:
+  S3BucketName:
+    Type: String
+  SnsTopicName:
+    Type: String
+
+Resources:
+  TextFunction:
+    # Comment
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      FunctionName: TextFunction
+      Handler: TextFunction.lambda_handler
+      Runtime: python3.7
+      CodeUri: ./TextFunction
+      Description: A function that calls the VocabRandomEntry function and sends a text with response contents.
+      Environment:
+        Variables:
+          SNS_TOPIC_NAME: !Ref SnsTopicName
+      Events:
+        #CloudWatch Events
+
+  VocabRandomEntry:
+    # Comment
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      FunctionName: VocabRandomEntry
+      Handler: VocabRandomEntry.lambda_handler
+      Runtime: python3.7
+      CodeUri: ./VocabRandomEntry
+      Description: A function selects a random entry from a table.
+      Environment:
+        Variables:
+          S3_BUCKET_NAME: !Ref S3BucketName
