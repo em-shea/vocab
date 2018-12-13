@@ -1,7 +1,7 @@
 {
   "version": "0",
   "id": "6a7e8feb-b491-4cf7-a9f1-bf3703467718",
-  "detail-type": "EC2 Instance State-change Notification",
+  "detail-type": "A daily CloudWatch Event that triggers TextFunction.",
   "source": "aws.ec2",
   "account": "111122223333",
   "time": "2017-12-22T18:43:48Z",
