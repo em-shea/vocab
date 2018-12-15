@@ -17,7 +17,7 @@ def random_entry(any_list):
 
 def lambda_handler(event, context):
     """Pulls data file from S3 bucket provided as an env var and passes list to random_entry function"""
-    csv_file = s3.get_object(Bucket='hsk-vocab', Key='HSK_Level_6.csv')
+    csv_file = s3.get_object(Bucket=os.environ['S3_BUCKET_NAME'], Key=os.environ['S3_BUCKET_KEY'])
     csv_response = csv_file['Body'].read()
     stream = io.StringIO(csv_response.decode("utf-8"))
     

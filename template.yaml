@@ -22,6 +22,11 @@ Resources:
       Environment:
         Variables:
           SNS_TOPIC_ARN: !Ref SnsTopicArn
+      Events:
+        Type: Schedule
+        Properties:
+          Schedule: rate(1 minute)
+          #Schedule: cron(0 20 * * ? *)
       # Events:
       #   Type: AWS::Events::Rule
       #   Properties: 

@@ -24,13 +24,13 @@ def lambda_handler(event, context):
     baidu_link = "https://fanyi.baidu.com/#zh/en/" + word["Word"]
 
     response = sns_client.publish(
-        TargetArn='arn:aws:sns:us-east-1:789896561553:Vocab',
+        TargetArn=os.environ['SNS_TOPIC_ARN'],
         Message=json.dumps({'default': message}),
         MessageStructure='json'
     )
     
     response = sns_client.publish(
-        TargetArn='arn:aws:sns:us-east-1:789896561553:Vocab',
+        TargetArn='SNS_TOPIC_ARN',
         Message=json.dumps({'default': baidu_link}),
         MessageStructure='json'
     )
