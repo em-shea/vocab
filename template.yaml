@@ -8,10 +8,13 @@ Parameters:
     Type: String
   SnsTopicArn:
     Type: String
+  SnsTopicName:
+    Type: String
 
 Resources:
   TextFunction:
-    # Comment
+    # This function is triggered by a daily cloudwatch event at 12pm PST to call VocabRandomEntry
+    # It publishes the results and a baidu URL with example sentences to an SNS topic
     Type: 'AWS::Serverless::Function'
     Properties:
       FunctionName: TextFunction
@@ -22,25 +25,19 @@ Resources:
       Environment:
         Variables:
           SNS_TOPIC_ARN: !Ref SnsTopicArn
+      Policies:
+       - AWSLambdaExecute
+       - AWSLambdaRole
+       - SNSPublishMessagePolicy:
+          TopicName: !Ref SnsTopicName
       Events:
         DailySchedule:
           Type: Schedule
           Properties:
-            Schedule: rate(1 minute)
-          #Schedule: cron(0 20 * * ? *)
-      # Events:
-      #   Type: AWS::Events::Rule
-      #   Properties: 
-      #     Description: A daily CloudWatch Event that triggers TextFunction.
-      #     EventPattern: JSON object
-      #     Name: DailyEvent
-      #     ScheduleExpression: "cron(0 20 * * ? *)"
-      #     State: ENABLED
-      #     Targets:
-      #       - TextFunction
+            Schedule: cron(0 20 * * ? *)
 
   VocabRandomEntry:
-    # Comment
+    # This function selects a random entry from an S3 file with HSK vocab
     Type: 'AWS::Serverless::Function'
     Properties:
       FunctionName: VocabRandomEntry
@@ -52,3 +49,6 @@ Resources:
         Variables:
           S3_BUCKET_NAME: !Ref S3BucketName
           S3_BUCKET_KEY: !Ref S3BucketKey
+      Policies:
+       - AWSLambdaExecute
+       - AWSLambdaRole
