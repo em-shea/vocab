@@ -47,19 +47,19 @@ def lambda_handler(event, context):
         word = get_random(level)
 
         # Selects relevant parts of the word's dictionary and creates baidu URL
-        message = "\n" + word["Word"] + "\n" + word["Pronunciation"] + "\n" + word["Definition"]
+        message = "HSK Level: " + level_dict["hsk_level"] + "\n" + word["Word"] + "\n" + word["Pronunciation"] + "\n" + word["Definition"]
         baidu_link = "https://fanyi.baidu.com/#zh/en/" + word["Word"]
 
         # Publishes word, pronunciation and definition to SNS
         response = sns_client.publish(
-            TargetArn=os.environ['SNS_TOPIC_ARN'],
+            TargetArn=level_dict["topic_arn"],
             Message=json.dumps({'default': message}),
             MessageStructure='json'
         )
         
         # Publishes baidu URL to SNS
         response = sns_client.publish(
-            TargetArn=os.environ['SNS_TOPIC_ARN'],
+            TargetArn=level_dict["topic_arn"],
             Message=json.dumps({'default': baidu_link}),
             MessageStructure='json'
         )

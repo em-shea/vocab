@@ -64,7 +64,7 @@ Resources:
        - AWSLambdaExecute
        - AWSLambdaRole
   
-  """SNS Topics at each HSK level"""
+  # SNS Topics at each HSK level
   Level1Topic:
     Type: AWS::SNS::Topic
     Properties:
@@ -77,32 +77,32 @@ Resources:
     Properties:
       Subscription:
         - Endpoint: +12532256518
-          Protocol: email
+          Protocol: sms
   
   Level3Topic:
     Type: AWS::SNS::Topic
     Properties:
       Subscription:
         - Endpoint: +12532256518
-          Protocol: email
+          Protocol: sms
   
   Level4Topic:
     Type: AWS::SNS::Topic
     Properties:
       Subscription:
         - Endpoint: +12532256518
-          Protocol: email
+          Protocol: sms
   
   Level5Topic:
     Type: AWS::SNS::Topic
     Properties:
       Subscription:
         - Endpoint: +12532256518
-          Protocol: email
+          Protocol: sms
 
   Level6Topic:
     Type: AWS::SNS::Topic
     Properties:
       Subscription:
         - Endpoint: +12532256518
-          Protocol: email
+          Protocol: sms
