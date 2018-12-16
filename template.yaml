@@ -6,10 +6,26 @@ Parameters:
     Type: String
   S3BucketKey:
     Type: String
-  SnsTopicArn:
+  SnsTopicArnLevel1:
     Type: String
-  SnsTopicName:
+  SnsTopicNameLevel1:
     Type: String
+  SnsTopicArnLevel2:
+    Type: String
+  SnsTopicNameLevel2:
+    Type: String
+  SnsTopicArnLevel3:
+    Type: String
+  SnsTopicNameLevel3:
+    Type: String
+  SnsTopicArnLevel4:
+    Type: String
+  SnsTopicNameLevel4:
+    Type: String
+  SnsTopicArnLevel5:
+    Type: String
+  SnsTopicNameLevel5:
+    Type: String    
 
 Resources:
   TextFunction:
@@ -24,12 +40,27 @@ Resources:
       Description: A function that calls the VocabRandomEntry function and sends a text with response contents.
       Environment:
         Variables:
-          SNS_TOPIC_ARN: !Ref SnsTopicArn
+          SNS_TOPIC_ARN1: !Ref SnsTopicArnLevel1
+          SNS_TOPIC_ARN2: !Ref SnsTopicArnLevel2
+          SNS_TOPIC_ARN3: !Ref SnsTopicArnLevel3
+          SNS_TOPIC_ARN4: !Ref SnsTopicArnLevel4
+          SNS_TOPIC_ARN5: !Ref SnsTopicArnLevel5
+          SNS_TOPIC_ARN6: !Ref SnsTopicArnLevel6
       Policies:
        - AWSLambdaExecute
        - AWSLambdaRole
        - SNSPublishMessagePolicy:
-          TopicName: !Ref SnsTopicName
+          TopicName: !Ref SnsTopicNameLevel1
+       - SNSPublishMessagePolicy:
+          TopicName: !Ref SnsTopicNameLevel2
+       - SNSPublishMessagePolicy:
+          TopicName: !Ref SnsTopicNameLevel3
+       - SNSPublishMessagePolicy:
+          TopicName: !Ref SnsTopicNameLevel4
+       - SNSPublishMessagePolicy:
+          TopicName: !Ref SnsTopicNameLevel5
+       - SNSPublishMessagePolicy:
+          TopicName: !Ref SnsTopicNameLevel6
       Events:
         DailySchedule:
           Type: Schedule
@@ -52,3 +83,17 @@ Resources:
       Policies:
        - AWSLambdaExecute
        - AWSLambdaRole
+  
+  Level1Topic:
+    Type: AWS::SNS::Topic
+    Properties:
+      Subscription:
+        - Endpoint: danielmweibel@gmail.com
+          Protocol: sms
+  
+  Level2Topic:
+    Type: AWS::SNS::Topic
+    Properties:
+      Subscription:
+        - Endpoint: danielmweibel@gmail.com
+          Protocol: email
