@@ -27,19 +27,12 @@ def lambda_handler(event, context):
     stream = io.StringIO(csv_response.decode("utf-8"))
     
     # Reads and prints the CSV file as a list of dictionaries
-    filter_level = {hsk_level: 1}
-    with open('data.tsv', 'r') as f_name:
-        for line in csv.DictReader(stream, delimiter='\t'):
-            if line['HSK Level'] not in filter_countries:
-                print(line)
-    
-
     reader = csv.DictReader(stream)
     vocab_list = []
     for row in reader:
-        vocab_list.append(dict(row))
+        if row['HSK Level'] == hsk_level:
+            vocab_list.append(dict(row))
     print(vocab_list)
-
 
     # Calls the random_entry function on the list
     word = random_entry(vocab_list)
