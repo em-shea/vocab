@@ -5,27 +5,7 @@ Parameters:
   S3BucketName:
     Type: String
   S3BucketKey:
-    Type: String
-  SnsTopicArnLevel1:
-    Type: String
-  SnsTopicNameLevel1:
-    Type: String
-  SnsTopicArnLevel2:
-    Type: String
-  SnsTopicNameLevel2:
-    Type: String
-  SnsTopicArnLevel3:
-    Type: String
-  SnsTopicNameLevel3:
-    Type: String
-  SnsTopicArnLevel4:
-    Type: String
-  SnsTopicNameLevel4:
-    Type: String
-  SnsTopicArnLevel5:
-    Type: String
-  SnsTopicNameLevel5:
-    Type: String    
+    Type: String  
 
 Resources:
   TextFunction:
@@ -40,27 +20,27 @@ Resources:
       Description: A function that calls the VocabRandomEntry function and sends a text with response contents.
       Environment:
         Variables:
-          SNS_TOPIC_ARN1: !Ref SnsTopicArnLevel1
-          SNS_TOPIC_ARN2: !Ref SnsTopicArnLevel2
-          SNS_TOPIC_ARN3: !Ref SnsTopicArnLevel3
-          SNS_TOPIC_ARN4: !Ref SnsTopicArnLevel4
-          SNS_TOPIC_ARN5: !Ref SnsTopicArnLevel5
-          SNS_TOPIC_ARN6: !Ref SnsTopicArnLevel6
+          SNS_TOPIC_ARN1: !Ref Level1Topic
+          SNS_TOPIC_ARN2: !Ref Level2Topic
+          SNS_TOPIC_ARN3: !Ref Level3Topic
+          SNS_TOPIC_ARN4: !Ref Level4Topic
+          SNS_TOPIC_ARN5: !Ref Level5Topic
+          SNS_TOPIC_ARN6: !Ref Level6Topic
       Policies:
        - AWSLambdaExecute
        - AWSLambdaRole
        - SNSPublishMessagePolicy:
-          TopicName: !Ref SnsTopicNameLevel1
+          TopicName: Level1Topic
        - SNSPublishMessagePolicy:
-          TopicName: !Ref SnsTopicNameLevel2
+          TopicName: Level2Topic
        - SNSPublishMessagePolicy:
-          TopicName: !Ref SnsTopicNameLevel3
+          TopicName: Level3Topic
        - SNSPublishMessagePolicy:
-          TopicName: !Ref SnsTopicNameLevel4
+          TopicName: Level4Topic
        - SNSPublishMessagePolicy:
-          TopicName: !Ref SnsTopicNameLevel5
+          TopicName: Level5Topic
        - SNSPublishMessagePolicy:
-          TopicName: !Ref SnsTopicNameLevel6
+          TopicName: Level6Topic
       Events:
         DailySchedule:
           Type: Schedule
@@ -84,16 +64,45 @@ Resources:
        - AWSLambdaExecute
        - AWSLambdaRole
   
+  """SNS Topics at each HSK level"""
   Level1Topic:
     Type: AWS::SNS::Topic
     Properties:
       Subscription:
-        - Endpoint: danielmweibel@gmail.com
+        - Endpoint: +12532256518
           Protocol: sms
   
   Level2Topic:
     Type: AWS::SNS::Topic
     Properties:
       Subscription:
-        - Endpoint: danielmweibel@gmail.com
+        - Endpoint: +12532256518
+          Protocol: email
+  
+  Level3Topic:
+    Type: AWS::SNS::Topic
+    Properties:
+      Subscription:
+        - Endpoint: +12532256518
+          Protocol: email
+  
+  Level4Topic:
+    Type: AWS::SNS::Topic
+    Properties:
+      Subscription:
+        - Endpoint: +12532256518
+          Protocol: email
+  
+  Level5Topic:
+    Type: AWS::SNS::Topic
+    Properties:
+      Subscription:
+        - Endpoint: +12532256518
+          Protocol: email
+
+  Level6Topic:
+    Type: AWS::SNS::Topic
+    Properties:
+      Subscription:
+        - Endpoint: +12532256518
           Protocol: email
