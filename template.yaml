@@ -29,18 +29,7 @@ Resources:
       Policies:
        - AWSLambdaExecute
        - AWSLambdaRole
-       - SNSPublishMessagePolicy:
-          TopicName: Level1Topic
-       - SNSPublishMessagePolicy:
-          TopicName: Level2Topic
-       - SNSPublishMessagePolicy:
-          TopicName: Level3Topic
-       - SNSPublishMessagePolicy:
-          TopicName: Level4Topic
-       - SNSPublishMessagePolicy:
-          TopicName: Level5Topic
-       - SNSPublishMessagePolicy:
-          TopicName: Level6Topic
+       - AmazonSNSFullAccess
       Events:
         DailySchedule:
           Type: Schedule
