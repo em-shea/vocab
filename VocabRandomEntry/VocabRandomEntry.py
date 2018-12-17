@@ -18,8 +18,6 @@ def random_entry(any_list):
 def lambda_handler(event, context):
     """Pulls a random vocabulary word from S3"""
     # Pulls data file from S3 bucket provided as an env var"""
-    print(event)
-    print(event["hsk_level"])
     hsk_level = event["hsk_level"]
 
     csv_file = s3.get_object(Bucket=os.environ['S3_BUCKET_NAME'], Key=os.environ['S3_BUCKET_KEY'])
