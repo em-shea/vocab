@@ -58,40 +58,40 @@ Resources:
     Type: AWS::SNS::Topic
     Properties:
       Subscription:
-        - Endpoint: +12532256518
+        - Endpoint: NUMBER
           Protocol: sms
   
   Level2Topic:
     Type: AWS::SNS::Topic
     Properties:
       Subscription:
-        - Endpoint: +12532256518
+        - Endpoint: NUMBER
           Protocol: sms
   
   Level3Topic:
     Type: AWS::SNS::Topic
     Properties:
       Subscription:
-        - Endpoint: +12532256518
+        - Endpoint: NUMBER
           Protocol: sms
   
   Level4Topic:
     Type: AWS::SNS::Topic
     Properties:
       Subscription:
-        - Endpoint: +12532256518
+        - Endpoint: NUMBER
           Protocol: sms
   
   Level5Topic:
     Type: AWS::SNS::Topic
     Properties:
       Subscription:
-        - Endpoint: +12532256518
+        - Endpoint: NUMBER
           Protocol: sms
 
   Level6Topic:
     Type: AWS::SNS::Topic
     Properties:
       Subscription:
-        - Endpoint: +12532256518
+        - Endpoint: NUMBER
           Protocol: sms
