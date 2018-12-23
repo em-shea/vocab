@@ -1,6 +1,7 @@
 import json
 import boto3
 import os
+import time
 from botocore.vendored import requests
 
 lambda_client = boto3.client('lambda')
@@ -56,12 +57,26 @@ def lambda_handler(event, context):
         response = sns_client.publish(
             TargetArn=level_dict["topic_arn"],
             Message=json.dumps({'default': message}),
-            MessageStructure='json'
+            MessageStructure='json',
+            MessageAttributes={
+                'DefaultSMSType': {
+                    'DataType': 'string',
+                    'StringValue': 'Transactional'
+                }
+            }
         )
-        
+        time.sleep(1)
+
         # Publishes baidu URL to SNS
         response = sns_client.publish(
             TargetArn=level_dict["topic_arn"],
             Message=json.dumps({'default': baidu_link}),
-            MessageStructure='json'
+            MessageStructure='json',
+            MessageAttributes={
+                'DefaultSMSType': {
+                    'DataType': 'string',
+                    'StringValue': 'Transactional'
+                }
+            }
         )
+        time.sleep(1)

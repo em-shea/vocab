@@ -56,42 +56,18 @@ Resources:
   # SNS Topics at each HSK level
   Level1Topic:
     Type: AWS::SNS::Topic
-    Properties:
-      Subscription:
-        - Endpoint: +12532256518
-          Protocol: sms
   
   Level2Topic:
     Type: AWS::SNS::Topic
-    Properties:
-      Subscription:
-        - Endpoint: +12532256518
-          Protocol: sms
   
   Level3Topic:
     Type: AWS::SNS::Topic
-    Properties:
-      Subscription:
-        - Endpoint: +12532256518
-          Protocol: sms
   
   Level4Topic:
     Type: AWS::SNS::Topic
-    Properties:
-      Subscription:
-        - Endpoint: +12532256518
-          Protocol: sms
   
   Level5Topic:
     Type: AWS::SNS::Topic
-    Properties:
-      Subscription:
-        - Endpoint: +12532256518
-          Protocol: sms
 
   Level6Topic:
     Type: AWS::SNS::Topic
-    Properties:
-      Subscription:
-        - Endpoint: +12532256518
-          Protocol: sms
