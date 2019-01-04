@@ -56,7 +56,6 @@ Resources:
   # SNS Topics at each HSK level
   Level1Topic:
     Type: AWS::SNS::Topic
-<<<<<<< HEAD
   
   Level2Topic:
     Type: AWS::SNS::Topic
@@ -72,44 +71,3 @@ Resources:
 
   Level6Topic:
     Type: AWS::SNS::Topic
-=======
-    Properties:
-      Subscription:
-        - Endpoint: NUMBER
-          Protocol: sms
-  
-  Level2Topic:
-    Type: AWS::SNS::Topic
-    Properties:
-      Subscription:
-        - Endpoint: NUMBER
-          Protocol: sms
-  
-  Level3Topic:
-    Type: AWS::SNS::Topic
-    Properties:
-      Subscription:
-        - Endpoint: NUMBER
-          Protocol: sms
-  
-  Level4Topic:
-    Type: AWS::SNS::Topic
-    Properties:
-      Subscription:
-        - Endpoint: NUMBER
-          Protocol: sms
-  
-  Level5Topic:
-    Type: AWS::SNS::Topic
-    Properties:
-      Subscription:
-        - Endpoint: NUMBER
-          Protocol: sms
-
-  Level6Topic:
-    Type: AWS::SNS::Topic
-    Properties:
-      Subscription:
-        - Endpoint: NUMBER
-          Protocol: sms
->>>>>>> 916460c481b155e637f870210473c1be846569f9

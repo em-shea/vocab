@@ -22,7 +22,6 @@ def get_random(any_level):
     return word
 
 def lambda_handler(event, context):
-    print("howdy")
     """Sends a daily random HSK vocab to SNS subscribers"""
     # Calls VocabRandomEntry, receives a single word's dictionary back
     hsk_level_arns = [{
@@ -48,35 +47,32 @@ def lambda_handler(event, context):
     for level_dict in hsk_level_arns:
         level = level_dict["hsk_level"]
         word = get_random(level)
+        num_level = int(level)
+        
+        if num_level in range(1,4):
+            # Selects relevant parts of the word's dictionary and creates baidu URL
+            message = ("HSK Level: " + level_dict["hsk_level"] + "\n" + word["Word"] + 
+            "\n" + word["Pronunciation"] + "\n" + word["Definition"] + 
+            "\n \n" + "https://www.yellowbridge.com/chinese/charsearch.php?zi=" + word["Word"])
 
-        # Selects relevant parts of the word's dictionary and creates baidu URL
-        message = "HSK Level: " + level_dict["hsk_level"] + "\n" + word["Word"] + "\n" + word["Pronunciation"] + "\n" + word["Definition"]
-        baidu_link = "https://fanyi.baidu.com/#zh/en/" + word["Word"]
+            # Publishes word, pronunciation and definition to SNS
+            response = sns_client.publish(
+                TargetArn=level_dict["topic_arn"],
+                Message=json.dumps({'default': message}),
+                MessageStructure='json'
+            )
+        else: 
+            # Selects relevant parts of the word's dictionary and creates baidu URL
+            message = ("HSK Level: " + level_dict["hsk_level"] + "\n" + word["Word"] + 
+            "\n" + word["Pronunciation"] + "\n" + word["Definition"] + 
+            "\n \n" + "https://fanyi.baidu.com/#zh/en/" + word["Word"])
 
-        # Publishes word, pronunciation and definition to SNS
-        response = sns_client.publish(
-            TargetArn=level_dict["topic_arn"],
-            Message=json.dumps({'default': message}),
-            MessageStructure='json',
-            MessageAttributes={
-                'DefaultSMSType': {
-                    'DataType': 'string',
-                    'StringValue': 'Transactional'
-                }
-            }
-        )
-        time.sleep(1)
+            # Publishes word, pronunciation and definition to SNS
+            response = sns_client.publish(
+                TargetArn=level_dict["topic_arn"],
+                Message=json.dumps({'default': message}),
+                MessageStructure='json'
+            )
+        
 
-        # Publishes baidu URL to SNS
-        response = sns_client.publish(
-            TargetArn=level_dict["topic_arn"],
-            Message=json.dumps({'default': baidu_link}),
-            MessageStructure='json',
-            MessageAttributes={
-                'DefaultSMSType': {
-                    'DataType': 'string',
-                    'StringValue': 'Transactional'
-                }
-            }
-        )
-        time.sleep(1)
+        

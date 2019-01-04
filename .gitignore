@@ -2,6 +2,7 @@
 env.json
 .aws-sam/build
 packaged-template.yaml
+output.txt
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
