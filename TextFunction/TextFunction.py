@@ -48,31 +48,24 @@ def lambda_handler(event, context):
         level = level_dict["hsk_level"]
         word = get_random(level)
         num_level = int(level)
+
+        message = ("HSK Level: " + level_dict["hsk_level"] + "\n" + word["Word"] + 
+            "\n" + word["Pronunciation"] + "\n" + word["Definition"]) 
         
         if num_level in range(1,4):
-            # Selects relevant parts of the word's dictionary and creates baidu URL
-            message = ("HSK Level: " + level_dict["hsk_level"] + "\n" + word["Word"] + 
-            "\n" + word["Pronunciation"] + "\n" + word["Definition"] + 
-            "\n \n" + "https://www.yellowbridge.com/chinese/charsearch.php?zi=" + word["Word"])
-
-            # Publishes word, pronunciation and definition to SNS
-            response = sns_client.publish(
-                TargetArn=level_dict["topic_arn"],
-                Message=json.dumps({'default': message}),
-                MessageStructure='json'
-            )
+            url = "\n \n" + "https://www.yellowbridge.com/chinese/charsearch.php?zi=" + word["Word"]
+  
         else: 
-            # Selects relevant parts of the word's dictionary and creates baidu URL
-            message = ("HSK Level: " + level_dict["hsk_level"] + "\n" + word["Word"] + 
-            "\n" + word["Pronunciation"] + "\n" + word["Definition"] + 
-            "\n \n" + "https://fanyi.baidu.com/#zh/en/" + word["Word"])
+            url = "\n \n" + "https://fanyi.baidu.com/#zh/en/" + word["Word"]
 
-            # Publishes word, pronunciation and definition to SNS
-            response = sns_client.publish(
-                TargetArn=level_dict["topic_arn"],
-                Message=json.dumps({'default': message}),
-                MessageStructure='json'
-            )
-        
+        complete_message = message + url
+
+        # Publishes word, pronunciation and definition to SNS
+        response = sns_client.publish(
+            TargetArn=level_dict["topic_arn"],
+            Message=json.dumps({'default': complete_message}),
+            MessageStructure='json'
+        )
+    
 
         
