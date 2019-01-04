@@ -53,7 +53,7 @@ def lambda_handler(event, context):
             "\n" + word["Pronunciation"] + "\n" + word["Definition"]) 
         
         if num_level in range(1,4):
-            url = "\n \n" + "https://www.yellowbridge.com/chinese/charsearch.php?zi=" + word["Word"]
+            url = "\n \n" + "https://www.yellowbridge.com/chinese/sentsearch.php?word=" + word["Word"]
   
         else: 
             url = "\n \n" + "https://fanyi.baidu.com/#zh/en/" + word["Word"]
