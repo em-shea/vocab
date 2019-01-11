@@ -13,7 +13,7 @@ HSK Level: 1
 shui4 jiao4  
 to go to bed; to go to sleep
 
-https://www.yellowbridge.com/chinese/sentsearch.php?word=%E7%9D%A1%E8%A7%89
+https://www.yellowbridge.com/chinese/sentsearch.php?word=睡觉
 
 
 Levels 1-3 use www.yellowbridge.com  
