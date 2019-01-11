@@ -17,4 +17,4 @@ https://www.yellowbridge.com/chinese/sentsearch.php?word=睡觉
 
 
 Levels 1-3 use www.yellowbridge.com  
-Levels 4-6 use https://fanyi.baidu.com
+Levels 4-6 use fanyi.baidu.com
