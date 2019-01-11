@@ -6,7 +6,7 @@ A serverless app that sends an HSK 1-6 word and link to example sentences as a d
 
 Example text message:
 
-![Screenshot of text message](https://s3.amazonaws.com/hsk-vocab/Example+Text+Message.png)
+![Screenshot of text message](https://s3.amazonaws.com/hsk-vocab/Example+Text+Message.jpg)
 
 > HSK Level: 1  
 > 睡觉  
