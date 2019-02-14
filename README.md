@@ -6,7 +6,7 @@ A serverless app that sends an HSK 1-6 word and link to example sentences as a d
 
 Design:
 
-![Architectural diagram](https://s3.amazonaws.com/hsk-vocab/Vocab+app+(2).png)
+![Architectural diagram](https://s3.amazonaws.com/hsk-vocab/Vocab+app+(2).pn)
 
 Example message:
 
