@@ -1,12 +1,14 @@
 # vocab
 
-A serverless app that sends an HSK 1-6 word and link to example sentences as a daily text message.
+A serverless app that sends an HSK 1-6 word and link to example sentences as a daily message.
 
 好好学习，天天向上
 
-Example text message:
+Design:
 
-![Screenshot of text message](https://s3.amazonaws.com/hsk-vocab/Example+Text+Message.jpg)
+![Architectural diagram](https://s3.amazonaws.com/hsk-vocab/Vocab+app+(2).png)
+
+Example message:
 
 > HSK Level: 1  
 > 睡觉  
