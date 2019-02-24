@@ -6,6 +6,14 @@ Parameters:
     Type: String
   S3BucketKey:
     Type: String  
+  APICustomDomain:
+    Type: String
+
+Globals:
+  Api:
+    # Allows www.example.com to call these APIs
+    # SAM will automatically add AllowMethods with a list of methods for this API
+    Cors: !Sub "'${APICustomDomain}'"
 
 Resources:
   TextFunction:
@@ -52,6 +60,32 @@ Resources:
       Policies:
        - AWSLambdaExecute
        - AWSLambdaRole
+
+  SampleVocabFunction:
+    # Define a function that reads a specified file from S3
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      FunctionName: SampleVocabFunction
+      Handler: SampleVocabFunction.lambda_handler
+      Runtime: python3.7
+      CodeUri: ./SampleVocabFunction
+      Description: A function that returns sample vocabulary words for each HSK level when called by API Gateway.
+      MemorySize: 128
+      Timeout: 3
+      Policies:
+       - AWSLambdaExecute
+       - AWSLambdaRole
+      Environment:
+        Variables:
+          S3_BUCKET_NAME: !Ref S3BucketName
+          S3_BUCKET_KEY: !Ref S3BucketKey
+      Events:
+        SampleVocabFunctionApi:
+          # Define an API Gateway endpoint that responds to HTTP GET
+          Type: Api
+          Properties:
+            Path: /
+            Method: GET
   
   # SNS Topics at each HSK level
   Level1Topic:
