@@ -8,6 +8,8 @@ Parameters:
     Type: String  
   APICustomDomain:
     Type: String
+  DomainName:
+    Type: String
 
 Globals:
   Api:
@@ -84,7 +86,7 @@ Resources:
           # Define an API Gateway endpoint that responds to HTTP GET
           Type: Api
           Properties:
-            Path: /
+            Path: /sample_vocab
             Method: GET
   
   # SNS Topics at each HSK level

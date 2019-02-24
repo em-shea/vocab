@@ -16,6 +16,7 @@ def random_entry(any_list):
     return random_selection
 
 def lambda_handler(event, context):
+
     """Pulls a random vocabulary word from S3"""
     # Pulls data file from S3 bucket provided as an env var"""
 
@@ -52,7 +53,7 @@ def lambda_handler(event, context):
         'statusCode': 200,
         'headers': {
             'Access-Control-Allow-Methods': 'GET,OPTIONS',
-            'Access-Control-Allow-Origin': 'https://haohaotiantian.com',
+            'Access-Control-Allow-Origin': os.environ['DomainName'],
         },
         'body': json.dumps(words)
     }
