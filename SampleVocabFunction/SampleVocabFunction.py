@@ -3,17 +3,17 @@ import io
 import csv
 import os
 import boto3
+import random
 from botocore.vendored import requests
-from random import randint
 
 s3 = boto3.client('s3')
 
-def random_entry(any_list):
-    """Pulls random entry from a list argument given to it"""
-    random_number = randint(0,len(any_list)-1)
-    random_selection = any_list[random_number]
+# def random_entry(any_list):
+#     """Pulls random entry from a list argument given to it"""
+#     random_number = randint(0,len(any_list)-1)
+#     random_selection = any_list[random_number]
 
-    return random_selection
+#     return random_selection
 
 def lambda_handler(event, context):
 
@@ -35,19 +35,17 @@ def lambda_handler(event, context):
         [],
     ]
 
-    for row in reader:
+    for row in reader: 
         
         hsk_level = row['HSK Level']
         index_hsk_level = int(hsk_level) - 1
         vocab_lists[index_hsk_level].append(dict(row))
-        
-    words = []
 
+    # Default dict example
+    complete_response = {}
     for vocab_list in vocab_lists:
-
-        # Calls the random_entry function on the list
-        word = random_entry(vocab_list)
-        words.append(word)
+        hsk_level = vocab_list[0]['HSK Level']
+        complete_response[hsk_level] = random.sample(vocab_list, 5)
 
     return {
         'statusCode': 200,
