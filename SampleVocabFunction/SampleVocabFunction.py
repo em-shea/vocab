@@ -53,7 +53,8 @@ def lambda_handler(event, context):
         'statusCode': 200,
         'headers': {
             'Access-Control-Allow-Methods': 'GET,OPTIONS',
-            'Access-Control-Allow-Origin': os.environ['DomainName'],
+            # 'Access-Control-Allow-Origin': os.environ['DomainName'],
+            'Access-Control-Allow-Origin': '*',
         },
         'body': json.dumps(words)
     }

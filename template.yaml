@@ -6,8 +6,6 @@ Parameters:
     Type: String
   S3BucketKey:
     Type: String  
-  APICustomDomain:
-    Type: String
   DomainName:
     Type: String
 
@@ -15,7 +13,7 @@ Globals:
   Api:
     # Allows www.example.com to call these APIs
     # SAM will automatically add AllowMethods with a list of methods for this API
-    Cors: !Sub "'${APICustomDomain}'"
+    Cors: !Sub "'${DomainName}'"
 
 Resources:
   TextFunction:
