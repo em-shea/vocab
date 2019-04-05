@@ -87,6 +87,29 @@ Resources:
             Path: /sample_vocab
             Method: GET
   
+  SubscribeFunction:
+    # Define a function that takes hsk level and email address inputs and subscribes to a topic
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      FunctionName: SubscribeFunction
+      Handler: SubscribeFunction.lambda_handler
+      Runtime: python3.7
+      CodeUri: ./SubscribeFunction
+      Description: A function that takes hsk level and email address inputs and subscribes to a topic.
+      MemorySize: 128
+      Timeout: 3
+      Policies:
+       - AWSLambdaExecute
+       - AWSLambdaRole
+       - AmazonSNSFullAccess
+      Events:
+        SubscribeFunctionApi:
+          # Define an API Gateway endpoint that responds to HTTP POST
+          Type: Api
+          Properties:
+            Path: /sub
+            Method: POST
+  
   # SNS Topics at each HSK level
   Level1Topic:
     Type: AWS::SNS::Topic
