@@ -94,9 +94,6 @@ Resources:
        - AWSLambdaExecute
        - AWSLambdaRole
        - AmazonSNSFullAccess
-      Environment:
-        Variables:
-          SG_API_KEY: !Ref SGApiKey
       Events:
         SubscribeFunctionApi:
           # Define an API Gateway endpoint that responds to HTTP POST
