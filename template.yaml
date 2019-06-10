@@ -8,8 +8,6 @@ Parameters:
     Type: String  
   DomainName:
     Type: String
-  SGApiKey:
-    Type: String
 
 Globals:
   Api:
