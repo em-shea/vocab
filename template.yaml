@@ -26,14 +26,6 @@ Resources:
       Runtime: python3.7
       CodeUri: ./TextFunction
       Description: A function that calls the VocabRandomEntry function and sends a text with response contents.
-      Environment:
-        Variables:
-          SNS_TOPIC_ARN1: !Ref Level1Topic
-          SNS_TOPIC_ARN2: !Ref Level2Topic
-          SNS_TOPIC_ARN3: !Ref Level3Topic
-          SNS_TOPIC_ARN4: !Ref Level4Topic
-          SNS_TOPIC_ARN5: !Ref Level5Topic
-          SNS_TOPIC_ARN6: !Ref Level6Topic
       Policies:
        - AWSLambdaExecute
        - AWSLambdaRole
