@@ -8,6 +8,8 @@ Parameters:
     Type: String  
   DomainName:
     Type: String
+  SGApiKey:
+    Type: String
 
 Globals:
   Api:
@@ -102,6 +104,9 @@ Resources:
        - AWSLambdaExecute
        - AWSLambdaRole
        - AmazonSNSFullAccess
+      Environment:
+        Variables:
+          SG_API_KEY: !Ref SGApiKey
       Events:
         SubscribeFunctionApi:
           # Define an API Gateway endpoint that responds to HTTP POST
@@ -109,22 +114,4 @@ Resources:
           Properties:
             Path: /sub
             Method: POST
-  
-  # SNS Topics at each HSK level
-  Level1Topic:
-    Type: AWS::SNS::Topic
-  
-  Level2Topic:
-    Type: AWS::SNS::Topic
-  
-  Level3Topic:
-    Type: AWS::SNS::Topic
-  
-  Level4Topic:
-    Type: AWS::SNS::Topic
-  
-  Level5Topic:
-    Type: AWS::SNS::Topic
 
-  Level6Topic:
-    Type: AWS::SNS::Topic
