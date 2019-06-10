@@ -37,7 +37,7 @@ def add_to_contact_list(recipient_id, hsk_level):
     url = "https://api.sendgrid.com/v3/contactdb/lists/" + str(list_id) + "/recipients/" + str(recipient_id)
 
     payload = "null"
-    headers = {'authorization': 'Bearer ' + os.environ['SGApiKey']}
+    headers = {'authorization': 'Bearer ' + os.environ['SG_API_KEY']}
 
     response = requests.request("POST", url, data=payload, headers=headers)
     
@@ -61,7 +61,7 @@ def lambda_handler(event, context):
     url = "https://api.sendgrid.com/v3/contactdb/recipients"
 
     headers = {
-        'authorization' : "Bearer " + os.environ['SGApiKey'],
+        'authorization' : "Bearer " + os.environ['SG_API_KEY'],
         'content-type' : "application/json"
     }
 
