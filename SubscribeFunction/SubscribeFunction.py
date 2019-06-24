@@ -83,9 +83,7 @@ def lambda_handler(event, context):
     invoke_response = lambda_client.invoke(
         FunctionName="NewUserConfirmation",
         InvocationType='Event',
-        Payload=json.dumps({
-            "hsk_level": event
-        })
+        Payload=json.dumps(event)
     )
 
     code = invoke_response['StatusCode']
