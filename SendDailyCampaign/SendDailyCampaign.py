@@ -11,7 +11,7 @@ lambda_client = boto3.client('lambda')
 def lambda_handler(event, context):
 
     # Loop through HSK levels
-    for level_dict in get_level_list()[0:1]:
+    for level_dict in get_level_list():
         level = level_dict["hsk_level"]
         word = get_random(level)
         num_level = int(level)

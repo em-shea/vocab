@@ -88,7 +88,7 @@ def lambda_handler(event, context):
         })
     )
 
-    code = invoke_response.StatusCode
+    code = invoke_response['StatusCode']
 
     if code == 202:
         print(f"Response code {code}. Invoke confirmation function successful.")
