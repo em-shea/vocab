@@ -18,16 +18,17 @@ Globals:
     Cors: !Sub "'${DomainName}'"
 
 Resources:
-  TextFunction:
+  SendDailyCampaign:
     # This function is triggered by a daily cloudwatch event at 12pm PST to call VocabRandomEntry
-    # It publishes the results and a baidu URL with example sentences to an SNS topic
+    # It creates and sends a SendGrid campaign with the word of the day for each HSK level 
+    # and sends to all users on the level contact list in SendGrid.
     Type: 'AWS::Serverless::Function'
     Properties:
-      FunctionName: TextFunction
-      Handler: TextFunction.lambda_handler
+      FunctionName: SendDailyCampaign
+      Handler: SendDailyCampaign.lambda_handler
       Runtime: python3.7
-      CodeUri: ./TextFunction
-      Description: A function that calls the VocabRandomEntry function and sends a text with response contents.
+      CodeUri: ./SendDailyCampaign
+      Description: A function that calls the VocabRandomEntry function and creates/send campaigns with the daily word.
       Policies:
        - AWSLambdaExecute
        - AWSLambdaRole
