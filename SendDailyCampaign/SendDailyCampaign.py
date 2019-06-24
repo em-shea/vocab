@@ -6,7 +6,6 @@ from datetime import datetime
 from botocore.vendored import requests
 
 lambda_client = boto3.client('lambda')
-sns_client = boto3.client('sns')
 
 # For each HSK level: Get a random word, fill in email template, and create and send a campaign
 def lambda_handler(event, context):

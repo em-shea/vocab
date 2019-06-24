@@ -1,5 +1,9 @@
 import os
+import json
+import boto3
 from botocore.vendored import requests
+
+lambda_client = boto3.client('lambda')
 
 def add_to_contact_list(recipient_id, hsk_level):
 
@@ -74,6 +78,22 @@ def lambda_handler(event, context):
 
     # Call function to add new contact to list
     add_to_contact_list(recipient_id, int(hsk_level))
+
+    # Call function send confirmation email
+    invoke_response = lambda_client.invoke(
+        FunctionName="NewUserConfirmation",
+        InvocationType='Event',
+        Payload=json.dumps({
+            "hsk_level": event
+        })
+    )
+
+    code = invoke_response.StatusCode
+
+    if code == 202:
+        print(f"Response code {code}. Invoke confirmation function successful.")
+    else:
+        print(f"Response code {code}. Invoke confirmation function unsuccessful.")
 
     return {
             'statusCode': 200,
