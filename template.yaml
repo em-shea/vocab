@@ -29,6 +29,7 @@ Resources:
       Runtime: python3.7
       CodeUri: ./SendDailyCampaign
       Description: A function that calls the VocabRandomEntry function and creates/send campaigns with the daily word.
+      Timeout: 120
       Policies:
        - AWSLambdaExecute
        - AWSLambdaRole
