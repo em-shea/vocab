@@ -35,7 +35,6 @@ Resources:
       Policies:
        - AWSLambdaExecute
        - AWSLambdaRole
-       - SNSPublishMessagePolicy
       Environment:
         Variables:
           SG_API_KEY: !Ref SGApiKey
@@ -102,7 +101,7 @@ Resources:
       Policies:
        - AWSLambdaExecute
        - AWSLambdaRole
-       - 
+       - SNSPublishMessagePolicy
       Environment:
         Variables:
           SG_API_KEY: !Ref SGApiKey
