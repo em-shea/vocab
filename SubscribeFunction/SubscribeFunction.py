@@ -17,7 +17,7 @@ def lambda_handler(event, context):
     payload = [
         {
             "email" : email_address,
-            "level_list" : "Level" + hsk_level
+            "level_list" : "Level " + hsk_level
         }
     ]
 
@@ -119,6 +119,6 @@ def publish_sns_update(success_status,payload):
         message = f"Error - {payload[0]['email']} not subscribed to {payload[0]['level_list']}"
 
     response = sns_client.publish(
-        TargetArn = os.environ['SUB_TOPIC_ARN'], 
-        Message = ({'default': json.dumps(message)})
+        TopicArn = os.environ['SUB_TOPIC_ARN'], 
+        Message = message
     )
