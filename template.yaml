@@ -115,9 +115,10 @@ Resources:
   
   SubNotifyTopic:
     Type: AWS::SNS::Topic
-    Subscription: 
-     - Protocol: email
-       Endpoint: !Ref SubNotifyEmail
+    Properties:
+      Subscription: 
+      - Protocol: email
+        Endpoint: !Ref SubNotifyEmail
 
   NewUserConfirmation:
     # A function that sends a new user confirmation email when a user subscribes
