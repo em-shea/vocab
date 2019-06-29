@@ -17,4 +17,4 @@ jobs:
 
       - run: 
           name: Deploy with SAM
-          command: sam package --s3-bucket hsk-vocab --output-template-file packaged-template.yaml && sam deploy --template-file ./packaged-template.yaml --stack-name vocab --region us-east-1 --capabilities CAPABILITY_IAM --parameter-overrides S3BucketName=hsk-vocab S3BucketKey=HSK_Level_6.csv DomainName=https://haohaotiantian.com SGApiKey=$SGApiKey
+          command: sam package --s3-bucket hsk-vocab --output-template-file packaged-template.yaml && sam deploy --template-file ./packaged-template.yaml --stack-name vocab --region us-east-1 --capabilities CAPABILITY_IAM --parameter-overrides S3BucketName=hsk-vocab S3BucketKey=HSK_Level_6.csv DomainName=https://haohaotiantian.com SGApiKey=$SGApiKey SubNotifyEmail=$SubNotifyEmail
