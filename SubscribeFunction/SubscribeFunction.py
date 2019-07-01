@@ -7,13 +7,14 @@ lambda_client = boto3.client('lambda')
 
 sns_client = boto3.client('sns')
 
+# Subscribe a new user, including sending an email confirmation to the user and a notification to the app owner
 def lambda_handler(event, context):
   
-    # extract relevant user details
+    # Extract relevant user details
     email_address = event["queryStringParameters"]['email']
     hsk_level = event["queryStringParameters"]['level']
 
-    # create payload with user details
+    # Create payload with user details
     payload = [
         {
             "email" : email_address,
@@ -36,16 +37,17 @@ def lambda_handler(event, context):
     data = response.json()
     recipient_id = data["persisted_recipients"][0]
 
-    # Call function to add new contact to list
+    # Add new contact to the correct HSK level list
     add_to_contact_list(recipient_id, int(hsk_level))
 
-    # Call function send confirmation email
+    # Send confirmation email function call
     invoke_response = lambda_client.invoke(
         FunctionName="NewUserConfirmation",
         InvocationType='Event',
         Payload=json.dumps(event)
     )
 
+    # Check if confirmation email function invoked successfully
     code = invoke_response['StatusCode']
 
     if code == 202:
@@ -58,6 +60,7 @@ def lambda_handler(event, context):
 
         print(f"Response code {code}. Invoke confirmation function unsuccessful.")
 
+    # Send notification to an SNS queue to notify the app owner
     publish_sns_update(success_status,payload)
 
     return {
@@ -69,8 +72,10 @@ def lambda_handler(event, context):
             'body': '{"success" : true}'
         }
 
+# Add created contact to the correct HSK level
 def add_to_contact_list(recipient_id, hsk_level):
 
+    # SendGrid level list IDs
     list_ids = [
         {
             "id": 7697668,
@@ -102,6 +107,7 @@ def add_to_contact_list(recipient_id, hsk_level):
 
     list_id = list_ids[hsk_level_index]["id"]
 
+    # Call add contact to list API
     url = "https://api.sendgrid.com/v3/contactdb/lists/" + str(list_id) + "/recipients/" + str(recipient_id)
 
     payload = "null"
@@ -111,6 +117,7 @@ def add_to_contact_list(recipient_id, hsk_level):
 
     print(response)
 
+# Publish an SNS message to notify the app owner about the new user creation success/failure
 def publish_sns_update(success_status,payload):
 
     if success_status == True:

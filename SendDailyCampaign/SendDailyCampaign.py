@@ -7,27 +7,34 @@ from botocore.vendored import requests
 
 lambda_client = boto3.client('lambda')
 
-# For each HSK level: Get a random word, fill in email template, and create and send a campaign
+# For each HSK level: Get a random word, fill in email template, create and send a campaign, send error notification on failure
 def lambda_handler(event, context):
 
     # Loop through HSK levels
     for level_dict in get_level_list():
         level = level_dict["hsk_level"]
+
+        # Get a random word for each level
         word = get_random(level)
         num_level = int(level)
 
+        # Replace campaign HTML placeholders with word and level
         campaign_contents = assemble_html_content(word,level,num_level)
 
+        # Assemble create campaign API call payload
         payload = assemble_payload(campaign_contents,level,level_dict)
         
+        # Call create campaign API
         campaign_id = create_campaign(payload)
         
+        # Call send campaign API
         sendgrid_response = send_campaign(campaign_id)
 
+        # Send error response and notification
         if "status" in sendgrid_response and sendgrid_response["status"] == "Scheduled":
             print(f"Campaign {sendgrid_response['id']} for HSK Level {num_level} scheduled for send successfully.")
         else: 
-            print("Campaign did not schedule successfully.")
+            print(f"Campaign for {num_level} did not schedule successfully.")
             print("SendGrid API response: " + sendgrid_response)
             # Option to call error alert function
 
@@ -63,7 +70,7 @@ def get_level_list():
 
     return hsk_level_lists
 
-# Get a random word from a given level
+# Get a random word for a given level
 def get_random(any_level):
     invoke_response = lambda_client.invoke(
         FunctionName="VocabRandomEntry",
@@ -101,7 +108,7 @@ def assemble_html_content(word,level,num_level):
 
     return campaign_contents
 
-# Assemble payload
+# Assemble create campaign payload
 def assemble_payload(campaign_contents,level,level_dict):
 
     payload = {
@@ -120,7 +127,7 @@ def assemble_payload(campaign_contents,level,level_dict):
 # Create campaign
 def create_campaign(payload):
     
-    # Create Campaign API call
+    # Create campaign API call
     create_url = "https://api.sendgrid.com/v3/campaigns"
         
     headers = {

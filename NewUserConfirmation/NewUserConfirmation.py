@@ -1,9 +1,9 @@
 import os
 from botocore.vendored import requests
 
-""" Invoked asynchronously from CreateContactFunction """
+""" Invoked asynchronously from SubscribeFunction """
 
-# Send confirmation email to new user
+# Send subscribe confirmation email to new user
 def lambda_handler(event, context):
     
     user_details = get_email_and_level(event)
@@ -16,7 +16,7 @@ def lambda_handler(event, context):
     else:
         print(f"Response code {code}. Confirmation email unsuccessful.")
 
-# Extract email and level from queryStringParameters
+# Extract user selected email and level from queryStringParameters
 def get_email_and_level(event):
     
     email_address = event["queryStringParameters"]['email']
@@ -24,7 +24,7 @@ def get_email_and_level(event):
 
     return email_address, hsk_level
 
-# Make SendGrid send email call 
+# Put together email personalizations and call SendGrid send email API 
 def send_confirmation(user_details):
 
     email_address, hsk_level = user_details

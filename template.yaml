@@ -1,6 +1,6 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: 'AWS::Serverless-2016-10-31'
-Description: An app that texts you an HSK vocab word each day and a link to example sentences.
+Description: An app that sends a daily email message for each HSK level with a vocab word
 Parameters:
   S3BucketName:
     Type: String
@@ -15,22 +15,19 @@ Parameters:
 
 Globals:
   Api:
-    # Allows www.example.com to call these APIs
-    # SAM will automatically add AllowMethods with a list of methods for this API
+    # Add AllowMethods with a list of methods for this domain name to call the API in this template
     Cors: !Sub "'${DomainName}'"
 
 Resources:
   SendDailyCampaign:
-    # This function is triggered by a daily cloudwatch event at 12pm PST to call VocabRandomEntry
-    # It creates and sends a SendGrid campaign with the word of the day for each HSK level 
-    # and sends to all users on the level contact list in SendGrid.
+    # A function that sends a daily SendGrid campaign with a vocab word for each HSK level
     Type: 'AWS::Serverless::Function'
     Properties:
       FunctionName: SendDailyCampaign
       Handler: SendDailyCampaign.lambda_handler
       Runtime: python3.7
       CodeUri: ./SendDailyCampaign
-      Description: A function that calls the VocabRandomEntry function and creates/send campaigns with the daily word.
+      Description: A function that sends a daily SendGrid campaign with a vocab word for each HSK level
       Timeout: 120
       Policies:
        - AWSLambdaExecute
@@ -45,14 +42,14 @@ Resources:
             Schedule: cron(0 20 * * ? *)
 
   VocabRandomEntry:
-    # This function selects a random entry from an S3 file with HSK vocab
+    # A function that selects a random entry from an S3 file
     Type: 'AWS::Serverless::Function'
     Properties:
       FunctionName: VocabRandomEntry
       Handler: VocabRandomEntry.lambda_handler
       Runtime: python3.7
       CodeUri: ./VocabRandomEntry
-      Description: A function selects a random entry from a table.
+      Description: A function that selects a random entry from an S3 file
       Environment:
         Variables:
           S3_BUCKET_NAME: !Ref S3BucketName
@@ -62,14 +59,14 @@ Resources:
        - AWSLambdaRole
 
   SampleVocabFunction:
-    # Define a function that reads a specified file from S3
+    # A function that returns five random words for each HSK level
     Type: 'AWS::Serverless::Function'
     Properties:
       FunctionName: SampleVocabFunction
       Handler: SampleVocabFunction.lambda_handler
       Runtime: python3.7
       CodeUri: ./SampleVocabFunction
-      Description: A function that returns sample vocabulary words for each HSK level when called by API Gateway.
+      Description: A function that returns five random words for each HSK level
       MemorySize: 128
       Timeout: 3
       Policies:
@@ -81,21 +78,21 @@ Resources:
           S3_BUCKET_KEY: !Ref S3BucketKey
       Events:
         SampleVocabFunctionApi:
-          # Define an API Gateway endpoint that responds to HTTP GET
+          # An API Gateway endpoint that responds to HTTP GET
           Type: Api
           Properties:
             Path: /sample_vocab
             Method: GET
   
   SubscribeFunction:
-    # Define a function that takes hsk level and email address inputs and subscribes to a topic
+    # A function that takes an HSK level and email address inputs and subscribes to a topic
     Type: 'AWS::Serverless::Function'
     Properties:
       FunctionName: SubscribeFunction
       Handler: SubscribeFunction.lambda_handler
       Runtime: python3.7
       CodeUri: ./SubscribeFunction
-      Description: A function that takes hsk level and email address inputs and subscribes to a topic.
+      Description: A function that takes an HSK level and email address inputs and subscribes to a topic.
       MemorySize: 128
       Timeout: 3
       Policies:
@@ -123,14 +120,14 @@ Resources:
         Endpoint: !Ref SubNotifyEmail
 
   NewUserConfirmation:
-    # A function that sends a new user confirmation email when a user subscribes
+    # A function that sends a confirmation email to new users and a notification to an SNS topic
     Type: 'AWS::Serverless::Function'
     Properties:
       FunctionName: NewUserConfirmation
       Handler: NewUserConfirmation.lambda_handler
       Runtime: python3.7
       CodeUri: ./NewUserConfirmation
-      Description: A function that sends a new user confirmation email when a user subscribes
+      Description: A function that sends a confirmation email to new users and a notification to an SNS topic
       MemorySize: 128
       Timeout: 3
       Policies:

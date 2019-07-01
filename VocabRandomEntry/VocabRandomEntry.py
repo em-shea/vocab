@@ -8,18 +8,11 @@ from random import randint
 
 s3 = boto3.client('s3')
 
-def random_entry(any_list):
-    """Pulls random entry from a list argument given to it"""
-    random_number = randint(0,len(any_list)-1)
-    random_selection = any_list[random_number]
-
-    return random_selection
-
 def lambda_handler(event, context):
-    """Pulls a random vocabulary word from S3"""
-    # Pulls data file from S3 bucket provided as an env var"""
+
     hsk_level = event["hsk_level"]
 
+    # Reads file from S3
     csv_file = s3.get_object(Bucket=os.environ['S3_BUCKET_NAME'], Key=os.environ['S3_BUCKET_KEY'])
     csv_response = csv_file['Body'].read()
     stream = io.StringIO(csv_response.decode("utf-8"))
@@ -32,10 +25,18 @@ def lambda_handler(event, context):
             vocab_list.append(dict(row))
     print(vocab_list)
 
-    # Calls the random_entry function on the list
+    # Gets a random entry from the vocab list
     word = random_entry(vocab_list)
 
     return {
         'statusCode': 200,
         'body': word
 }
+
+# Select random entry from provided list
+def random_entry(any_list):
+
+    random_number = randint(0,len(any_list)-1)
+    random_selection = any_list[random_number]
+
+    return random_selection
