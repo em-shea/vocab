@@ -119,6 +119,9 @@ def publish_sns_update(success_status,payload):
         message = f"Error - {payload[0]['email']} not subscribed to {payload[0]['level_list']}"
 
     response = sns_client.publish(
-        TopicArn = os.environ['SUB_TOPIC_ARN'], 
-        Message = message
+        TargetArn = os.environ['SUB_TOPIC_ARN'], 
+        Message=json.dumps({'default': message}),
+        MessageStructure='json'
     )
+
+    print("SNS Response", response)
