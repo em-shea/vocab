@@ -35,6 +35,7 @@ Resources:
       Environment:
         Variables:
           SG_API_KEY: !Ref SGApiKey
+          SUB_TOPIC_ARN: !Ref SubNotifyTopic
       Events:
         DailySchedule:
           Type: Schedule

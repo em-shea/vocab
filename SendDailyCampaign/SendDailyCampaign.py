@@ -6,6 +6,7 @@ from datetime import datetime
 from botocore.vendored import requests
 
 lambda_client = boto3.client('lambda')
+sns_client = boto3.client('sns')
 
 # For each HSK level: Get a random word, fill in email template, create and send a campaign, send error notification on failure
 def lambda_handler(event, context):
@@ -24,22 +25,32 @@ def lambda_handler(event, context):
         # Assemble create campaign API call payload
         payload = assemble_payload(campaign_contents,level,level_dict)
         
-        # Call create campaign API
+        # SendGrid requires campaigns to be created and then sent
+        # First create the campaign and retrieve the campaign id to call the send API
         campaign_id = create_campaign(payload)
         
-        # Call send campaign API
         sendgrid_response = send_campaign(campaign_id)
 
-        # Send error response and notification
+        # Send success/error response and notification
         if "status" in sendgrid_response and sendgrid_response["status"] == "Scheduled":
             print(f"Campaign {sendgrid_response['id']} for HSK Level {num_level} scheduled for send successfully.")
+        
         else: 
-            print(f"Campaign for {num_level} did not schedule successfully.")
-            print("SendGrid API response: " + sendgrid_response)
-            # Option to call error alert function
+            failure_message = f"Campaign for {num_level} did not schedule successfully. SendGrid API response: " + sendgrid_response
+            publish_sns_update(failure_message)
 
+            print (failure_message)
 
-# Get level list data
+# Send SNS notification if the send campaign API call fails
+def publish_sns_update(message):
+
+    response = sns_client.publish(
+        TargetArn = os.environ['SUB_TOPIC_ARN'], 
+        Message=json.dumps({'default': message}),
+        MessageStructure='json'
+    )
+
+# Get SendGrid level list data: list ID and unsubscribe group ID for each HSK level 
 def get_level_list():
 
     hsk_level_lists = [{
@@ -85,7 +96,8 @@ def get_random(any_level):
     word = response_python["body"]
     return word
 
-# Assemble HTML template content
+# There are placeholders in the example template for dynamic content like the daily word
+# Here we swap the relevant content in for those placeholders
 def assemble_html_content(word,level,num_level):
 
     # Create example sentence URL
@@ -95,11 +107,11 @@ def assemble_html_content(word,level,num_level):
     else: 
         example_link = "https://fanyi.baidu.com/#zh/en/" + word["Word"]
 
-    # Read email template
+    # We have an html template file packaged with this function's code which we read here
     with open('template.html') as fh:
         contents = fh.read()
 
-    # Replace word in example template
+    # Replace relevant content in example template
     campaign_contents = contents.replace("{word}", word["Word"])
     campaign_contents = campaign_contents.replace("{pronunciation}", word["Pronunciation"])
     campaign_contents = campaign_contents.replace("{definition}", word["Definition"])
