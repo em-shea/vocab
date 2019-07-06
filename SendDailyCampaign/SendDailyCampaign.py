@@ -46,8 +46,9 @@ def lambda_handler(event, context):
         
         except Exception as e:
             print(e)
+            publish_sns_update(str(e))
 
-# Send SNS notification if the send campaign API call fails
+# Send SNS notification on failure
 def publish_sns_update(message):
 
     response = sns_client.publish(
