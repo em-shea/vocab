@@ -13,33 +13,39 @@ def lambda_handler(event, context):
 
     # Loop through HSK levels
     for level_dict in get_level_list():
-        level = level_dict["hsk_level"]
 
-        # Get a random word for each level
-        word = get_random(level)
-        num_level = int(level)
+        try: 
 
-        # Replace campaign HTML placeholders with word and level
-        campaign_contents = assemble_html_content(word,level,num_level)
+            level = level_dict["hsk_level"]
 
-        # Assemble create campaign API call payload
-        payload = assemble_payload(campaign_contents,level,level_dict)
+            # Get a random word for each level
+            word = get_random(level)
+            num_level = int(level)
+
+            # Replace campaign HTML placeholders with word and level
+            campaign_contents = assemble_html_content(word,level,num_level)
+
+            # Assemble create campaign API call payload
+            payload = assemble_payload(campaign_contents,level,level_dict)
+            
+            # SendGrid requires campaigns to be created and then sent
+            # First create the campaign and retrieve the campaign id to call the send API
+            campaign_id = create_campaign(payload)
+            
+            sendgrid_response = send_campaign(campaign_id)
+
+            # Send success/error response and notification
+            if "status" in sendgrid_response and sendgrid_response["status"] == "Scheduled":
+                print(f"Campaign {sendgrid_response['id']} for HSK Level {num_level} scheduled for send successfully.")
+            
+            else: 
+                failure_message = f"Campaign for {num_level} did not schedule successfully. SendGrid API response: " + sendgrid_response
+                publish_sns_update(failure_message)
+
+                print (failure_message)
         
-        # SendGrid requires campaigns to be created and then sent
-        # First create the campaign and retrieve the campaign id to call the send API
-        campaign_id = create_campaign(payload)
-        
-        sendgrid_response = send_campaign(campaign_id)
-
-        # Send success/error response and notification
-        if "status" in sendgrid_response and sendgrid_response["status"] == "Scheduled":
-            print(f"Campaign {sendgrid_response['id']} for HSK Level {num_level} scheduled for send successfully.")
-        
-        else: 
-            failure_message = f"Campaign for {num_level} did not schedule successfully. SendGrid API response: " + sendgrid_response
-            publish_sns_update(failure_message)
-
-            print (failure_message)
+        except Exception as e:
+            print(e)
 
 # Send SNS notification if the send campaign API call fails
 def publish_sns_update(message):
@@ -148,7 +154,9 @@ def create_campaign(payload):
     }
 
     response = requests.request("POST", create_url, json=payload, headers=headers)
-        
+    
+    print("Create campaign response:", response.text)
+
     data = response.json()
     campaign_id = data["id"]
     
