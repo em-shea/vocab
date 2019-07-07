@@ -28,6 +28,8 @@ def lambda_handler(event, context):
             # Assemble create campaign API call payload
             payload = assemble_payload(campaign_contents,level,level_dict)
             
+            print(f"HSK Level {num_level} campaign payload: {payload}")
+
             # SendGrid requires campaigns to be created and then sent
             # First create the campaign and retrieve the campaign id to call the send API
             campaign_id = create_campaign(payload)
