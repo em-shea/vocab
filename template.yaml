@@ -45,23 +45,8 @@ Resources:
           Type: Schedule
           Properties:
             Schedule: cron(0 20 * * ? *)
-
-  VocabRandomEntry:
-    # A function that selects a random entry from an S3 file
-    Type: 'AWS::Serverless::Function'
-    Properties:
-      FunctionName: !Sub VocabRandomEntry-${Stage}
-      Handler: VocabRandomEntry.lambda_handler
-      Runtime: python3.7
-      CodeUri: ./VocabRandomEntry
-      Description: A function that selects a random entry from an S3 file
-      Environment:
-        Variables:
-          S3_BUCKET_NAME: !Ref S3BucketName
-          S3_BUCKET_KEY: !Ref S3BucketKey
-      Policies:
-       - AWSLambdaExecute
-       - AWSLambdaRole
+      Layers:
+       - !Ref Layer
 
   SampleVocabFunction:
     # A function that returns five random words for each HSK level
@@ -88,6 +73,8 @@ Resources:
           Properties:
             Path: /sample_vocab
             Method: GET
+      Layers:
+       - !Ref Layer
   
   SubscribeFunction:
     # A function that takes an HSK level and email address inputs and subscribes to a topic
@@ -157,4 +144,11 @@ Resources:
       Period: 60
       Statistic: Sum
       Threshold: '1'
+
+  Layer:
+    Type: 'AWS::Serverless::LayerVersion'
+    Properties:
+      ContentUri: ./layer
+      CompatibleRuntimes:
+        - python3.7
 

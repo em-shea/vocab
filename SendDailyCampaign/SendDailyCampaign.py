@@ -5,6 +5,10 @@ import time
 from datetime import datetime
 from botocore.vendored import requests
 
+import sys
+sys.path.insert(0, '/opt')
+from vocab_random_word import select_random_word
+
 lambda_client = boto3.client('lambda')
 sns_client = boto3.client('sns')
 
@@ -19,7 +23,7 @@ def lambda_handler(event, context):
             level = level_dict["hsk_level"]
 
             # Get a random word for each level
-            word = get_random(level)
+            word = select_random_word(level)
             num_level = int(level)
 
             # Replace campaign HTML placeholders with word and level
@@ -89,21 +93,6 @@ def get_level_list():
     }]
 
     return hsk_level_lists
-
-# Get a random word for a given level
-def get_random(any_level):
-    invoke_response = lambda_client.invoke(
-        FunctionName="VocabRandomEntry",
-        InvocationType='RequestResponse',
-        Payload=json.dumps({
-            "hsk_level": any_level
-        })
-    )
-
-    response_json = invoke_response['Payload'].read()
-    response_python = json.loads(response_json)
-    word = response_python["body"]
-    return word
 
 # There are placeholders in the example template for dynamic content like the daily word
 # Here we swap the relevant content in for those placeholders
