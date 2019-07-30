@@ -25,7 +25,7 @@ Resources:
     # A function that sends a daily SendGrid campaign with a vocab word for each HSK level
     Type: 'AWS::Serverless::Function'
     Properties:
-      FunctionName: SendDailyCampaign-${Stage}
+      FunctionName: !Sub SendDailyCampaign-${Stage}
       Handler: SendDailyCampaign.lambda_handler
       Runtime: python3.7
       CodeUri: ./SendDailyCampaign
@@ -50,7 +50,7 @@ Resources:
     # A function that selects a random entry from an S3 file
     Type: 'AWS::Serverless::Function'
     Properties:
-      FunctionName: VocabRandomEntry-${Stage}
+      FunctionName: !Sub VocabRandomEntry-${Stage}
       Handler: VocabRandomEntry.lambda_handler
       Runtime: python3.7
       CodeUri: ./VocabRandomEntry
@@ -67,7 +67,7 @@ Resources:
     # A function that returns five random words for each HSK level
     Type: 'AWS::Serverless::Function'
     Properties:
-      FunctionName: SampleVocabFunction-${Stage}
+      FunctionName: !Sub SampleVocabFunction-${Stage}
       Handler: SampleVocabFunction.lambda_handler
       Runtime: python3.7
       CodeUri: ./SampleVocabFunction
@@ -93,7 +93,7 @@ Resources:
     # A function that takes an HSK level and email address inputs and subscribes to a topic
     Type: 'AWS::Serverless::Function'
     Properties:
-      FunctionName: SubscribeFunction-${Stage}
+      FunctionName: !Sub SubscribeFunction-${Stage}
       Handler: SubscribeFunction.lambda_handler
       Runtime: python3.7
       CodeUri: ./SubscribeFunction
@@ -128,7 +128,7 @@ Resources:
     # A function that sends a confirmation email to new users and a notification to an SNS topic
     Type: 'AWS::Serverless::Function'
     Properties:
-      FunctionName: NewUserConfirmation-${Stage}
+      FunctionName: !Sub NewUserConfirmation-${Stage}
       Handler: NewUserConfirmation.lambda_handler
       Runtime: python3.7
       CodeUri: ./NewUserConfirmation
