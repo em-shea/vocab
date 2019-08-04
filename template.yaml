@@ -170,7 +170,7 @@ Resources:
         LambdaLogs:      
           Type: CloudWatchLogs
           Properties:
-            LogGroupName: !Sub /aws/lambda/${SubscribeFunction.FunctionName}
+            LogGroupName: !Sub /aws/lambda/SubscribeFunction-${Stage}
             FilterPattern: Error
 
     NotificationTopic:
