@@ -171,7 +171,7 @@ Resources:
         LambdaLogs:      
           Type: CloudWatchLogs
           Properties:
-            LogGroupName: SubscribeFunction.TopicName
+            LogGroupName: !GetAtt SubscribeFunction.TopicName
             FilterPattern: Error
 
     NotificationTopic:
