@@ -106,13 +106,6 @@ Resources:
           Properties:
             Path: /sub
             Method: POST
-  
-  NotificationTopic:
-    Type: AWS::SNS::Topic
-    Properties:
-      Subscription: 
-      - Protocol: email
-        Endpoint: !Ref SubNotifyEmail
 
   NewUserConfirmation:
     # A function that sends a confirmation email to new users and a notification to an SNS topic
@@ -155,3 +148,35 @@ Resources:
       CompatibleRuntimes:
         - python3.7
 
+  CWLogsNotifications:
+    # A function that sends a confirmation email to new users and a notification to an SNS topic
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      FunctionName: !Sub CWLogsNotifications-${Stage}
+      Handler: CWLogsNotifications.lambda_handler
+      Runtime: python3.7
+      CodeUri: ./CWLogsNotifications
+      Description: A function that send notifications to an SNS topic for based on CW logs metric filters
+      MemorySize: 128
+      Timeout: 3
+      Policies:
+       - AWSLambdaExecute
+       - AWSLambdaRole
+       - SNSPublishMessagePolicy:
+           TopicName: !GetAtt NotificationTopic.TopicName
+      Environment:
+        Variables:
+          SUB_TOPIC_ARN: !Ref NotificationTopic
+      Events:
+        LambdaLogs:      
+          Type: CloudWatchLogs
+          Properties:
+            LogGroupName: SubscribeFunction.TopicName
+            FilterPattern: Error
+
+    NotificationTopic:
+      Type: AWS::SNS::Topic
+      Properties:
+        Subscription: 
+        - Protocol: email
+          Endpoint: !Ref SubNotifyEmail
