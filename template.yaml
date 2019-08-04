@@ -149,7 +149,6 @@ Resources:
         - python3.7
 
   CWLogsNotifications:
-    # A function that sends a confirmation email to new users and a notification to an SNS topic
     Type: 'AWS::Serverless::Function'
     Properties:
       FunctionName: !Sub CWLogsNotifications-${Stage}
@@ -171,7 +170,7 @@ Resources:
         LambdaLogs:      
           Type: CloudWatchLogs
           Properties:
-            LogGroupName: !GetAtt SubscribeFunction.FunctionName
+            LogGroupName: !Sub /aws/lambda/${SubscribeFunction.FunctionName}
             FilterPattern: Error
 
     NotificationTopic:
