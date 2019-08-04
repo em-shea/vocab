@@ -93,7 +93,7 @@ Resources:
       Policies:
        - AWSLambdaExecute
        - AWSLambdaRole
-       - CloudWatchPutMetricPolicy: {}
+       - AWSLambdaBasicExecutionRole
        - SNSPublishMessagePolicy:
            TopicName: !GetAtt NotificationTopic.TopicName
       Environment:
@@ -162,8 +162,6 @@ Resources:
       Policies:
        - AWSLambdaExecute
        - AWSLambdaRole
-       - FilterLogEventsPolicy:
-           LogGroupName: name
        - SNSPublishMessagePolicy:
            TopicName: !GetAtt NotificationTopic.TopicName
       Environment:
