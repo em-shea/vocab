@@ -40,6 +40,7 @@ Resources:
         Variables:
           SG_API_KEY: !Ref SGApiKey
           SUB_TOPIC_ARN: !Ref NotificationTopic
+          STAGE: !Ref Stage
       Events:
         DailySchedule:
           Type: Schedule

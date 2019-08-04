@@ -15,8 +15,13 @@ sns_client = boto3.client('sns')
 # For each HSK level: Get a random word, fill in email template, create and send a campaign, send error notification on failure
 def lambda_handler(event, context):
 
+    if os.environ['STAGE'] == "Prod":
+        level_list_function = get_level_list_prod()
+    else:
+        level_list_function = get_level_list_staging()
+
     # Loop through HSK levels
-    for level_dict in get_level_list():
+    for level_dict in level_list_function:
 
         try: 
 
@@ -63,8 +68,8 @@ def publish_sns_update(message):
         MessageStructure='json'
     )
 
-# Get SendGrid level list data: list ID and unsubscribe group ID for each HSK level 
-def get_level_list():
+# Get SendGrid production level list data: list ID and unsubscribe group ID for each HSK level 
+def get_level_list_prod():
 
     hsk_level_lists = [{
         "hsk_level": "1",
@@ -89,6 +94,37 @@ def get_level_list():
     },{
         "hsk_level": "6",
         "level_contact_list": 8393614,
+        "unsub": 84960
+    }]
+
+    return hsk_level_lists
+
+# Get SendGrid staging level list data: list ID and unsubscribe group ID for each HSK level 
+def get_level_list_staging():
+
+    hsk_level_lists = [{
+        "hsk_level": "1",
+        "level_contact_list": 9013474,
+        "unsub": 84947
+    },{
+        "hsk_level": "2",
+        "level_contact_list": 9066107,
+        "unsub": 84956
+    },{
+        "hsk_level": "3",
+        "level_contact_list": 9066108,
+        "unsub": 84957
+    },{
+        "hsk_level": "4",
+        "level_contact_list": 9066110,
+        "unsub": 84958
+    },{
+        "hsk_level": "5",
+        "level_contact_list": 9066112,
+        "unsub": 84959
+    },{
+        "hsk_level": "6",
+        "level_contact_list": 9066116,
         "unsub": 84960
     }]
 
