@@ -108,24 +108,6 @@ Resources:
             Path: /sub
             Method: POST
 
-  NewUserConfirmation:
-    # A function that sends a confirmation email to new users and a notification to an SNS topic
-    Type: 'AWS::Serverless::Function'
-    Properties:
-      FunctionName: !Sub NewUserConfirmation-${Stage}
-      Handler: NewUserConfirmation.lambda_handler
-      Runtime: python3.7
-      CodeUri: ./NewUserConfirmation
-      Description: A function that sends a confirmation email to new users and a notification to an SNS topic
-      MemorySize: 128
-      Timeout: 3
-      Policies:
-       - AWSLambdaExecute
-       - AWSLambdaRole
-      Environment:
-        Variables:
-          SG_API_KEY: !Ref SGApiKey
-
   Alarm:
     Type: AWS::CloudWatch::Alarm
     Properties:

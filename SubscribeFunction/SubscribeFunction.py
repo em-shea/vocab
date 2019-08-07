@@ -41,14 +41,10 @@ def lambda_handler(event, context):
     add_to_contact_list(recipient_id, int(hsk_level))
 
     # Send confirmation email function call
-    invoke_response = lambda_client.invoke(
-        FunctionName="NewUserConfirmation",
-        InvocationType='Event',
-        Payload=json.dumps(event)
-    )
+    confirmation_response = send_new_user_confirmation_email(email_address, hsk_level)
 
     # Check if confirmation email function invoked successfully
-    code = invoke_response['StatusCode']
+    code = confirmation_response['StatusCode']
 
     if code == 202:
         success_status = True
@@ -116,6 +112,60 @@ def add_to_contact_list(recipient_id, hsk_level):
     response = requests.request("POST", url, data=payload, headers=headers)
 
     print(response)
+
+# Send subscribe confirmation email to new user
+def send_new_user_confirmation_email(email_address, hsk_level):
+    
+    user_details = email_address, hsk_level
+    
+    response = generate_confirmation_email_content_and_send(user_details)
+    code = response.status_code
+
+    if code == 202:
+        print(f"Response code {code}. Confirmation email successfully sent.")
+    else:
+        print(f"Response code {code}. Confirmation email unsuccessful.")
+    
+    return response
+
+# Put together email personalizations and call SendGrid send email API 
+def generate_confirmation_email_content_and_send(user_details):
+
+    email_address, hsk_level = user_details
+
+    url = "https://api.sendgrid.com/v3/mail/send"
+
+    payload = {
+        "personalizations": [
+            {
+            "to": [
+                {
+                "email": email_address
+                }
+            ],
+            "dynamic_template_data": {
+                "level": hsk_level,
+            },
+            "subject": "Hello, World!"
+            }
+        ],
+        "from": {
+            "email": "vocab@haohaotiantian.com"
+        },
+        "reply_to": {
+            "email": "vocab@haohaotiantian.com"
+        },
+        "template_id": "d-6c1a22b11b4a4f3dbe3826d5e70be4cc"
+        }
+
+    headers = {
+    'authorization': "Bearer " + os.environ['SG_API_KEY'],
+    'content-type': "application/json"
+    }
+
+    response = requests.request("POST", url, json=payload, headers=headers)
+
+    return response
 
 # Publish an SNS message to notify the app owner about the new user creation success/failure
 def publish_sns_update(success_status,payload):
