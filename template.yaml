@@ -136,17 +136,17 @@ Resources:
         Variables:
           SUB_TOPIC_ARN: !Ref NotificationTopic
       Events:
-        LambdaLogs:      
+        SubFunctionLogs:      
           Type: CloudWatchLogs
           Properties:
             LogGroupName: !Sub /aws/lambda/SubscribeFunction-${Stage}
-            FilterPattern: Error, Success
-        LambdaLogs:      
+            FilterPattern: "?Error ?Success"
+        SendDailyLogs:      
           Type: CloudWatchLogs
           Properties:
             LogGroupName: !Sub /aws/lambda/SendDailyCampaign-${Stage}
             FilterPattern: Error
-        LambdaLogs:      
+        SampleVocabLogs:      
           Type: CloudWatchLogs
           Properties:
             LogGroupName: !Sub /aws/lambda/SampleVocabFunction-${Stage}
