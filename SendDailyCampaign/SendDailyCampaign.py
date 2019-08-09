@@ -51,22 +51,11 @@ def lambda_handler(event, context):
             
             else: 
                 failure_message = f"Campaign for {num_level} did not schedule successfully. SendGrid API response: " + sendgrid_response
-                publish_sns_update(failure_message)
 
                 print (failure_message)
         
         except Exception as e:
             print(e)
-            publish_sns_update(str(e))
-
-# Send SNS notification on failure
-def publish_sns_update(message):
-
-    response = sns_client.publish(
-        TargetArn = os.environ['SUB_TOPIC_ARN'], 
-        Message=json.dumps({'default': message}),
-        MessageStructure='json'
-    )
 
 # Get SendGrid production level list data: list ID and unsubscribe group ID for each HSK level 
 def get_level_list_prod():

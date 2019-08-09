@@ -9,10 +9,68 @@ sns_client = boto3.client('sns')
 
 # Subscribe a new user, including sending an email confirmation to the user and a notification to the app owner
 def lambda_handler(event, context):
-  
+
     # Extract relevant user details
     email_address = event["queryStringParameters"]['email']
     hsk_level = event["queryStringParameters"]['level']
+    
+    # Create contact and return contact ID
+    try: 
+        recipient_id = create_contact(email_address, hsk_level)    
+    except Exception as e:
+        print(f"Error: Failed to create contact for {email_address} for {hsk_level}")
+        print(e)
+        return {
+            'statusCode': 502,
+            'headers': {
+                'Access-Control-Allow-Methods': 'POST,OPTIONS',
+                'Access-Control-Allow-Origin': '*',
+            },
+            'body': '{"success" : false}'
+        }
+
+    # Add new contact to the correct HSK level list
+    try:
+        add_to_contact_list(recipient_id, int(hsk_level))
+    except Exception as e:
+        print(f"Error: Failed to add contact {email_address} to {hsk_level} list")
+        print(e)
+        return {
+            'statusCode': 502,
+            'headers': {
+                'Access-Control-Allow-Methods': 'POST,OPTIONS',
+                'Access-Control-Allow-Origin': '*',
+            },
+            'body': '{"success" : false}'
+        }
+
+    # Send confirmation email function call
+    try:
+        send_new_user_confirmation_email(email_address, hsk_level)
+        print(f"Success: {email_address} subscribed to {hsk_level}")
+    except Exception as e:
+        print(f"Error: Failed to send confirmation email to {email_address} for {hsk_level}.")
+        print(e)
+        return {
+            'statusCode': 502,
+            'headers': {
+                'Access-Control-Allow-Methods': 'POST,OPTIONS',
+                'Access-Control-Allow-Origin': '*',
+            },
+            'body': '{"success" : false}'
+        }
+
+    return {
+        'statusCode': 200,
+        'headers': {
+            'Access-Control-Allow-Methods': 'POST,OPTIONS',
+            'Access-Control-Allow-Origin': '*',
+        },
+        'body': '{"success" : true}'
+    }
+
+# Create new contact
+def create_contact(email_address, hsk_level):
 
     # Create payload with user details
     payload = [
@@ -37,36 +95,7 @@ def lambda_handler(event, context):
     data = response.json()
     recipient_id = data["persisted_recipients"][0]
 
-    # Add new contact to the correct HSK level list
-    add_to_contact_list(recipient_id, int(hsk_level))
-
-    # Send confirmation email function call
-    confirmation_response = send_new_user_confirmation_email(email_address, hsk_level)
-
-    # Check if confirmation email function invoked successfully
-    code = confirmation_response['StatusCode']
-
-    if code == 202:
-        success_status = True
-        
-        print(f"Response code {code}. Invoke confirmation function successful.")
-
-    else:
-        success_status = False
-
-        print(f"Response code {code}. Invoke confirmation function unsuccessful.")
-
-    # Send notification to an SNS queue to notify the app owner
-    publish_sns_update(success_status,payload)
-
-    return {
-            'statusCode': 200,
-            'headers': {
-                'Access-Control-Allow-Methods': 'POST,OPTIONS',
-                'Access-Control-Allow-Origin': '*',
-            },
-            'body': '{"success" : true}'
-        }
+    return recipient_id
 
 # Add created contact to the correct HSK level
 def add_to_contact_list(recipient_id, hsk_level):
@@ -111,7 +140,7 @@ def add_to_contact_list(recipient_id, hsk_level):
 
     response = requests.request("POST", url, data=payload, headers=headers)
 
-    print(response)
+    return response
 
 # Send subscribe confirmation email to new user
 def send_new_user_confirmation_email(email_address, hsk_level):
@@ -166,19 +195,3 @@ def generate_confirmation_email_content_and_send(user_details):
     response = requests.request("POST", url, json=payload, headers=headers)
 
     return response
-
-# Publish an SNS message to notify the app owner about the new user creation success/failure
-def publish_sns_update(success_status,payload):
-
-    if success_status == True:
-        message = f"Success - {payload[0]['email']} successfully subscribed to {payload[0]['level_list']}"
-    else:
-        message = f"Error - {payload[0]['email']} not subscribed to {payload[0]['level_list']}"
-
-    response = sns_client.publish(
-        TargetArn = os.environ['SUB_TOPIC_ARN'], 
-        Message=json.dumps({'default': message}),
-        MessageStructure='json'
-    )
-
-    print("SNS Response", response)
