@@ -1,7 +1,9 @@
-import json
-import boto3
 import os
+import io
+import csv
+import json
 import time
+import boto3
 from datetime import datetime
 from botocore.vendored import requests
 
@@ -9,8 +11,9 @@ import sys
 sys.path.insert(0, '/opt')
 from vocab_random_word import select_random_word
 
-lambda_client = boto3.client('lambda')
+s3_client = boto3.client('s3')
 sns_client = boto3.client('sns')
+lambda_client = boto3.client('lambda')
 
 # For each HSK level: Get a random word, fill in email template, create and send a campaign, send error notification on failure
 def lambda_handler(event, context):
@@ -21,7 +24,7 @@ def lambda_handler(event, context):
         level_list_function = get_level_list_staging()
 
     # Loop through HSK levels
-    for level_dict in level_list_function:
+    for level_dict in get_level_list():
 
         try: 
 
@@ -56,6 +59,30 @@ def lambda_handler(event, context):
         
         except Exception as e:
             print(e)
+
+def get_level_list():
+
+    # Pull stage from environment variables
+    if os.environ['STAGE'] == "Prod":
+        stage = "prod"
+    else: 
+        stage = "staging"
+    
+    # Read file from S3
+    csv_file = s3_client.get_object(Bucket=os.environ['LISTS_BUCKET_NAME'], Key=os.environ['LISTS_BUCKET_KEY'])
+    csv_response = csv_file['Body'].read()
+    stream = io.StringIO(csv_response.decode("utf-8"))
+    reader = csv.DictReader(stream)
+
+    # Create an empty list that will hold the contact lists
+    hsk_level_lists = []
+
+    # Filter contact lists for the correct stage
+    for row in reader: 
+        if row['stage'] == stage:
+            hsk_level_lists.append(dict(row))
+
+    return hsk_level_lists
 
 # Get SendGrid production level list data: list ID and unsubscribe group ID for each HSK level 
 def get_level_list_prod():
