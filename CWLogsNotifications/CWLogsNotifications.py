@@ -8,8 +8,6 @@ import base64
 sns_client = boto3.client('sns')
 
 def lambda_handler(event, context):
-
-  print(event)
   
   #capture the CloudWatch log data
   outEvent = event['awslogs']['data']
@@ -18,12 +16,9 @@ def lambda_handler(event, context):
   #decode and unzip the log data
   outEvent = gzip.decompress(outEventDecoded).decode('utf-8')
   
-  # #convert the log data from JSON into a dictionary
-  # cleanEvent = json.loads(outEvent)
-
-  # print(cleanEvent)
-  
   message = outEvent
+
+  print(outEvent)
 
   response = sns_client.publish(
           TargetArn = os.environ['SUB_TOPIC_ARN'], 

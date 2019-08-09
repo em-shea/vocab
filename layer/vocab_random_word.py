@@ -9,7 +9,7 @@ from random import randint
 s3 = boto3.client('s3')
 
 # Read file from S3
-csv_file = s3.get_object(Bucket=os.environ['S3_BUCKET_NAME'], Key=os.environ['S3_BUCKET_KEY'])
+csv_file = s3.get_object(Bucket=os.environ['WORDS_BUCKET_NAME'], Key=os.environ['WORDS_BUCKET_KEY'])
 csv_response = csv_file['Body'].read()
 stream = io.StringIO(csv_response.decode("utf-8"))
 reader = csv.DictReader(stream)

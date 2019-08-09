@@ -2,10 +2,14 @@ AWSTemplateFormatVersion: '2010-09-09'
 Transform: 'AWS::Serverless-2016-10-31'
 Description: An app that sends a daily email message for each HSK level with a vocab word
 Parameters:
-  S3BucketName:
+  WordsBucketName:
     Type: String
-  S3BucketKey:
-    Type: String  
+  WordsBucketKey:
+    Type: String
+  ListsBucketName:
+    Type: String
+  ListsBucketKey:
+    Type: String
   DomainName:
     Type: String
   SGApiKey:
@@ -40,8 +44,10 @@ Resources:
         Variables:
           SG_API_KEY: !Ref SGApiKey
           SUB_TOPIC_ARN: !Ref NotificationTopic
-          S3_BUCKET_NAME: !Ref S3BucketName
-          S3_BUCKET_KEY: !Ref S3BucketKey
+          WORDS_BUCKET_NAME: !Ref WordsBucketName
+          WORDS_BUCKET_KEY: !Ref WordsBucketKey
+          LISTS_BUCKET_NAME: !Ref ListsBucketName
+          LISTS_BUCKET_KEY: !Ref ListsBucketKey
           STAGE: !Ref Stage
       Events:
         DailySchedule:
@@ -67,8 +73,8 @@ Resources:
        - AWSLambdaRole
       Environment:
         Variables:
-          S3_BUCKET_NAME: !Ref S3BucketName
-          S3_BUCKET_KEY: !Ref S3BucketKey
+          WORDS_BUCKET_NAME: !Ref WordsBucketName
+          WORDS_BUCKET_KEY: !Ref WordsBucketKey
       Events:
         SampleVocabFunctionApi:
           # An API Gateway endpoint that responds to HTTP GET
