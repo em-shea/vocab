@@ -61,7 +61,7 @@ Resources:
       CodeUri: ./SampleVocabFunction
       Description: A function that returns five random words for each HSK level
       MemorySize: 128
-      Timeout: 3
+      Timeout: 120
       Policies:
        - AWSLambdaExecute
        - AWSLambdaRole
@@ -89,7 +89,7 @@ Resources:
       CodeUri: ./SubscribeFunction
       Description: A function that takes an HSK level and email address inputs and subscribes to a topic.
       MemorySize: 128
-      Timeout: 3
+      Timeout: 120
       Policies:
        - AWSLambdaExecute
        - AWSLambdaRole
@@ -102,7 +102,7 @@ Resources:
           SUB_TOPIC_ARN: !Ref NotificationTopic
       Events:
         SubscribeFunctionApi:
-          # Define an API Gateway endpoint that responds to HTTP POST
+          # An API Gateway endpoint that responds to HTTP POST
           Type: Api
           Properties:
             Path: /sub
@@ -125,6 +125,7 @@ Resources:
       Threshold: '1'
 
   Layer:
+    # A Layer that holds a Python module that returns a random word when given an HSK level
     Type: 'AWS::Serverless::LayerVersion'
     Properties:
       ContentUri: ./layer
@@ -132,6 +133,7 @@ Resources:
         - python3.7
 
   CWLogsNotifications:
+    # A function that filters function logs for error messages and publishes to SNS
     Type: 'AWS::Serverless::Function'
     Properties:
       FunctionName: !Sub CWLogsNotifications-${Stage}
@@ -140,7 +142,7 @@ Resources:
       CodeUri: ./CWLogsNotifications
       Description: A function that send notifications to an SNS topic for based on CW logs metric filters
       MemorySize: 128
-      Timeout: 3
+      Timeout: 120
       Policies:
        - AWSLambdaExecute
        - AWSLambdaRole
@@ -155,8 +157,19 @@ Resources:
           Properties:
             LogGroupName: !Sub /aws/lambda/SubscribeFunction-${Stage}
             FilterPattern: Error
+        LambdaLogs:      
+          Type: CloudWatchLogs
+          Properties:
+            LogGroupName: !Sub /aws/lambda/SendDailyCampaign-${Stage}
+            FilterPattern: Error
+        LambdaLogs:      
+          Type: CloudWatchLogs
+          Properties:
+            LogGroupName: !Sub /aws/lambda/SampleVocabFunction-${Stage}
+            FilterPattern: Error
 
   NotificationTopic:
+    # A topic that error notifications will be published to
     Type: AWS::SNS::Topic
     Properties:
       Subscription: 
