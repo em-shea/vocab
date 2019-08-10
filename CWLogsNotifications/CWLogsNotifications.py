@@ -62,5 +62,3 @@ def compose_message(log_json):
   print(message_dict)
 
   return message_dict
-    
-compose_message(log_json)
