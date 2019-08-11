@@ -12,7 +12,7 @@ def lambda_handler(event, context):
   
   log_json = decode_and_decompress_log(event)
 
-  message = compose_message(log_json)
+  message = json.dumps(compose_message(log_json), indent=4)
 
   response = sns_client.publish(
           TargetArn = os.environ['SUB_TOPIC_ARN'], 
@@ -58,7 +58,5 @@ def compose_message(log_json):
     error_dict["error message"] = error["message"]
 
     message_dict["errors list"].append(error_dict)
-
-  print(message_dict)
 
   return message_dict
