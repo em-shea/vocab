@@ -127,10 +127,10 @@ Resources:
   CWLogsNotifications:
     # A function that filters function logs for error messages and publishes to SNS
     Type: 'AWS::Serverless::Function'
-    DependsOn:
-      - SubscribeFunctionLogGroup
-      - SendDailyCampaignLogGroup
-      - SampleVocabFunctionLogGroup
+    # DependsOn:
+    #   - SubscribeFunctionLogGroup
+    #   - SendDailyCampaignLogGroup
+    #   - SampleVocabFunctionLogGroup
     Properties:
       FunctionName: !Sub CWLogsNotifications-${Stage}
       Handler: CWLogsNotifications.lambda_handler
@@ -147,22 +147,22 @@ Resources:
       Environment:
         Variables:
           SUB_TOPIC_ARN: !Ref NotificationTopic
-      Events:
-        SubFunctionLogs:      
-          Type: CloudWatchLogs
-          Properties:
-            LogGroupName: !Sub /aws/lambda/SubscribeFunction-${Stage}
-            FilterPattern: "?Error ?Success"
-        SendDailyLogs:      
-          Type: CloudWatchLogs
-          Properties:
-            LogGroupName: !Sub /aws/lambda/SendDailyCampaign-${Stage}
-            FilterPattern: Error
-        SampleVocabLogs:      
-          Type: CloudWatchLogs
-          Properties:
-            LogGroupName: !Sub /aws/lambda/SampleVocabFunction-${Stage}
-            FilterPattern: Error
+      # Events:
+      #   SubFunctionLogs:      
+      #     Type: CloudWatchLogs
+      #     Properties:
+      #       LogGroupName: !Sub /aws/lambda/SubscribeFunction-${Stage}
+      #       FilterPattern: "?Error ?Success"
+      #   SendDailyLogs:      
+      #     Type: CloudWatchLogs
+      #     Properties:
+      #       LogGroupName: !Sub /aws/lambda/SendDailyCampaign-${Stage}
+      #       FilterPattern: Error
+      #   SampleVocabLogs:      
+      #     Type: CloudWatchLogs
+      #     Properties:
+      #       LogGroupName: !Sub /aws/lambda/SampleVocabFunction-${Stage}
+      #       FilterPattern: Error
 
   NotificationTopic:
     # A topic that error notifications will be published to
