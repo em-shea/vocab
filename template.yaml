@@ -167,3 +167,24 @@ Resources:
       Subscription: 
       - Protocol: email
         Endpoint: !Ref SubNotifyEmail
+
+  SubscribeFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    DependsOn:
+      - SubscribeFunction-${Stage}
+    Properties:
+      LogGroupName: !Sub /aws/lambda/SubscribeFunction-${Stage}
+
+  SendDailyCampaignLogGroup:
+    Type: AWS::Logs::LogGroup
+    DependsOn:
+      - SendDailyCampaign-${Stage}
+    Properties:
+      LogGroupName: !Sub /aws/lambda/SendDailyCampaign-${Stage}
+  
+  SampleVocabFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    DependsOn:
+      - SampleVocabFunction-${Stage}
+    Properties:
+      LogGroupName: !Sub /aws/lambda/SampleVocabFunction-${Stage}
