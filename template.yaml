@@ -175,7 +175,10 @@ Resources:
   SubscribeFunctionLogGroup:
     Type: AWS::Logs::LogGroup
     DependsOn:
-      - !Sub SubscribeFunction-${Stage}
+      - !Join [
+          '',
+          ['/aws/lambda/', !Sub 'SubscribeFunction-${Stage}']
+        ]
     Properties:
       LogGroupName: 
         !Join [
@@ -186,7 +189,10 @@ Resources:
   SendDailyCampaignLogGroup:
     Type: AWS::Logs::LogGroup
     DependsOn:
-      - !Sub SendDailyCampaign-${Stage}
+      - !Join [
+          '',
+          ['/aws/lambda/', !Sub 'SendDailyCampaign-${Stage}']
+        ]
     Properties:
       LogGroupName: 
         !Join [
@@ -197,7 +203,10 @@ Resources:
   SampleVocabFunctionLogGroup:
     Type: AWS::Logs::LogGroup
     DependsOn:
-      - !Sub SampleVocabFunction-${Stage}
+      - !Join [
+          '',
+          ['/aws/lambda/', !Sub 'SampleVocabFunction-${Stage}']
+        ]
     Properties:
       LogGroupName: 
         !Join [
