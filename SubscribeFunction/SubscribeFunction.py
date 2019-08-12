@@ -3,6 +3,8 @@ import json
 import boto3
 from botocore.vendored import requests
 
+import sys
+sys.path.insert(0, '/opt')
 from contact_lists import get_contact_level_list
 
 sns_client = boto3.client('sns')
