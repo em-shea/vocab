@@ -127,6 +127,10 @@ Resources:
   CWLogsNotifications:
     # A function that filters function logs for error messages and publishes to SNS
     Type: 'AWS::Serverless::Function'
+    DependsOn:
+      - SubscribeFunctionLogGroup
+      - SendDailyCampaignLogGroup
+      - SampleVocabFunctionLogGroup
     Properties:
       FunctionName: !Sub CWLogsNotifications-${Stage}
       Handler: CWLogsNotifications.lambda_handler
