@@ -46,8 +46,8 @@ def compose_message(log_json):
   date_timestamp = datetime.fromtimestamp(log_json['logEvents'][0]["timestamp"]/1000).strftime('%Y-%m-%dT%H:%M:%SZ')
   message_dict["link"] = f"https://console.aws.amazon.com/cloudwatch/home?region=us-east-1#logEventViewer:group={log_json['logGroup']};stream={log_json['logStream']};start={date_timestamp}"
 
-  # Errors
-  message_dict["errors list"] = []
+  # Event
+  message_dict["event list"] = []
   for error in log_json["logEvents"]:
     
     error_dict = {}
@@ -55,8 +55,8 @@ def compose_message(log_json):
     date_timestamp = datetime.fromtimestamp(error["timestamp"]/1000)
     error_dict["time"] = date_timestamp.strftime('%Y-%m-%d %H:%M:%S')
 
-    error_dict["error message"] = error["message"]
+    error_dict["message"] = error["message"].strip()
 
-    message_dict["errors list"].append(error_dict)
+    message_dict["event list"].append(error_dict)
 
   return message_dict
