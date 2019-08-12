@@ -3,9 +3,13 @@ import json
 import boto3
 from botocore.vendored import requests
 
-lambda_client = boto3.client('lambda')
+from contact_lists import get_contact_level_list
 
 sns_client = boto3.client('sns')
+lambda_client = boto3.client('lambda')
+
+# Cache contact level list
+contact_level_list = get_contact_level_list()
 
 # Subscribe a new user, including sending an email confirmation to the user and a notification to the app owner
 def lambda_handler(event, context):
@@ -100,37 +104,9 @@ def create_contact(email_address, hsk_level):
 # Add created contact to the correct HSK level
 def add_to_contact_list(recipient_id, hsk_level):
 
-    # SendGrid level list IDs
-    list_ids = [
-        {
-            "id": 7697668,
-            "name": "Level 1"
-        },
-        {
-            "id": 8295693,
-            "name": "Level 2"
-        },
-        {
-            "id": 8296149,
-            "name": "Level 3"
-        },
-        {
-            "id": 8296153,
-            "name": "Level 4"
-        },
-        {
-            "id": 8393613,
-            "name": "Level 5"
-        },
-        {
-            "id": 8393614,
-            "name": "Level 6"
-        }
-    ]
-
     hsk_level_index = hsk_level - 1
 
-    list_id = list_ids[hsk_level_index]["id"]
+    list_id = contact_level_list[hsk_level_index]["level_contact_list"]
 
     # Call add contact to list API
     url = "https://api.sendgrid.com/v3/contactdb/lists/" + str(list_id) + "/recipients/" + str(recipient_id)

@@ -10,21 +10,20 @@ from botocore.vendored import requests
 import sys
 sys.path.insert(0, '/opt')
 from vocab_random_word import select_random_word
+from contact_lists import get_contact_level_list
 
 s3_client = boto3.client('s3')
 sns_client = boto3.client('sns')
 lambda_client = boto3.client('lambda')
 
+# Cache contact level list
+contact_level_list = get_contact_level_list()
+
 # For each HSK level: Get a random word, fill in email template, create and send a campaign, send error notification on failure
 def lambda_handler(event, context):
 
-    if os.environ['STAGE'] == "Prod":
-        level_list_function = get_level_list_prod()
-    else:
-        level_list_function = get_level_list_staging()
-
     # Loop through HSK levels
-    for level_dict in get_level_list():
+    for level_dict in contact_level_list:
 
         try: 
 
@@ -59,92 +58,6 @@ def lambda_handler(event, context):
         
         except Exception as e:
             print(e)
-
-def get_level_list():
-
-    # Pull stage from environment variables
-    if os.environ['STAGE'] == "Prod":
-        stage = "prod"
-    else: 
-        stage = "staging"
-    
-    # Read file from S3
-    csv_file = s3_client.get_object(Bucket=os.environ['LISTS_BUCKET_NAME'], Key=os.environ['LISTS_BUCKET_KEY'])
-    csv_response = csv_file['Body'].read()
-    stream = io.StringIO(csv_response.decode("utf-8"))
-    reader = csv.DictReader(stream)
-
-    # Create an empty list that will hold the contact lists
-    hsk_level_lists = []
-
-    # Filter contact lists for the correct stage
-    for row in reader: 
-        if row['stage'] == stage:
-            hsk_level_lists.append(dict(row))
-
-    return hsk_level_lists
-
-# Get SendGrid production level list data: list ID and unsubscribe group ID for each HSK level 
-def get_level_list_prod():
-
-    hsk_level_lists = [{
-        "hsk_level": "1",
-        "level_contact_list": 7697668,
-        "unsub": 84947
-    },{
-        "hsk_level": "2",
-        "level_contact_list": 8295693,
-        "unsub": 84956
-    },{
-        "hsk_level": "3",
-        "level_contact_list": 8296149,
-        "unsub": 84957
-    },{
-        "hsk_level": "4",
-        "level_contact_list": 8296153,
-        "unsub": 84958
-    },{
-        "hsk_level": "5",
-        "level_contact_list": 8393613,
-        "unsub": 84959
-    },{
-        "hsk_level": "6",
-        "level_contact_list": 8393614,
-        "unsub": 84960
-    }]
-
-    return hsk_level_lists
-
-# Get SendGrid staging level list data: list ID and unsubscribe group ID for each HSK level 
-def get_level_list_staging():
-
-    hsk_level_lists = [{
-        "hsk_level": "1",
-        "level_contact_list": 9013474,
-        "unsub": 84947
-    },{
-        "hsk_level": "2",
-        "level_contact_list": 9066107,
-        "unsub": 84956
-    },{
-        "hsk_level": "3",
-        "level_contact_list": 9066108,
-        "unsub": 84957
-    },{
-        "hsk_level": "4",
-        "level_contact_list": 9066110,
-        "unsub": 84958
-    },{
-        "hsk_level": "5",
-        "level_contact_list": 9066112,
-        "unsub": 84959
-    },{
-        "hsk_level": "6",
-        "level_contact_list": 9066116,
-        "unsub": 84960
-    }]
-
-    return hsk_level_lists
 
 # There are placeholders in the example template for dynamic content like the daily word
 # Here we swap the relevant content in for those placeholders
