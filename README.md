@@ -8,17 +8,11 @@ A serverless app that sends an HSK 1-6 word and link to example sentences as a d
 
 ## Design
 
-![Architectural diagram](https://s3.amazonaws.com/haohaotiantian.com/Vocab+app+v2+(2).png)
+![Architectural diagram](https://s3.amazonaws.com/tsu-dev.emshea.com-dev-static/static/images/vocab-app-launch/Vocab+app+v3-640.PNG)
 
 ## Example message
 
-> HSK Level: 1  
-> 睡觉  
-> shuì jiào  
-> to go to bed; to go to sleep
-> 
-> https://www.yellowbridge.com/chinese/sentsearch.php?word=睡觉
-
+![Example message](https://s3.amazonaws.com/tsu-dev.emshea.com-dev-static/static/images/vocab-app-launch/haohaotiantian-email-640.PNG)
 
 Levels 1-3 use https://www.yellowbridge.com/  
 Levels 4-6 use https://fanyi.baidu.com
