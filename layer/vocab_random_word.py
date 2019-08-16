@@ -13,8 +13,7 @@ def select_random_word(hsk_level):
     global vocab_lists
     
     # Only generate vocab list if the global variable is not yet assigned
-    if vocab_lists == None:
-        
+    if vocab_lists is None:
         vocab_lists = get_vocab_lists()
 
     index_hsk_level = int(hsk_level) - 1
