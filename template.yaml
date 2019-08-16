@@ -85,6 +85,13 @@ Resources:
       Layers:
        - !Ref Layer
   
+  SampleVocabLambdaPermission:
+    Type: "AWS::Lambda::Permission"
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref SampleVocabFunction
+      Principal: apigateway.amazonaws.com
+
   SubscribeFunction:
     # A function that takes an HSK level and email address inputs and subscribes to a topic
     Type: 'AWS::Serverless::Function'
@@ -118,6 +125,13 @@ Resources:
             Method: POST
       Layers:
        - !Ref Layer
+
+  SampleVocabLambdaPermission:
+    Type: "AWS::Lambda::Permission"
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref SubscribeFunction-${Stage}
+      Principal: apigateway.amazonaws.com
 
   Layer:
     # A Layer that holds several Python modules
