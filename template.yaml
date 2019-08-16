@@ -130,7 +130,7 @@ Resources:
     Type: "AWS::Lambda::Permission"
     Properties:
       Action: lambda:InvokeFunction
-      FunctionName: !Ref SubscribeFunction-${Stage}
+      FunctionName: SubscribeFunction.FunctionName
       Principal: apigateway.amazonaws.com
 
   Layer:
