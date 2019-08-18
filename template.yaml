@@ -37,9 +37,6 @@ Resources:
       Timeout: 120
       Policies:
        - AWSLambdaExecute
-       - AWSLambdaRole
-       - SNSPublishMessagePolicy:
-           TopicName: !GetAtt NotificationTopic.TopicName
       Environment:
         Variables:
           SG_API_KEY: !Ref SGApiKey
@@ -69,8 +66,7 @@ Resources:
       MemorySize: 128
       Timeout: 120
       Policies:
-       - AWSLambdaExecute
-       - AWSLambdaRole
+      #  - AWSLambdaExecute
       Environment:
         Variables:
           WORDS_BUCKET_NAME: !Ref WordsBucketName
@@ -86,6 +82,8 @@ Resources:
        - !Ref Layer
   
   SampleVocabLambdaPermission:
+    # Permissions for API Gateway to invoke this function. Using a workaround described here:
+    # https://github.com/awslabs/serverless-application-model/issues/59
     Type: "AWS::Lambda::Permission"
     Properties:
       Action: lambda:InvokeFunction
@@ -105,10 +103,6 @@ Resources:
       Timeout: 120
       Policies:
        - AWSLambdaExecute
-       - AWSLambdaRole
-       - AWSLambdaBasicExecutionRole
-       - SNSPublishMessagePolicy:
-           TopicName: !GetAtt NotificationTopic.TopicName
       Environment:
         Variables:
           SG_API_KEY: !Ref SGApiKey
@@ -126,7 +120,9 @@ Resources:
       Layers:
        - !Ref Layer
 
-  SampleVocabLambdaPermission:
+  SubscribeLambdaPermission:
+    # Permissions for API Gateway to invoke this function. Using a workaround described here:
+    # https://github.com/awslabs/serverless-application-model/issues/59
     Type: "AWS::Lambda::Permission"
     Properties:
       Action: lambda:InvokeFunction
@@ -160,7 +156,6 @@ Resources:
       Timeout: 120
       Policies:
        - AWSLambdaExecute
-       - AWSLambdaRole
        - SNSPublishMessagePolicy:
            TopicName: !GetAtt NotificationTopic.TopicName
       Environment:
@@ -203,6 +198,9 @@ Resources:
       - Protocol: email
         Endpoint: !Ref SubNotifyEmail
 
+  # Creating CloudWatch Logs groups for each function. 
+  # By default, a log group is only created for a function once the function is invoked.
+  # We are creating log groups here to be able to subscribe the CWLogsNotification function to those log groups.
   SubscribeFunctionLogGroup:
     Type: AWS::Logs::LogGroup
     DependsOn:
