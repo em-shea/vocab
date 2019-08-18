@@ -66,7 +66,7 @@ Resources:
       MemorySize: 128
       Timeout: 120
       Policies:
-      #  - AWSLambdaExecute
+       - AWSLambdaExecute
       Environment:
         Variables:
           WORDS_BUCKET_NAME: !Ref WordsBucketName
