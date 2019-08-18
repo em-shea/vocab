@@ -37,9 +37,6 @@ Resources:
       Timeout: 120
       Policies:
        - AWSLambdaExecute
-       - AWSLambdaRole
-       - SNSPublishMessagePolicy:
-           TopicName: !GetAtt NotificationTopic.TopicName
       Environment:
         Variables:
           SG_API_KEY: !Ref SGApiKey
@@ -70,7 +67,6 @@ Resources:
       Timeout: 120
       Policies:
        - AWSLambdaExecute
-       - AWSLambdaRole
       Environment:
         Variables:
           WORDS_BUCKET_NAME: !Ref WordsBucketName
@@ -85,6 +81,15 @@ Resources:
       Layers:
        - !Ref Layer
   
+  SampleVocabLambdaPermission:
+    # Permissions for API Gateway to invoke this function. Using a workaround described here:
+    # https://github.com/awslabs/serverless-application-model/issues/59
+    Type: "AWS::Lambda::Permission"
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref SampleVocabFunction
+      Principal: apigateway.amazonaws.com
+
   SubscribeFunction:
     # A function that takes an HSK level and email address inputs and subscribes to a topic
     Type: 'AWS::Serverless::Function'
@@ -98,10 +103,6 @@ Resources:
       Timeout: 120
       Policies:
        - AWSLambdaExecute
-       - AWSLambdaRole
-       - AWSLambdaBasicExecutionRole
-       - SNSPublishMessagePolicy:
-           TopicName: !GetAtt NotificationTopic.TopicName
       Environment:
         Variables:
           SG_API_KEY: !Ref SGApiKey
@@ -118,6 +119,15 @@ Resources:
             Method: POST
       Layers:
        - !Ref Layer
+
+  SubscribeLambdaPermission:
+    # Permissions for API Gateway to invoke this function. Using a workaround described here:
+    # https://github.com/awslabs/serverless-application-model/issues/59
+    Type: "AWS::Lambda::Permission"
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref SubscribeFunction
+      Principal: apigateway.amazonaws.com
 
   Layer:
     # A Layer that holds several Python modules
@@ -146,7 +156,6 @@ Resources:
       Timeout: 120
       Policies:
        - AWSLambdaExecute
-       - AWSLambdaRole
        - SNSPublishMessagePolicy:
            TopicName: !GetAtt NotificationTopic.TopicName
       Environment:
@@ -189,6 +198,9 @@ Resources:
       - Protocol: email
         Endpoint: !Ref SubNotifyEmail
 
+  # Creating CloudWatch Logs groups for each function. 
+  # By default, a log group is only created for a function once the function is invoked.
+  # We are creating log groups here to be able to subscribe the CWLogsNotification function to those log groups.
   SubscribeFunctionLogGroup:
     Type: AWS::Logs::LogGroup
     DependsOn:
