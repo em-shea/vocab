@@ -10,7 +10,7 @@ https://haohaotiantian.com
 
 Details on the development process and architecture here: https://emshea.com/post/chinese-vocab-app
 
-![Architectural diagram](https://s3.amazonaws.com/tsu-dev.emshea.com-dev-static/static/images/vocab-app-launch/Vocab+app+v3-640.PNG)
+![Architectural diagram](https://emshea.com/static/images/chinese-vocab-app/vocab-app-v3.PNG)
 
 ## Example message
 
