@@ -2,13 +2,13 @@
 
 A serverless app that sends an HSK 1-6 word and link to example sentences as a daily message.
 
-好好学习，天天向上
+https://haohaotiantian.com
 
-Details on the development process and architecture here: https://emshea.com/post/chinese-vocab-app
-
-Frontend repo: https://github.com/em-shea/vocab-frontend
+[Frontend repo](https://github.com/em-shea/vocab-frontend)
 
 ## Design
+
+Details on the development process and architecture here: https://emshea.com/post/chinese-vocab-app
 
 ![Architectural diagram](https://s3.amazonaws.com/tsu-dev.emshea.com-dev-static/static/images/vocab-app-launch/Vocab+app+v3-640.PNG)
 
