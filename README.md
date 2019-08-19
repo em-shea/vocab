@@ -4,7 +4,9 @@ A serverless app that sends an HSK 1-6 word and link to example sentences as a d
 
 好好学习，天天向上
 
-[Frontend repo](https://github.com/em-shea/vocab-frontend)
+Details on the development process and architecture here: https://emshea.com/post/chinese-vocab-app
+
+Frontend repo: https://github.com/em-shea/vocab-frontend
 
 ## Design
 
