@@ -145,15 +145,16 @@ Resources:
     Properties: 
       TableName: !Sub DailyWordHistory-${Stage}
       AttributeDefinitions: 
-        - AttributeName: Date
-          AttributeType: N
         - AttributeName: Level
+          AttributeType: N
+        - AttributeName: Date
           AttributeType: N
       KeySchema: 
-        - AttributeName: Date
-          KeyType: HASH
         - AttributeName: Level
+          KeyType: HASH
+        - AttributeName: Date
           KeyType: RANGE
+      BillingMode: PAY_PER_REQUEST
       ProvisionedThroughput:
         ReadCapacityUnits: 0
         WriteCapacityUnits: 0
