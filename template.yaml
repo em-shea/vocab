@@ -145,12 +145,12 @@ Resources:
     Properties: 
       TableName: !Sub DailyWordHistory-${Stage}
       AttributeDefinitions: 
-        - AttributeName: Level
-          AttributeType: N
+        - AttributeName: ListId
+          AttributeType: S
         - AttributeName: Date
           AttributeType: N
       KeySchema: 
-        - AttributeName: Level
+        - AttributeName: ListId
           KeyType: HASH
         - AttributeName: Date
           KeyType: RANGE
