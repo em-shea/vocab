@@ -15,6 +15,7 @@ from contact_lists import get_contact_level_list
 s3_client = boto3.client('s3')
 sns_client = boto3.client('sns')
 lambda_client = boto3.client('lambda')
+dynamo_client = boto3.client('dynamodb')
 
 # Cache contact level list
 contact_level_list = get_contact_level_list()
@@ -32,6 +33,9 @@ def lambda_handler(event, context):
             # Get a random word for each level
             word = select_random_word(level)
             num_level = int(level)
+
+            # Write to Dynamo
+            store_word(word,num_level)
 
             # Replace campaign HTML placeholders with word and level
             campaign_contents = assemble_html_content(word,level,num_level)
@@ -58,6 +62,25 @@ def lambda_handler(event, context):
         
         except Exception as e:
             print(e)
+
+def store_word(word,list_id):
+
+    table = os.environ['TABLE_NAME']
+    
+    # Test date
+    date = datetime.today()
+    # Actual date
+    # date = datetime.today()
+
+    response = table.put_item(
+        Item={
+                'ListId': list_id,
+                'Date': date,
+                'Word': word,
+            }
+        )
+
+    print("Word added to table.")
 
 # There are placeholders in the example template for dynamic content like the daily word
 # Here we swap the relevant content in for those placeholders
