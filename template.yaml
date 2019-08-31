@@ -154,6 +154,9 @@ Resources:
           KeyType: HASH
         - AttributeName: Level
           KeyType: RANGE
+      ProvisionedThroughput:
+        ReadCapacityUnits: 0
+        WriteCapacityUnits: 0
 
   CWLogsNotifications:
     # A function that filters function logs for error messages and publishes to SNS
