@@ -141,9 +141,9 @@ Resources:
 
   DynamoDBTable:
     Type: AWS::DynamoDB::Table
-    TableName: !Sub DailyWordHistory-${Stage}
     DeletionPolicy: Retain
     Properties: 
+      TableName: !Sub DailyWordHistory-${Stage}
       AttributeDefinitions: 
         - AttributeName: Date
           AttributeType: N
