@@ -139,6 +139,22 @@ Resources:
       CompatibleRuntimes:
         - python3.7
 
+  DynamoDBTable:
+    Type: AWS::DynamoDB::Table
+    TableName: DailyWordHistory-${Stage}
+    DeletionPolicy: Retain
+    Properties: 
+      AttributeDefinitions: 
+        - AttributeName: Date
+          AttributeType: N
+        - AttributeName: Level
+          AttributeType: N
+      KeySchema: 
+        - AttributeName: Date
+          KeyType: HASH
+        - AttributeName: Level
+          KeyType: RANGE
+
   CWLogsNotifications:
     # A function that filters function logs for error messages and publishes to SNS
     Type: 'AWS::Serverless::Function'
