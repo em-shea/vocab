@@ -15,7 +15,7 @@ from contact_lists import get_contact_level_list
 s3_client = boto3.client('s3')
 sns_client = boto3.client('sns')
 lambda_client = boto3.client('lambda')
-dynamo_client = boto3.client('dynamodb')
+dynamo_client = boto3.resource('dynamodb')
 
 # Cache contact level list
 contact_level_list = get_contact_level_list()
@@ -38,7 +38,7 @@ def lambda_handler(event, context):
             try: 
             
                 # Write to Dynamo
-                store_word(word,num_level)
+                store_word(word,level)
             
             except Exception as e:
                 print(e)
@@ -75,7 +75,7 @@ def store_word(word,level):
     
     table = dynamo_client.Table(os.environ['TABLE_NAME'])
     
-    date = str(datetime.today())
+    date = str(datetime.today().strftime('%Y-%m-%d'))
 
     response = table.put_item(
         Item={
@@ -85,7 +85,7 @@ def store_word(word,level):
             }
         )
 
-    print(f"{word} for {level} added to table.")
+    print(f"Word for {list_id} added to table.")
 
 # There are placeholders in the example template for dynamic content like the daily word
 # Here we swap the relevant content in for those placeholders
