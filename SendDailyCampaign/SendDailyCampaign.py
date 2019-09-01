@@ -34,8 +34,14 @@ def lambda_handler(event, context):
             word = select_random_word(level)
             num_level = int(level)
 
-            # Write to Dynamo
-            store_word(word,num_level)
+            # If unable to store word in Dynamo, continue sending campaign
+            try: 
+            
+                # Write to Dynamo
+                store_word(word,num_level)
+            
+            except Exception as e:
+                print(e)
 
             # Replace campaign HTML placeholders with word and level
             campaign_contents = assemble_html_content(word,level,num_level)
@@ -56,21 +62,20 @@ def lambda_handler(event, context):
                 print(f"Campaign {sendgrid_response['id']} for HSK Level {num_level} scheduled for send successfully.")
             
             else: 
-                failure_message = f"Campaign for {num_level} did not schedule successfully. SendGrid API response: " + sendgrid_response
+                failure_message = f"Error: Campaign for {num_level} did not schedule successfully. SendGrid API response: " + sendgrid_response
 
                 print (failure_message)
         
         except Exception as e:
             print(e)
 
-def store_word(word,list_id):
+def store_word(word,level):
 
-    table = os.environ['TABLE_NAME']
+    list_id = "HSKLevel" + level
     
-    # Test date
-    date = datetime.today()
-    # Actual date
-    # date = datetime.today()
+    table = dynamo_client.Table(os.environ['TABLE_NAME'])
+    
+    date = str(datetime.today())
 
     response = table.put_item(
         Item={
@@ -80,7 +85,7 @@ def store_word(word,list_id):
             }
         )
 
-    print("Word added to table.")
+    print(f"{word} for {level} added to table.")
 
 # There are placeholders in the example template for dynamic content like the daily word
 # Here we swap the relevant content in for those placeholders
