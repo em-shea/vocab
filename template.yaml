@@ -83,7 +83,7 @@ Resources:
             Method: GET
       Layers:
        - !Ref Layer
-  
+
   SampleVocabLambdaPermission:
     # Permissions for API Gateway to invoke this function. Using a workaround described here:
     # https://github.com/awslabs/serverless-application-model/issues/59
@@ -91,6 +91,41 @@ Resources:
     Properties:
       Action: lambda:InvokeFunction
       FunctionName: !Ref SampleVocabFunction
+      Principal: apigateway.amazonaws.com
+
+  DailyWordHistory:
+    # A function that returns all previous daily words
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      FunctionName: !Sub DailyWordHistory-${Stage}
+      Handler: DailyWordHistory.lambda_handler
+      Runtime: python3.7
+      CodeUri: ./DailyWordHistory
+      Description: A function that returns all previous daily words
+      MemorySize: 128
+      Timeout: 120
+      Policies:
+       - AWSLambdaExecute
+       - DynamoDBCrudPolicy:
+          TableName: !Ref DynamoDBTable
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref DynamoDBTable
+      Events:
+        DailyWordHistoryApi:
+          # An API Gateway endpoint that responds to HTTP GET
+          Type: Api
+          Properties:
+            Path: /history
+            Method: GET
+  
+  DailyWordHistoryPermission:
+    # Permissions for API Gateway to invoke this function. Using a workaround described here:
+    # https://github.com/awslabs/serverless-application-model/issues/59
+    Type: "AWS::Lambda::Permission"
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref WordHistoryFunction
       Principal: apigateway.amazonaws.com
 
   SubscribeFunction:
