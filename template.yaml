@@ -37,6 +37,8 @@ Resources:
       Timeout: 120
       Policies:
        - AWSLambdaExecute
+       - DynamoDBCrudPolicy:
+          TableName: !Ref DynamoDBTable
       Environment:
         Variables:
           SG_API_KEY: !Ref SGApiKey
@@ -45,6 +47,7 @@ Resources:
           WORDS_BUCKET_KEY: !Ref WordsBucketKey
           LISTS_BUCKET_NAME: !Ref ListsBucketName
           LISTS_BUCKET_KEY: !Ref ListsBucketKey
+          TABLE_NAME: !Ref DynamoDBTable
           STAGE: !Ref Stage
       Events:
         DailySchedule:
@@ -80,7 +83,7 @@ Resources:
             Method: GET
       Layers:
        - !Ref Layer
-  
+
   SampleVocabLambdaPermission:
     # Permissions for API Gateway to invoke this function. Using a workaround described here:
     # https://github.com/awslabs/serverless-application-model/issues/59
@@ -88,6 +91,41 @@ Resources:
     Properties:
       Action: lambda:InvokeFunction
       FunctionName: !Ref SampleVocabFunction
+      Principal: apigateway.amazonaws.com
+
+  DailyWordHistory:
+    # A function that returns all previous daily words
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      FunctionName: !Sub DailyWordHistory-${Stage}
+      Handler: DailyWordHistory.lambda_handler
+      Runtime: python3.7
+      CodeUri: ./DailyWordHistory
+      Description: A function that returns all previous daily words
+      MemorySize: 128
+      Timeout: 120
+      Policies:
+       - AWSLambdaExecute
+       - DynamoDBCrudPolicy:
+          TableName: !Ref DynamoDBTable
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref DynamoDBTable
+      Events:
+        DailyWordHistoryApi:
+          # An API Gateway endpoint that responds to HTTP GET
+          Type: Api
+          Properties:
+            Path: /history
+            Method: GET
+  
+  DailyWordHistoryPermission:
+    # Permissions for API Gateway to invoke this function. Using a workaround described here:
+    # https://github.com/awslabs/serverless-application-model/issues/59
+    Type: "AWS::Lambda::Permission"
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref DailyWordHistory
       Principal: apigateway.amazonaws.com
 
   SubscribeFunction:
@@ -138,6 +176,26 @@ Resources:
       ContentUri: ./layer
       CompatibleRuntimes:
         - python3.7
+
+  DynamoDBTable:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    Properties: 
+      TableName: !Sub DailyWordHistory-${Stage}
+      AttributeDefinitions: 
+        - AttributeName: ListId
+          AttributeType: S
+        - AttributeName: Date
+          AttributeType: S
+      KeySchema: 
+        - AttributeName: ListId
+          KeyType: HASH
+        - AttributeName: Date
+          KeyType: RANGE
+      BillingMode: PAY_PER_REQUEST
+      ProvisionedThroughput:
+        ReadCapacityUnits: 0
+        WriteCapacityUnits: 0
 
   CWLogsNotifications:
     # A function that filters function logs for error messages and publishes to SNS

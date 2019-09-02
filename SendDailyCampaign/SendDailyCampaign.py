@@ -15,6 +15,7 @@ from contact_lists import get_contact_level_list
 s3_client = boto3.client('s3')
 sns_client = boto3.client('sns')
 lambda_client = boto3.client('lambda')
+dynamo_client = boto3.resource('dynamodb')
 
 # Cache contact level list
 contact_level_list = get_contact_level_list()
@@ -32,6 +33,15 @@ def lambda_handler(event, context):
             # Get a random word for each level
             word = select_random_word(level)
             num_level = int(level)
+
+            # If unable to store word in Dynamo, continue sending campaign
+            try: 
+            
+                # Write to Dynamo
+                store_word(word,level)
+            
+            except Exception as e:
+                print(e)
 
             # Replace campaign HTML placeholders with word and level
             campaign_contents = assemble_html_content(word,level,num_level)
@@ -52,12 +62,30 @@ def lambda_handler(event, context):
                 print(f"Campaign {sendgrid_response['id']} for HSK Level {num_level} scheduled for send successfully.")
             
             else: 
-                failure_message = f"Campaign for {num_level} did not schedule successfully. SendGrid API response: " + sendgrid_response
+                failure_message = f"Error: Campaign for {num_level} did not schedule successfully. SendGrid API response: " + sendgrid_response
 
                 print (failure_message)
         
         except Exception as e:
             print(e)
+
+def store_word(word,level):
+
+    list_id = "HSKLevel" + level
+    
+    table = dynamo_client.Table(os.environ['TABLE_NAME'])
+    
+    date = str(datetime.today().strftime('%Y-%m-%d'))
+
+    response = table.put_item(
+        Item={
+                'ListId': list_id,
+                'Date': date,
+                'Word': word,
+            }
+        )
+
+    print(f"Word for {list_id} added to table.")
 
 # There are placeholders in the example template for dynamic content like the daily word
 # Here we swap the relevant content in for those placeholders
