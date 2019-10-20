@@ -18,9 +18,6 @@ all_lists = [
     'HSKLevel6'
   ]
 
-# Set today's date and dates 30 and 90 days before today's date
-todays_date = format_date(datetime.today())
-
 def lambda_handler(event,context):
 
   # Words returned from Dynamo
