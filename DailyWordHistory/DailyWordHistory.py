@@ -11,8 +11,13 @@ dynamo = boto3.resource('dynamodb')
 def lambda_handler(event,context):
 
   table = dynamo.Table(os.environ['TABLE_NAME'])
-  
+
   items = []
+
+  from_date = datetime.today() - timedelta(days=int(90))
+
+  from_date = format_date(from_date)
+  todays_date = format_date(datetime.today())
 
   # Filter data by query string parameters
   # Query string parameters should be a the list name (ex, HSKLevel1) and a number of days (ex, 7)
@@ -41,7 +46,7 @@ def lambda_handler(event,context):
         else:
             items = response['Items']
             print(json.dumps(items, indent=4))
-            
+
             return {
                 'statusCode': 200,
                 'headers': {
@@ -54,11 +59,6 @@ def lambda_handler(event,context):
 
       # If no date range supplied, get words from last 90 days
       else:
-          from_date = datetime.today() - timedelta(days=int(90))
-  
-          from_date = format_date(from_date)
-          todays_date = format_date(datetime.today())
-  
           try:
               response = table.query(
                   KeyConditionExpression=Key('ListId').eq(list_id) & Key('Date').between(str(from_date),str(todays_date))
@@ -68,7 +68,7 @@ def lambda_handler(event,context):
           else:
               items = response['Items']
               print(json.dumps(items, indent=4))
-              
+
               return {
                 'statusCode': 200,
                 'headers': {
