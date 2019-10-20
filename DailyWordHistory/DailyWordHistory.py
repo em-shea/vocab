@@ -18,6 +18,9 @@ all_lists = [
     'HSKLevel6'
   ]
 
+# Set today's date and dates 30 and 90 days before today's date
+todays_date = format_date(datetime.today())
+
 def lambda_handler(event,context):
 
   # Words returned from Dynamo
@@ -44,11 +47,11 @@ def lambda_handler(event,context):
       else:
         from_date = format_date(datetime.today() - timedelta(days=int(90)))
 
-    items = pull_words_with_params(list_id, from_date)
+    items = pull_words_with_params(list_id, from_date, todays_date)
 
   # If no params passed, get all lists words from the last 30 days
   else:
-    items = pull_words_no_params()
+    items = pull_words_no_params(todays_date)
 
   return {
           'statusCode': 200,
@@ -60,7 +63,7 @@ def lambda_handler(event,context):
           'body': json.dumps(items)
         }
 
-def pull_words_with_params(list_id, from_date):
+def pull_words_with_params(list_id, from_date, todays_date):
 
   try:
       response = table.query(
@@ -74,22 +77,21 @@ def pull_words_with_params(list_id, from_date):
 
   return items
 
-def pull_words_no_params():
+def pull_words_no_params(todays_date):
 
   completed_item_list = []
 
-  from_date = format_date(datetime.today() - timedelta(days=int(30)))
+  from_date = format_date(datetime.today() - timedelta(days=int(7)))
 
-  try:
-      for list_id in all_lists:
-
+  for list_id in all_lists:
+    try:
         response = table.query(
           KeyConditionExpression=Key('ListId').eq(list_id) & Key('Date').between(str(from_date),str(todays_date))
         )
-  except ClientError as e:
-    print(e.response['Error']['Message'])
-  else:
-    completed_item_list.append(response['Items'])
+    except ClientError as e:
+      print(e.response['Error']['Message'])
+    else:
+      completed_item_list.append(response['Items'])
 
   print(json.dumps(completed_item_list, indent=4))
   return completed_item_list
