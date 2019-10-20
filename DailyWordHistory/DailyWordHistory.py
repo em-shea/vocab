@@ -28,7 +28,7 @@ def lambda_handler(event,context):
 
   # Extract query string parameters
   # Query string parameters should be a the list name (ex, HSKLevel1) and a number of days (ex, 7)
-  if 'queryStringParameters' in event:
+  if 'queryStringParameters' in event and event['queryStringParameters'] is not None:
 
     # Set word list
     if 'list' in event['queryStringParameters']:
@@ -39,6 +39,8 @@ def lambda_handler(event,context):
         date_range = event["queryStringParameters"]['date_range']
 
         from_date = format_date(datetime.today() - timedelta(days=int(date_range)))
+
+        # Add error response if date range is longer than a certain quantity?
 
       # If no date param given, set to 90 days
       else:
@@ -72,11 +74,11 @@ def pull_words_with_params(list_id, from_date, todays_date):
     items = response['Items']
     print(json.dumps(items, indent=4))
 
-  return items
+  return {list_id : items}
 
 def pull_words_no_params(todays_date):
 
-  completed_item_list = []
+  completed_item_list = {}
 
   from_date = format_date(datetime.today() - timedelta(days=int(7)))
 
@@ -88,7 +90,7 @@ def pull_words_no_params(todays_date):
     except ClientError as e:
       print(e.response['Error']['Message'])
     else:
-      completed_item_list.append(response['Items'])
+      completed_item_list[list_id] = response['Items']
 
   print(json.dumps(completed_item_list, indent=4))
   return completed_item_list
