@@ -14,9 +14,9 @@ To subscribe, visit https://haohaotiantian.com, where you can preview sample wor
 
 You can read about the development process and architecture here: https://emshea.com/post/chinese-vocab-app
 
-![Architectural diagram](https://emshea.com/static/images/chinese-vocab-app/vocab-app-v3-640.PNG)
+Link to the [frontend repo](https://github.com/em-shea/vocab-frontend).
 
-[Frontend repo](https://github.com/em-shea/vocab-frontend)
+![Architectural diagram](https://emshea.com/static/images/chinese-vocab-app/vocab-app-v3-640.PNG)
 
 ## Roadmap
 
