@@ -22,7 +22,7 @@ Parameters:
 Globals:
   Api:
     # Add AllowMethods with a list of methods for this domain name to call the API in this template
-    Cors: !Sub "'${DomainName}', 'localhost'"
+    Cors: !Sub "'${DomainName}, localhost'"
 
 Resources:
   SendDailyCampaign:
