@@ -26,7 +26,7 @@ Globals:
     # Cors: "'*'"
     Cors:
       AllowMethods: "'OPTIONS,POST,GET'"
-      AllowHeaders: "'Content-Type'"
+      AllowHeaders: "'*'"
       AllowOrigin: "'*'"
 
 Resources:
