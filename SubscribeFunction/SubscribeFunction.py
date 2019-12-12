@@ -16,9 +16,16 @@ contact_level_list = get_contact_level_list()
 # Subscribe a new user, including sending an email confirmation to the user and a notification to the app owner
 def lambda_handler(event, context):
 
+    body = json.loads(event["body"])
+
     # Extract relevant user details
+<<<<<<< HEAD
     email_address = event["queryStringParameters"]['email']
     hsk_level = event["queryStringParameters"]['level']
+=======
+    email_address = body['email']
+    hsk_level = body['level']
+>>>>>>> staging
 
     # Create contact and return contact ID
     try:
