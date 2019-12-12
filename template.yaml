@@ -22,7 +22,11 @@ Parameters:
 Globals:
   Api:
     # Add AllowMethods with a list of methods for this domain name to call the API in this template
-    Cors: !Sub "'${DomainName}'"
+    # Cors: !Sub "'${DomainName}'"
+    Cors:
+      AllowMethods: "'OPTIONS,POST,GET'"
+      AllowHeaders: "'*'"
+      AllowOrigin: "'*'"
 
 Resources:
   SendDailyCampaign:
@@ -118,7 +122,7 @@ Resources:
           Properties:
             Path: /history
             Method: GET
-  
+
   DailyWordHistoryPermission:
     # Permissions for API Gateway to invoke this function. Using a workaround described here:
     # https://github.com/awslabs/serverless-application-model/issues/59
@@ -180,14 +184,14 @@ Resources:
   DynamoDBTable:
     Type: AWS::DynamoDB::Table
     DeletionPolicy: Retain
-    Properties: 
+    Properties:
       TableName: !Sub DailyWordHistory-${Stage}
-      AttributeDefinitions: 
+      AttributeDefinitions:
         - AttributeName: ListId
           AttributeType: S
         - AttributeName: Date
           AttributeType: S
-      KeySchema: 
+      KeySchema:
         - AttributeName: ListId
           KeyType: HASH
         - AttributeName: Date
@@ -220,28 +224,28 @@ Resources:
         Variables:
           SUB_TOPIC_ARN: !Ref NotificationTopic
       Events:
-        SubFunctionLogs:      
+        SubFunctionLogs:
           Type: CloudWatchLogs
           Properties:
-            LogGroupName: 
+            LogGroupName:
               !Join [
           '',
           ['/aws/lambda/', !Sub 'SubscribeFunction-${Stage}']
         ]
             FilterPattern: "?Error ?Success"
-        SendDailyLogs:      
+        SendDailyLogs:
           Type: CloudWatchLogs
           Properties:
-            LogGroupName: 
+            LogGroupName:
               !Join [
           '',
           ['/aws/lambda/', !Sub 'SendDailyCampaign-${Stage}']
         ]
             FilterPattern: Error
-        SampleVocabLogs:      
+        SampleVocabLogs:
           Type: CloudWatchLogs
           Properties:
-            LogGroupName: 
+            LogGroupName:
               !Join [
           '',
           ['/aws/lambda/', !Sub 'SampleVocabFunction-${Stage}']
@@ -252,11 +256,11 @@ Resources:
     # A topic that error notifications will be published to
     Type: AWS::SNS::Topic
     Properties:
-      Subscription: 
+      Subscription:
       - Protocol: email
         Endpoint: !Ref SubNotifyEmail
 
-  # Creating CloudWatch Logs groups for each function. 
+  # Creating CloudWatch Logs groups for each function.
   # By default, a log group is only created for a function once the function is invoked.
   # We are creating log groups here to be able to subscribe the CWLogsNotification function to those log groups.
   SubscribeFunctionLogGroup:
@@ -264,7 +268,7 @@ Resources:
     DependsOn:
       - SubscribeFunction
     Properties:
-      LogGroupName: 
+      LogGroupName:
         !Join [
           '',
           ['/aws/lambda/', !Sub 'SubscribeFunction-${Stage}']
@@ -275,18 +279,18 @@ Resources:
     DependsOn:
       - SendDailyCampaign
     Properties:
-      LogGroupName: 
+      LogGroupName:
         !Join [
           '',
           ['/aws/lambda/', !Sub 'SendDailyCampaign-${Stage}']
         ]
-  
+
   SampleVocabFunctionLogGroup:
     Type: AWS::Logs::LogGroup
     DependsOn:
       - SampleVocabFunction
     Properties:
-      LogGroupName: 
+      LogGroupName:
         !Join [
           '',
           ['/aws/lambda/', !Sub 'SampleVocabFunction-${Stage}']
