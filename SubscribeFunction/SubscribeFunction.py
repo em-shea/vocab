@@ -17,12 +17,12 @@ contact_level_list = get_contact_level_list()
 def lambda_handler(event, context):
 
     # Extract relevant user details
-    email_address = event["queryStringParameters"]['email']
-    hsk_level = event["queryStringParameters"]['level']
-    
+    email_address = event["data"]['email']
+    hsk_level = event["data"]['level']
+
     # Create contact and return contact ID
-    try: 
-        recipient_id = create_contact(email_address, hsk_level)    
+    try:
+        recipient_id = create_contact(email_address, hsk_level)
     except Exception as e:
         print(f"Error: Failed to create contact for {email_address} for {hsk_level}")
         print(e)
@@ -122,9 +122,9 @@ def add_to_contact_list(recipient_id, hsk_level):
 
 # Send subscribe confirmation email to new user
 def send_new_user_confirmation_email(email_address, hsk_level):
-    
+
     user_details = email_address, hsk_level
-    
+
     response = generate_confirmation_email_content_and_send(user_details)
     code = response.status_code
 
@@ -132,10 +132,10 @@ def send_new_user_confirmation_email(email_address, hsk_level):
         print(f"Response code {code}. Confirmation email successfully sent.")
     else:
         print(f"Response code {code}. Confirmation email unsuccessful.")
-    
+
     return response
 
-# Put together email personalizations and call SendGrid send email API 
+# Put together email personalizations and call SendGrid send email API
 def generate_confirmation_email_content_and_send(user_details):
 
     email_address, hsk_level = user_details
