@@ -26,6 +26,6 @@ Link to the [frontend repo](https://github.com/em-shea/vocab-frontend-vue).
 | Create API to serve daily word history | :heavy_check_mark:  |
 | Refactor homepage to Vue | :heavy_check_mark: |
 | Build interface for users to explore and export word history | :heavy_check_mark: |
-| Add links to word history to daily email message | :soon: |
+| Add links to word history to daily email message | :heavy_check_mark: |
 | Build interface for quizzes | |
 | Add word audio support for email and website | |
