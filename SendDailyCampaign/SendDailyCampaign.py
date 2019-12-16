@@ -26,7 +26,7 @@ def lambda_handler(event, context):
     # Loop through HSK levels
     for level_dict in contact_level_list:
 
-        try: 
+        try:
 
             level = level_dict["hsk_level"]
 
@@ -35,11 +35,11 @@ def lambda_handler(event, context):
             num_level = int(level)
 
             # If unable to store word in Dynamo, continue sending campaign
-            try: 
-            
+            try:
+
                 # Write to Dynamo
                 store_word(word,level)
-            
+
             except Exception as e:
                 print(e)
 
@@ -48,33 +48,33 @@ def lambda_handler(event, context):
 
             # Assemble create campaign API call payload
             payload = assemble_payload(campaign_contents,level,level_dict)
-            
+
             print(f"HSK Level {num_level} campaign payload: {payload}")
 
             # SendGrid requires campaigns to be created and then sent
             # First create the campaign and retrieve the campaign id to call the send API
             campaign_id = create_campaign(payload)
-            
+
             sendgrid_response = send_campaign(campaign_id)
 
             # Send success/error response and notification
             if "status" in sendgrid_response and sendgrid_response["status"] == "Scheduled":
                 print(f"Campaign {sendgrid_response['id']} for HSK Level {num_level} scheduled for send successfully.")
-            
-            else: 
+
+            else:
                 failure_message = f"Error: Campaign for {num_level} did not schedule successfully. SendGrid API response: " + sendgrid_response
 
                 print (failure_message)
-        
+
         except Exception as e:
             print(e)
 
 def store_word(word,level):
 
     list_id = "HSKLevel" + level
-    
+
     table = dynamo_client.Table(os.environ['TABLE_NAME'])
-    
+
     date = str(datetime.today().strftime('%Y-%m-%d'))
 
     response = table.put_item(
@@ -95,7 +95,7 @@ def assemble_html_content(word,level,num_level):
     if num_level in range(1,4):
         example_link = "https://www.yellowbridge.com/chinese/sentsearch.php?word=" + word["Word"]
 
-    else: 
+    else:
         example_link = "https://fanyi.baidu.com/#zh/en/" + word["Word"]
 
     # We have an html template file packaged with this function's code which we read here
@@ -124,35 +124,35 @@ def assemble_payload(campaign_contents,level,level_dict):
         ],
         "html_content": campaign_contents
     }
-    
+
     return payload
 
 # Create campaign
 def create_campaign(payload):
-    
+
     # Create campaign API call
     create_url = "https://api.sendgrid.com/v3/campaigns"
-        
+
     headers = {
         'authorization' : "Bearer " + os.environ['SG_API_KEY'],
         'content-type' : "application/json"
     }
 
     response = requests.request("POST", create_url, json=payload, headers=headers)
-    
+
     print("Create campaign response:", response.text)
 
     data = response.json()
     campaign_id = data["id"]
-    
+
     return campaign_id
 
 # Send campaign
 def send_campaign(campaign_id):
-    
+
     # Send Campaign API call
     send_url = "https://api.sendgrid.com/v3/campaigns/" + str(campaign_id) + "/schedules/now"
-        
+
     payload = "null"
     headers = {'authorization': 'Bearer ' + os.environ['SG_API_KEY']}
 
