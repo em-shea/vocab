@@ -108,6 +108,7 @@ def assemble_html_content(word,level,num_level):
     campaign_contents = campaign_contents.replace("{definition}", word["Definition"])
     campaign_contents = campaign_contents.replace("{link}", example_link)
     campaign_contents = campaign_contents.replace("{level}", "HSK Level " + level)
+    campaign_contents = campaign_contents.replace("{history_link}", "https://haohaotiantian.com/history?list=HSKLevel" + level + "&dates=30")
 
     return campaign_contents
 
