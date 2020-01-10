@@ -1,6 +1,7 @@
 import os
 import json
 import boto3
+from datetime import datetime
 from botocore.vendored import requests
 
 import sys
@@ -9,6 +10,7 @@ from contact_lists import get_contact_level_list
 
 sns_client = boto3.client('sns')
 lambda_client = boto3.client('lambda')
+dynamo_client = boto3.resource('dynamodb')
 
 # Cache contact level list
 contact_level_list = get_contact_level_list()
@@ -68,6 +70,24 @@ def lambda_handler(event, context):
             'body': '{"success" : false}'
         }
 
+    # Write contact to DynamoDB
+    try:
+        create_contact_dynamo(email_address, hsk_level)
+        print(f"Success: Contact created in Dynamo - {email_address}, {hsk_level}.")
+    except Exception as e:
+        print(f"Error: Failed to create contact in Dynamo - {email_address}, {hsk_level}.")
+        print(e)
+        return {
+            'statusCode': 502,
+            'headers': {
+                'Access-Control-Allow-Methods': 'POST,OPTIONS',
+                'Access-Control-Allow-Origin': '*',
+            },
+            'body': '{"success" : false}'
+        }
+
+    # Send confirmation email from SES
+
     return {
         'statusCode': 200,
         'headers': {
@@ -75,7 +95,28 @@ def lambda_handler(event, context):
             'Access-Control-Allow-Origin': '*',
         },
         'body': '{"success" : true}'
+
     }
+
+# Write new contact to Dynamo
+def create_contact_dynamo(email_address, hsk_level):
+
+    table = dynamo_client.Table(os.environ['TABLE_NAME'])
+
+    date = str(datetime.today().strftime('%Y-%m-%d'))
+
+    sub_status = "subscribed"
+
+    response = table.put_item(
+        Item={
+                'ListId': hsk_level,
+                'SubscriberEmail' : email_address,
+                'Date': date,
+                'Status': sub_status,
+            }
+        )
+
+    print(f"Contact added to Dynamo - {email_address}, {hsk_level}.")
 
 # Create new contact
 def create_contact(email_address, hsk_level):
