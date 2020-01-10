@@ -181,7 +181,7 @@ Resources:
       CompatibleRuntimes:
         - python3.7
 
-  DynamoDBTable:
+  WordHistoryDynamoDBTable:
     Type: AWS::DynamoDB::Table
     DeletionPolicy: Retain
     Properties:
@@ -195,6 +195,26 @@ Resources:
         - AttributeName: ListId
           KeyType: HASH
         - AttributeName: Date
+          KeyType: RANGE
+      BillingMode: PAY_PER_REQUEST
+      ProvisionedThroughput:
+        ReadCapacityUnits: 0
+        WriteCapacityUnits: 0
+
+  SubscriberContactListDynamoDBTable:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    Properties:
+      TableName: !Sub SubscriberContactList-${Stage}
+      AttributeDefinitions:
+        - AttributeName: ListId
+          AttributeType: S
+        - AttributeName: SubscriberEmail
+          AttributeType: S
+      KeySchema:
+        - AttributeName: ListId
+          KeyType: HASH
+        - AttributeName: SubscriberEmail
           KeyType: RANGE
       BillingMode: PAY_PER_REQUEST
       ProvisionedThroughput:
