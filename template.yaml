@@ -145,7 +145,8 @@ Resources:
       Timeout: 120
       Policies:
        - AWSLambdaExecute
-       - SESCrudPolicy: {}
+       - SESCrudPolicy:
+          IdentityName: haohaotiantian.com
        - DynamoDBCrudPolicy:
           TableName: !Ref SubscriberContactListDynamoDBTable
       Environment:
