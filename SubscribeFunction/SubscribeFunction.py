@@ -9,6 +9,7 @@ sys.path.insert(0, '/opt')
 from contact_lists import get_contact_level_list
 
 sns_client = boto3.client('sns')
+ses_client = boto3.client('ses')
 lambda_client = boto3.client('lambda')
 dynamo_client = boto3.resource('dynamodb')
 
@@ -24,51 +25,51 @@ def lambda_handler(event, context):
     email_address = body['email']
     hsk_level = body['level']
 
-    # Create contact and return contact ID
-    try:
-        recipient_id = create_contact(email_address, hsk_level)
-    except Exception as e:
-        print(f"Error: Failed to create contact for {email_address} for {hsk_level}")
-        print(e)
-        return {
-            'statusCode': 502,
-            'headers': {
-                'Access-Control-Allow-Methods': 'POST,OPTIONS',
-                'Access-Control-Allow-Origin': '*',
-            },
-            'body': '{"success" : false}'
-        }
+    # # Create contact and return contact ID
+    # try:
+    #     recipient_id = create_contact(email_address, hsk_level)
+    # except Exception as e:
+    #     print(f"Error: Failed to create contact for {email_address} for {hsk_level}")
+    #     print(e)
+    #     return {
+    #         'statusCode': 502,
+    #         'headers': {
+    #             'Access-Control-Allow-Methods': 'POST,OPTIONS',
+    #             'Access-Control-Allow-Origin': '*',
+    #         },
+    #         'body': '{"success" : false}'
+    #     }
 
-    # Add new contact to the correct HSK level list
-    try:
-        add_to_contact_list(recipient_id, int(hsk_level))
-    except Exception as e:
-        print(f"Error: Failed to add contact {email_address} to {hsk_level} list")
-        print(e)
-        return {
-            'statusCode': 502,
-            'headers': {
-                'Access-Control-Allow-Methods': 'POST,OPTIONS',
-                'Access-Control-Allow-Origin': '*',
-            },
-            'body': '{"success" : false}'
-        }
+    # # Add new contact to the correct HSK level list
+    # try:
+    #     add_to_contact_list(recipient_id, int(hsk_level))
+    # except Exception as e:
+    #     print(f"Error: Failed to add contact {email_address} to {hsk_level} list")
+    #     print(e)
+    #     return {
+    #         'statusCode': 502,
+    #         'headers': {
+    #             'Access-Control-Allow-Methods': 'POST,OPTIONS',
+    #             'Access-Control-Allow-Origin': '*',
+    #         },
+    #         'body': '{"success" : false}'
+    #     }
 
-    # Send confirmation email function call
-    try:
-        send_new_user_confirmation_email(email_address, hsk_level)
-        print(f"Success: {email_address} subscribed to {hsk_level}")
-    except Exception as e:
-        print(f"Error: Failed to send confirmation email to {email_address} for {hsk_level}.")
-        print(e)
-        return {
-            'statusCode': 502,
-            'headers': {
-                'Access-Control-Allow-Methods': 'POST,OPTIONS',
-                'Access-Control-Allow-Origin': '*',
-            },
-            'body': '{"success" : false}'
-        }
+    # # Send confirmation email function call
+    # try:
+    #     send_new_user_confirmation_email(email_address, hsk_level)
+    #     print(f"Success: {email_address} subscribed to {hsk_level}")
+    # except Exception as e:
+    #     print(f"Error: Failed to send confirmation email to {email_address} for {hsk_level}.")
+    #     print(e)
+    #     return {
+    #         'statusCode': 502,
+    #         'headers': {
+    #             'Access-Control-Allow-Methods': 'POST,OPTIONS',
+    #             'Access-Control-Allow-Origin': '*',
+    #         },
+    #         'body': '{"success" : false}'
+    #     }
 
     # Write contact to DynamoDB
     try:
@@ -87,6 +88,19 @@ def lambda_handler(event, context):
         }
 
     # Send confirmation email from SES
+    try:
+        send_new_user_confirmation_email_ses(email_address, hsk_level)
+        print(f"Success: Confirmation email sent through SES - {email_address}, {hsk_level}.")
+    except Exception as e:
+        print(f"Error: Failed to send confirmation email through SES - {email_address}, {hsk_level}.")
+        print(e)
+        return {
+            'statusCode': 502,
+            'headers': {
+                'Access-Control-Allow-Methods': 'POST,OPTIONS',
+                'Access-Control-Allow-Origin': '*',
+            },
+            'body': '{"success" : false}'
 
     return {
         'statusCode': 200,
@@ -117,6 +131,40 @@ def create_contact_dynamo(email_address, hsk_level):
         )
 
     print(f"Contact added to Dynamo - {email_address}, {hsk_level}.")
+
+def send_new_user_confirmation_email_ses(email_address, hsk_level):
+
+    # We have an html template file packaged with this function's code which we read here
+    with open('confirmation_template.html') as fh:
+        contents = fh.read()
+
+    email_contents = contents.replace("{level}", level)
+
+    payload = ses_client.send_email(
+        Source = "welcome@haohaotiantian.com",
+        Destination = {
+            "ToAddresses" : [
+            email_address
+            ]
+        },
+        Message = {
+            "Subject": {
+                "Charset": "UTF-8",
+                "Data": "Welcome! 欢迎您!"
+                },
+            "Body": {
+                # "Text": {
+                #     "Charset": "UTF-8",
+                #     "Data": "test html api send"
+                # },
+                "Html": {
+                    "Charset": "UTF-8",
+                    "Data": email_contents
+                }
+            }
+        }
+    )
+
 
 # Create new contact
 def create_contact(email_address, hsk_level):
