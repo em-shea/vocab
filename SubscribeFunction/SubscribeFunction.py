@@ -101,6 +101,7 @@ def lambda_handler(event, context):
                 'Access-Control-Allow-Origin': '*',
             },
             'body': '{"success" : false}'
+        }
 
     return {
         'statusCode': 200,
