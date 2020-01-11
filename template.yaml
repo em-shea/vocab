@@ -145,6 +145,7 @@ Resources:
       Timeout: 120
       Policies:
        - AWSLambdaExecute
+       - SESCrudPolicy
        - DynamoDBCrudPolicy:
           TableName: !Ref SubscriberContactListDynamoDBTable
       Environment:

@@ -122,12 +122,15 @@ def create_contact_dynamo(email_address, hsk_level):
 
     sub_status = "subscribed"
 
+    character_set = "simplified"
+
     response = table.put_item(
         Item={
                 'ListId': hsk_level,
                 'SubscriberEmail' : email_address,
                 'Date': date,
                 'Status': sub_status,
+                'CharacterSet' : character_set
             }
         )
 
@@ -139,7 +142,7 @@ def send_new_user_confirmation_email_ses(email_address, hsk_level):
     with open('confirmation_template.html') as fh:
         contents = fh.read()
 
-    email_contents = contents.replace("{level}", level)
+    email_contents = contents.replace("{level}", hsk_level)
 
     payload = ses_client.send_email(
         Source = "welcome@haohaotiantian.com",
