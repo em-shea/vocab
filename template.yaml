@@ -366,14 +366,3 @@ Resources:
           '',
           ['/aws/lambda/', !Sub 'UnsubscribeFunction-${Stage}']
         ]
-
-  DailyWordHistoryLogGroup:
-    Type: AWS::Logs::LogGroup
-    DependsOn:
-      - DailyWordHistory
-    Properties:
-      LogGroupName:
-        !Join [
-          '',
-          ['/aws/lambda/', !Sub 'DailyWordHistory-${Stage}']
-        ]
