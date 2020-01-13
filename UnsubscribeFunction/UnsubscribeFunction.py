@@ -7,7 +7,6 @@ from botocore.exceptions import ClientError
 
 dynamo_client = boto3.resource('dynamodb')
 table = boto3.resource('dynamodb').Table(os.environ['TABLE_NAME'])
-table_name = dynamo_client.Table(os.environ['TABLE_NAME'])
 
 # Unsubscribe a user from the given HSK level or all levels.
 def lambda_handler(event, context):
@@ -46,29 +45,28 @@ def find_contact(email_address, hsk_level):
           'ListId': str(level_list+1),
           'SubscriberEmail': email_address
         })
-    else:
 
-      # If unsubscribing from a single list, get item from Dynamo by subscriber email and the given HSK level list
-      keys = keys.append({
+    # If unsubscribing from a single list, get item from Dynamo by subscriber email and the given HSK level list
+    else:
+      keys.append({
           'ListId': hsk_level,
           'SubscriberEmail': email_address
         })
 
-      try:
-
-        # Batch get item from Dynamo
-        response = dynamo_client.batch_get_item(
-          RequestItems={
-            table_name : {
-              'Keys' : keys
-            }
+    # Batch get item from Dynamo
+    try:
+      response = dynamo_client.batch_get_item(
+        RequestItems={
+          table.name : {
+            'Keys' : keys
           }
-        )
-      except ClientError as e:
-        print(e.response['Error']['Message'])
-      else:
-        print(response)
-        contact_found_count = len(response["Responses"][table])
+        }
+      )
+    except ClientError as e:
+      print(e.response['Error']['Message'])
+    else:
+      print(response)
+      contact_found_count = len(response["Responses"][table.name])
 
     return response, contact_found_count
 
@@ -80,8 +78,8 @@ def unsubscribe_user(response, contact_found_count):
 
     # If user does exist, change subscribed status to unsubscribed
     if contact_found_count != 0:
-      for item in response["Responses"][table]:
-        response = table.update_item(
+      for item in response["Responses"][table.name]:
+        unsub_response = table.update_item(
           Key = {
             "SubscriberEmail": item["SubscriberEmail"],
             "ListId": item["ListId"]
@@ -95,5 +93,5 @@ def unsubscribe_user(response, contact_found_count):
           },
           ReturnValues = "UPDATED_NEW"
         )
-        print("Updated contact...", response)
+        print("Updated contact...", unsub_response)
       return
