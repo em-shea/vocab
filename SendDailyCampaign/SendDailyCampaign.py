@@ -16,7 +16,8 @@ s3_client = boto3.client('s3')
 sns_client = boto3.client('sns')
 lambda_client = boto3.client('lambda')
 dynamo_client = boto3.resource('dynamodb')
-table = boto3.resource('dynamodb').Table(os.environ['CONTACT_TABLE_NAME'])
+word_history_table = boto3.resource('dynamodb').Table(os.environ['TABLE_NAME'])
+contacts_table = boto3.resource('dynamodb').Table(os.environ['CONTACT_TABLE_NAME'])
 
 # For each HSK level: Get a random word, fill in email template, create and send a campaign, send error notification on failure
 def lambda_handler(event, context):
@@ -79,7 +80,7 @@ def get_daily_word():
     word_list = []
 
     # Loop through HSK levels and select and save word
-    for hsk_level in range(0,5):
+    for hsk_level in range(0,6):
 
         level = str(hsk_level + 1)
 
@@ -91,23 +92,25 @@ def get_daily_word():
 
             word_list.append(word)
 
+        except Exception as e:
+            print(e)
+
     return(word_list)
 
 def store_word(word_list):
 
-    for word in word_list:
+    # Loop through all words for the day
+    for item in word_list:
 
-        word = word['Word']
-        # how to access level in word information? is it 'HSK Level'?
-        level = word['Word']
+        word = item
+        level = item['HSK Level']
 
         list_id = "HSKLevel" + level
 
-        table = dynamo_client.Table(os.environ['TABLE_NAME'])
-
         date = str(datetime.today().strftime('%Y-%m-%d'))
 
-        response = table.put_item(
+        # Write each to Dynamo word history table
+        response = word_history_table.put_item(
             Item={
                     'ListId': list_id,
                     'Date': date,
@@ -115,12 +118,15 @@ def store_word(word_list):
                 }
             )
 
-        print(f"Word for {list_id} added to table.")
+        # individual_word = item['Word']
+        # print(f"Response from word history table for {individual_word}, {level}...", response['ResponseMetadata']['HTTPStatusCode'])
+
+    return
 
 def scan_contacts_table():
 
     # Loop through contacts in Dynamo
-    results = table.scan(
+    results = contacts_table.scan(
         Select = "ALL_ATTRIBUTES"
     )
 
@@ -130,8 +136,15 @@ def scan_contacts_table():
 
 def send_ses_email(word_list, all_contacts):
 
+    # example:
+    # {'Date': '2020-01-13', 'CharacterSet': 'simplified', 'Status': 'unsubscribed', 'SubscriberEmail': 'c.emilyshea@gmail.com', 'ListId': '1'}
+
     for contact in all_contacts:
-        if contact['']
+        if contact['Status'] == 'unsubscribed':
+            return
+        else:
+
+
 
 
 
