@@ -16,32 +16,36 @@ s3_client = boto3.client('s3')
 sns_client = boto3.client('sns')
 lambda_client = boto3.client('lambda')
 dynamo_client = boto3.resource('dynamodb')
-
-# Cache contact level list
-contact_level_list = get_contact_level_list()
+table = boto3.resource('dynamodb').Table(os.environ['CONTACT_TABLE_NAME'])
 
 # For each HSK level: Get a random word, fill in email template, create and send a campaign, send error notification on failure
 def lambda_handler(event, context):
 
-    # Loop through HSK levels
-    for level_dict in contact_level_list:
+    # Select a random word for each level
+    word_list = get_daily_word()
 
-        try:
+    # If unable to store word in Dynamo, continue sending campaign
+    try:
 
-            level = level_dict["hsk_level"]
+        # Write to Dynamo
+        store_word(word_list)
 
-            # Get a random word for each level
-            word = select_random_word(level)
-            num_level = int(level)
+    except Exception as e:
+        print(e)
 
-            # If unable to store word in Dynamo, continue sending campaign
-            try:
+    print(word_list)
 
-                # Write to Dynamo
-                store_word(word,level)
+    # Scan the contacts table for a list of all contacts
+    all_contacts = scan_contacts_table()
 
-            except Exception as e:
-                print(e)
+    # Assemble HTML content and send the ses email for each contact
+    response = send_ses_email(word_list, all_contacts)
+
+
+
+        message_content = assemble_html_content(contact)
+
+            # Old send grid code vvvv
 
             # Replace campaign HTML placeholders with word and level
             campaign_contents = assemble_html_content(word,level,num_level)
@@ -69,23 +73,67 @@ def lambda_handler(event, context):
         except Exception as e:
             print(e)
 
-def store_word(word,level):
+def get_daily_word():
 
-    list_id = "HSKLevel" + level
+    # Create list of words for the day
+    word_list = []
 
-    table = dynamo_client.Table(os.environ['TABLE_NAME'])
+    # Loop through HSK levels and select and save word
+    for hsk_level in range(0,5):
 
-    date = str(datetime.today().strftime('%Y-%m-%d'))
+        level = str(hsk_level + 1)
 
-    response = table.put_item(
-        Item={
-                'ListId': list_id,
-                'Date': date,
-                'Word': word,
-            }
-        )
+        try:
 
-    print(f"Word for {list_id} added to table.")
+            # Get a random word for each level
+            word = select_random_word(level)
+            num_level = int(level)
+
+            word_list.append(word)
+
+    return(word_list)
+
+def store_word(word_list):
+
+    for word in word_list:
+
+        word = word['Word']
+        # how to access level in word information? is it 'HSK Level'?
+        level = word['Word']
+
+        list_id = "HSKLevel" + level
+
+        table = dynamo_client.Table(os.environ['TABLE_NAME'])
+
+        date = str(datetime.today().strftime('%Y-%m-%d'))
+
+        response = table.put_item(
+            Item={
+                    'ListId': list_id,
+                    'Date': date,
+                    'Word': word,
+                }
+            )
+
+        print(f"Word for {list_id} added to table.")
+
+def scan_contacts_table():
+
+    # Loop through contacts in Dynamo
+    results = table.scan(
+        Select = "ALL_ATTRIBUTES"
+    )
+
+    all_contacts = results['Items']
+
+    return all_contacts
+
+def send_ses_email(word_list, all_contacts):
+
+    for contact in all_contacts:
+        if contact['']
+
+
 
 # There are placeholders in the example template for dynamic content like the daily word
 # Here we swap the relevant content in for those placeholders

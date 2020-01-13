@@ -84,7 +84,7 @@ def unsubscribe_user(response, contact_found_count):
             "SubscriberEmail": item["SubscriberEmail"],
             "ListId": item["ListId"]
           },
-          UpdateExpression = "set Status = :status",
+          UpdateExpression = "set #s = :status",
           ExpressionAttributeValues = {
             ":status": "unsubscribed"
           },
