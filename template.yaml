@@ -167,6 +167,32 @@ Resources:
       Layers:
        - !Ref Layer
 
+  UnsubscribeFunction:
+    # A function that unsubscribes the user from the given HSK level or from all levels.
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      FunctionName: !Sub UnsubscribeFunction-${Stage}
+      Handler: UnsubscribeFunction.lambda_handler
+      Runtime: python3.7
+      CodeUri: ./UnsubscribeFunction
+      Description: A function that unsubscribes the user from the given HSK level or from all levels.
+      MemorySize: 128
+      Timeout: 120
+      Policies:
+       - AWSLambdaExecute
+      Environment:
+        Variables:
+          SUB_TOPIC_ARN: !Ref NotificationTopic
+          STAGE: !Ref Stage
+          TABLE_NAME: !Ref SubscriberContactListDynamoDBTable
+      Events:
+        SubscribeFunctionApi:
+          # An API Gateway endpoint that responds to HTTP POST
+          Type: Api
+          Properties:
+            Path: /unsub
+            Method: POST
+
   SubscribeLambdaPermission:
     # Permissions for API Gateway to invoke this function. Using a workaround described here:
     # https://github.com/awslabs/serverless-application-model/issues/59
@@ -175,6 +201,15 @@ Resources:
       Action: lambda:InvokeFunction
       FunctionName: !Ref SubscribeFunction
       Principal: apigateway.amazonaws.com
+
+  UnsubscribeLambdaPermission:
+  # Permissions for API Gateway to invoke this function. Using a workaround described here:
+  # https://github.com/awslabs/serverless-application-model/issues/59
+  Type: "AWS::Lambda::Permission"
+  Properties:
+    Action: lambda:InvokeFunction
+    FunctionName: !Ref UnsubscribeFunction
+    Principal: apigateway.amazonaws.com
 
   Layer:
     # A Layer that holds several Python modules

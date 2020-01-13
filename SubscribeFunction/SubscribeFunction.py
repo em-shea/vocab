@@ -110,7 +110,6 @@ def lambda_handler(event, context):
             'Access-Control-Allow-Origin': '*',
         },
         'body': '{"success" : true}'
-
     }
 
 # Write new contact to Dynamo
