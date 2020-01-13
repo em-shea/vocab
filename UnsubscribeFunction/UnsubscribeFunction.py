@@ -81,8 +81,7 @@ def unsubscribe_user(response, contact_found_count):
     # If user does exist, change subscribed status to unsubscribed
     if contact_found_count != 0:
       for item in response["Responses"][table]:
-        response = dynamo_client.update_item(
-          TableName = table,
+        response = table.update_item(
           Key = {
             "SubscriberEmail": item["SubscriberEmail"],
             "ListId": item["ListId"]
