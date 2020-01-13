@@ -203,13 +203,13 @@ Resources:
       Principal: apigateway.amazonaws.com
 
   UnsubscribeLambdaPermission:
-  # Permissions for API Gateway to invoke this function. Using a workaround described here:
-  # https://github.com/awslabs/serverless-application-model/issues/59
-  Type: "AWS::Lambda::Permission"
-  Properties:
-    Action: lambda:InvokeFunction
-    FunctionName: !Ref UnsubscribeFunction
-    Principal: apigateway.amazonaws.com
+    # Permissions for API Gateway to invoke this function. Using a workaround described here:
+    # https://github.com/awslabs/serverless-application-model/issues/59
+    Type: "AWS::Lambda::Permission"
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref UnsubscribeFunction
+      Principal: apigateway.amazonaws.com
 
   Layer:
     # A Layer that holds several Python modules
@@ -354,4 +354,26 @@ Resources:
         !Join [
           '',
           ['/aws/lambda/', !Sub 'SampleVocabFunction-${Stage}']
+        ]
+
+  UnsubscribeFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    DependsOn:
+      - UnsubscribeFunction
+    Properties:
+      LogGroupName:
+        !Join [
+          '',
+          ['/aws/lambda/', !Sub 'UnsubscribeFunction-${Stage}']
+        ]
+
+  DailyWordHistoryLogGroup:
+    Type: AWS::Logs::LogGroup
+    DependsOn:
+      - DailyWordHistory
+    Properties:
+      LogGroupName:
+        !Join [
+          '',
+          ['/aws/lambda/', !Sub 'DailyWordHistory-${Stage}']
         ]
