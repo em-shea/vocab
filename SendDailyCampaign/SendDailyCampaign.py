@@ -10,7 +10,6 @@ from botocore.vendored import requests
 import sys
 sys.path.insert(0, '/opt')
 from vocab_random_word import select_random_word
-from contact_lists import get_contact_level_list
 
 s3_client = boto3.client('s3')
 ses_client = boto3.client('ses')
