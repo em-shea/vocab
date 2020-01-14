@@ -13,6 +13,7 @@ from vocab_random_word import select_random_word
 from contact_lists import get_contact_level_list
 
 s3_client = boto3.client('s3')
+ses_client = boto3.client('ses')
 sns_client = boto3.client('sns')
 lambda_client = boto3.client('lambda')
 dynamo_client = boto3.resource('dynamodb')
@@ -34,13 +35,14 @@ def lambda_handler(event, context):
     except Exception as e:
         print(e)
 
-    print(word_list)
+    print("Word list for today...", word_list)
 
     # Scan the contacts table for a list of all contacts
     all_contacts = scan_contacts_table()
+    print("Contacts scanned...", all_contacts)
 
     # Assemble HTML content and send the ses email for each contact
-    response = send_all_emails(word_list, all_contacts)
+    send_all_emails(word_list, all_contacts)
 
 def get_daily_word():
 
@@ -56,7 +58,6 @@ def get_daily_word():
 
             # Get a random word for each level
             word = select_random_word(level)
-            num_level = int(level)
 
             word_list.append(word)
 
@@ -93,10 +94,14 @@ def store_word(word_list):
 
 def scan_contacts_table():
 
+    print("Scanning contacts table...")
+
     # Loop through contacts in Dynamo
     results = contacts_table.scan(
         Select = "ALL_ATTRIBUTES"
     )
+
+    print("Contact scan complete.")
 
     all_contacts = results['Items']
 
@@ -104,23 +109,34 @@ def scan_contacts_table():
 
 def send_all_emails(word_list, all_contacts):
 
-    # example:
+    # contact item example:
     # {'Date': '2020-01-13', 'CharacterSet': 'simplified', 'Status': 'unsubscribed', 'SubscriberEmail': 'c.emilyshea@gmail.com', 'ListId': '1'}
+
+    print("Looping through each contact...")
 
     for contact in all_contacts:
         if contact['Status'] == 'unsubscribed':
+            print("Unsubscribed contact:", contact['SubscriberEmail'])
             return
         else:
+            print("Subscribed contact:", contact['SubscriberEmail'])
             level = contact['ListId']
             email = contact['SubscriberEmail']
 
             word_index = int(contact['ListId']) - 1
+            print("Word index:", word_index)
             word = word_list[word_index]
+            print("Word for contact:", word)
+
             campaign_contents = assemble_html_content(level, email, word)
             response = send_email(campaign_contents, email, level)
 
+            return response
+
 # Swap the relevant content in for the placeholders in the email template
 def assemble_html_content(level, email, word):
+
+    print("Assembling HTML content...")
 
     num_level = int(level)
 
@@ -149,6 +165,8 @@ def assemble_html_content(level, email, word):
 # Send SES email
 def send_email(campaign_contents, email, level):
 
+    print("Sending SES email...")
+
     response = ses_client.send_email(
         Source = "vocab@haohaotiantian.com",
         Destination = {
@@ -164,10 +182,11 @@ def send_email(campaign_contents, email, level):
             "Body": {
                 "Html": {
                     "Charset": "UTF-8",
-                    "Data": html
+                    "Data": campaign_contents
                 }
             }
         }
     )
 
+    print("SES response", response)
     return response
