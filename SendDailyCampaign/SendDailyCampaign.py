@@ -42,38 +42,6 @@ def lambda_handler(event, context):
     # Assemble HTML content and send the ses email for each contact
     response = send_all_emails(word_list, all_contacts)
 
-
-
-        message_content = assemble_html_content(contact)
-
-            # Old send grid code vvvv
-
-            # Replace campaign HTML placeholders with word and level
-            campaign_contents = assemble_html_content(word,level,num_level)
-
-            # Assemble create campaign API call payload
-            payload = assemble_payload(campaign_contents,level,level_dict)
-
-            print(f"HSK Level {num_level} campaign payload: {payload}")
-
-            # SendGrid requires campaigns to be created and then sent
-            # First create the campaign and retrieve the campaign id to call the send API
-            campaign_id = create_campaign(payload)
-
-            sendgrid_response = send_campaign(campaign_id)
-
-            # Send success/error response and notification
-            if "status" in sendgrid_response and sendgrid_response["status"] == "Scheduled":
-                print(f"Campaign {sendgrid_response['id']} for HSK Level {num_level} scheduled for send successfully.")
-
-            else:
-                failure_message = f"Error: Campaign for {num_level} did not schedule successfully. SendGrid API response: " + sendgrid_response
-
-                print (failure_message)
-
-        except Exception as e:
-            print(e)
-
 def get_daily_word():
 
     # Create list of words for the day
@@ -145,7 +113,9 @@ def send_all_emails(word_list, all_contacts):
         else:
             level = contact['ListId']
             email = contact['SubscriberEmail']
-            word = # look up in word_list
+
+            word_index = int(contact['ListId']) - 1
+            word = word_list[word_index]
             campaign_contents = assemble_html_content(level, email, word)
             response = send_email(campaign_contents, email, level)
 
