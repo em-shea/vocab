@@ -41,6 +41,8 @@ Resources:
       Timeout: 120
       Policies:
        - AWSLambdaExecute
+       - SESCrudPolicy:
+          IdentityName: haohaotiantian.com
        - DynamoDBCrudPolicy:
           TableName: !Ref DynamoDBTable
        - DynamoDBCrudPolicy:
@@ -150,6 +152,8 @@ Resources:
        - AWSLambdaExecute
        - SESCrudPolicy:
           IdentityName: haohaotiantian.com
+       - DynamoDBCrudPolicy:
+          TableName: !Ref SubscriberContactListDynamoDBTable
       Environment:
         Variables:
           SG_API_KEY: !Ref SGApiKey
