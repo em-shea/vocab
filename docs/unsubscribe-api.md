@@ -14,12 +14,3 @@ Example payload to unsub from all levels:
 }
 ````
 
-Example query string parameters:
-
-````
-https://api.haohaotiantian.com/unsub?email=me@testemail.com&level=1
-
-https://api.haohaotiantian.com/unsub?email=me@testemail.com&level=all
-````
-
-

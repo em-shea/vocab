@@ -40,7 +40,7 @@ def lambda_handler(event, context):
     all_contacts = scan_contacts_table()
 
     # Assemble HTML content and send the ses email for each contact
-    response = send_ses_email(word_list, all_contacts)
+    response = send_all_emails(word_list, all_contacts)
 
 
 
@@ -134,7 +134,7 @@ def scan_contacts_table():
 
     return all_contacts
 
-def send_ses_email(word_list, all_contacts):
+def send_all_emails(word_list, all_contacts):
 
     # example:
     # {'Date': '2020-01-13', 'CharacterSet': 'simplified', 'Status': 'unsubscribed', 'SubscriberEmail': 'c.emilyshea@gmail.com', 'ListId': '1'}
@@ -143,14 +143,16 @@ def send_ses_email(word_list, all_contacts):
         if contact['Status'] == 'unsubscribed':
             return
         else:
+            level = contact['ListId']
+            email = contact['SubscriberEmail']
+            word = # look up in word_list
+            campaign_contents = assemble_html_content(level, email, word)
+            response = send_email(campaign_contents, email, level)
 
+# Swap the relevant content in for the placeholders in the email template
+def assemble_html_content(level, email, word):
 
-
-
-
-# There are placeholders in the example template for dynamic content like the daily word
-# Here we swap the relevant content in for those placeholders
-def assemble_html_content(word,level,num_level):
+    num_level = int(level)
 
     # Create example sentence URL
     if num_level in range(1,4):
@@ -170,54 +172,32 @@ def assemble_html_content(word,level,num_level):
     campaign_contents = campaign_contents.replace("{link}", example_link)
     campaign_contents = campaign_contents.replace("{level}", "HSK Level " + level)
     campaign_contents = campaign_contents.replace("{history_link}", "https://haohaotiantian.com/history?list=HSKLevel" + level + "&dates=30")
+    campaign_contents = campaign_contents.replace("{unsubscribe_link}", "https://haohaotiantian.com/unsub?level=" + level + "&email=" + email)
 
     return campaign_contents
 
-# Assemble create campaign payload
-def assemble_payload(campaign_contents,level,level_dict):
+# Send SES email
+def send_email(campaign_contents, email, level):
 
-    payload = {
-        "title": "Daily vocab message - HSK Level " + level,
-        "subject": "Daily vocab word - " + datetime.today().strftime('%b. %d, %Y'),
-        "sender_id": 465706,
-        "suppression_group_id": level_dict["unsub"],
-        "list_ids": [
-            level_dict["level_contact_list"]
-        ],
-        "html_content": campaign_contents
-    }
+    response = ses_client.send_email(
+        Source = "vocab@haohaotiantian.com",
+        Destination = {
+            "ToAddresses" : [
+            email
+            ]
+        },
+        Message = {
+            "Subject": {
+            "Charset": "UTF-8",
+            "Data": "Daily vocab word - " + datetime.today().strftime('%b. %d, %Y')
+            },
+            "Body": {
+                "Html": {
+                    "Charset": "UTF-8",
+                    "Data": html
+                }
+            }
+        }
+    )
 
-    return payload
-
-# Create campaign
-def create_campaign(payload):
-
-    # Create campaign API call
-    create_url = "https://api.sendgrid.com/v3/campaigns"
-
-    headers = {
-        'authorization' : "Bearer " + os.environ['SG_API_KEY'],
-        'content-type' : "application/json"
-    }
-
-    response = requests.request("POST", create_url, json=payload, headers=headers)
-
-    print("Create campaign response:", response.text)
-
-    data = response.json()
-    campaign_id = data["id"]
-
-    return campaign_id
-
-# Send campaign
-def send_campaign(campaign_id):
-
-    # Send Campaign API call
-    send_url = "https://api.sendgrid.com/v3/campaigns/" + str(campaign_id) + "/schedules/now"
-
-    payload = "null"
-    headers = {'authorization': 'Bearer ' + os.environ['SG_API_KEY']}
-
-    response = requests.request("POST", send_url, json=payload, headers=headers)
-
-    return response.json()
+    return response
