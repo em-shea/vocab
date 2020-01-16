@@ -34,11 +34,11 @@ def lambda_handler(event, context):
     except Exception as e:
         print(e)
 
-    print("Word list for today...", word_list)
+    # print("Word list for today...", word_list)
 
     # Scan the contacts table for a list of all contacts
     all_contacts = scan_contacts_table()
-    print("Contacts scanned...", all_contacts)
+    # print("Contacts scanned...", all_contacts)
 
     # Assemble HTML content and send the ses email for each contact
     send_all_emails(word_list, all_contacts)
@@ -93,14 +93,14 @@ def store_word(word_list):
 
 def scan_contacts_table():
 
-    print("Scanning contacts table...")
+    # print("Scanning contacts table...")
 
     # Loop through contacts in Dynamo
     results = contacts_table.scan(
         Select = "ALL_ATTRIBUTES"
     )
 
-    print("Contact scan complete.")
+    # print("Contact scan complete.")
 
     all_contacts = results['Items']
 
@@ -111,7 +111,7 @@ def send_all_emails(word_list, all_contacts):
     # contact item example:
     # {'Date': '2020-01-13', 'CharacterSet': 'simplified', 'Status': 'unsubscribed', 'SubscriberEmail': 'c.emilyshea@gmail.com', 'ListId': '1'}
 
-    print("Looping through each contact...")
+    # print("Looping through each contact...")
 
     for contact in all_contacts:
         if contact['Status'] == 'unsubscribed':
@@ -124,6 +124,8 @@ def send_all_emails(word_list, all_contacts):
 
             word_index = int(contact['ListId']) - 1
             print("Word index:", word_index)
+
+            # Future functionality: opportunity to choose simplified or traditional word here
             word = word_list[word_index]
             print("Word for contact:", word)
 
@@ -135,7 +137,7 @@ def send_all_emails(word_list, all_contacts):
 # Swap the relevant content in for the placeholders in the email template
 def assemble_html_content(level, email, word):
 
-    print("Assembling HTML content...")
+    # print("Assembling HTML content...")
 
     num_level = int(level)
 
@@ -164,10 +166,10 @@ def assemble_html_content(level, email, word):
 # Send SES email
 def send_email(campaign_contents, email, level):
 
-    print("Sending SES email...")
+    # print("Sending SES email...")
 
     response = ses_client.send_email(
-        Source = "Haohaotiantian - staging <vocab@haohaotiantian.com>",
+        Source = "Haohaotiantian <vocab@haohaotiantian.com>",
         Destination = {
             "ToAddresses" : [
             email
@@ -187,5 +189,5 @@ def send_email(campaign_contents, email, level):
         }
     )
 
-    print("SES response", response)
+    # print("SES response", response)
     return response

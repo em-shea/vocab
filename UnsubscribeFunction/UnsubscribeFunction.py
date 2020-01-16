@@ -93,5 +93,5 @@ def unsubscribe_user(response, contact_found_count):
           },
           ReturnValues = "UPDATED_NEW"
         )
-        print("Updated contact...", unsub_response)
+        # print("Updated contact...", unsub_response)
       return

@@ -94,7 +94,7 @@ def send_new_user_confirmation_email_ses(email_address, hsk_level):
     email_contents = contents.replace("{level}", hsk_level)
 
     payload = ses_client.send_email(
-        Source = "welcome@haohaotiantian.com",
+        Source = "Haohaotiantian <welcome@haohaotiantian.com>",
         Destination = {
             "ToAddresses" : [
             email_address
