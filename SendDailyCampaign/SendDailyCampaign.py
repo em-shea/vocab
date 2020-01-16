@@ -130,7 +130,7 @@ def send_all_emails(word_list, all_contacts):
             campaign_contents = assemble_html_content(level, email, word)
             response = send_email(campaign_contents, email, level)
 
-            return response
+            # return response
 
 # Swap the relevant content in for the placeholders in the email template
 def assemble_html_content(level, email, word):
@@ -167,7 +167,7 @@ def send_email(campaign_contents, email, level):
     print("Sending SES email...")
 
     response = ses_client.send_email(
-        Source = "vocab@haohaotiantian.com",
+        Source = "Haohaotiantian - staging <vocab@haohaotiantian.com>",
         Destination = {
             "ToAddresses" : [
             email
