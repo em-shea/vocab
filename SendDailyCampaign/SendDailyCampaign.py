@@ -116,7 +116,6 @@ def send_all_emails(word_list, all_contacts):
     for contact in all_contacts:
         if contact['Status'] == 'unsubscribed':
             print("Unsubscribed contact:", contact['SubscriberEmail'])
-            return
         else:
             print("Subscribed contact:", contact['SubscriberEmail'])
             level = contact['ListId']
