@@ -19,7 +19,9 @@ dynamo_client = boto3.resource('dynamodb')
 word_history_table = boto3.resource('dynamodb').Table(os.environ['TABLE_NAME'])
 contacts_table = boto3.resource('dynamodb').Table(os.environ['CONTACT_TABLE_NAME'])
 
-# For each HSK level: Get a random word, fill in email template, create and send a campaign, send error notification on failure
+# Select a random word for each HSK level and store in word history Dynamo table 
+# Loop through list of contacts, assemble a customized email, and send
+# Log each send and send error notification on failure
 def lambda_handler(event, context):
 
     # Select a random word for each level
@@ -40,26 +42,46 @@ def lambda_handler(event, context):
     all_contacts = scan_contacts_table()
     # print("Contacts scanned...", all_contacts)
 
-    # Assemble HTML content and send the ses email for each contact
-    send_all_emails(word_list, all_contacts)
+    # contact item example:
+    # {'Date': '2020-01-13', 'CharacterSet': 'simplified', 'Status': 'unsubscribed', 'SubscriberEmail': 'c.emilyshea@gmail.com', 'ListId': '1'}
+
+    for contact in all_contacts:
+
+        # Send emails to all subscribed contacts
+        if not contact['Status'] == 'unsubscribed':
+            print("Subscribed contact:", contact['SubscriberEmail'])
+            level = contact['ListId']
+            email = contact['SubscriberEmail']
+            word_index = int(contact['ListId']) - 1
+            # print("Word index:", word_index)
+
+            # Future functionality: opportunity to choose simplified or traditional word here
+
+            word = word_list[word_index]
+            # print("Word for contact:", word)
+
+            # Should these assemble and send function calls be in the handler as opposed to this function?
+            campaign_contents = assemble_html_content(level, email, word)
+
+            try:
+                response = send_email(campaign_contents, email, level)
+                except Exception as e:
+                print(f"Error: Failed to send email - {email}, {level}.")
+                print(e)
+        else:
+            print("Unsubscribed contact:", contact['SubscriberEmail'])
+            pass
 
 def get_daily_word():
 
-    # Create list of words for the day
     word_list = []
 
     # Loop through HSK levels and select and save word
     for hsk_level in range(0,6):
-
         level = str(hsk_level + 1)
-
         try:
-
-            # Get a random word for each level
             word = select_random_word(level)
-
             word_list.append(word)
-
         except Exception as e:
             print(e)
 
@@ -67,17 +89,13 @@ def get_daily_word():
 
 def store_word(word_list):
 
-    # Loop through all words for the day
     for item in word_list:
-
         word = item
         level = item['HSK Level']
-
         list_id = "HSKLevel" + level
-
         date = str(datetime.today().strftime('%Y-%m-%d'))
 
-        # Write each to Dynamo word history table
+        # Write each word to Dynamo word history table
         response = word_history_table.put_item(
             Item={
                     'ListId': list_id,
@@ -85,10 +103,8 @@ def store_word(word_list):
                     'Word': word,
                 }
             )
-
         # individual_word = item['Word']
         # print(f"Response from word history table for {individual_word}, {level}...", response['ResponseMetadata']['HTTPStatusCode'])
-
     return
 
 def scan_contacts_table():
@@ -100,44 +116,14 @@ def scan_contacts_table():
         Select = "ALL_ATTRIBUTES"
     )
 
-    # print("Contact scan complete.")
-
     all_contacts = results['Items']
 
     return all_contacts
 
-def send_all_emails(word_list, all_contacts):
-
-    # contact item example:
-    # {'Date': '2020-01-13', 'CharacterSet': 'simplified', 'Status': 'unsubscribed', 'SubscriberEmail': 'c.emilyshea@gmail.com', 'ListId': '1'}
-
-    # print("Looping through each contact...")
-
-    for contact in all_contacts:
-        if contact['Status'] == 'unsubscribed':
-            print("Unsubscribed contact:", contact['SubscriberEmail'])
-        else:
-            print("Subscribed contact:", contact['SubscriberEmail'])
-            level = contact['ListId']
-            email = contact['SubscriberEmail']
-
-            word_index = int(contact['ListId']) - 1
-            print("Word index:", word_index)
-
-            # Future functionality: opportunity to choose simplified or traditional word here
-            word = word_list[word_index]
-            print("Word for contact:", word)
-
-            campaign_contents = assemble_html_content(level, email, word)
-            response = send_email(campaign_contents, email, level)
-
-            # return response
-
-# Swap the relevant content in for the placeholders in the email template
+# Populate relevant content in for the placeholders in the email template
 def assemble_html_content(level, email, word):
 
     # print("Assembling HTML content...")
-
     num_level = int(level)
 
     # Create example sentence URL
@@ -166,7 +152,6 @@ def assemble_html_content(level, email, word):
 def send_email(campaign_contents, email, level):
 
     # print("Sending SES email...")
-
     response = ses_client.send_email(
         Source = "Haohaotiantian <vocab@haohaotiantian.com>",
         Destination = {
