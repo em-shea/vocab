@@ -27,8 +27,8 @@ Link to the [frontend repo](https://github.com/em-shea/vocab-frontend-vue).
 | Refactor homepage to Vue | :heavy_check_mark: |
 | Build interface for users to explore and export word history | :heavy_check_mark: |
 | Add links to word history to daily email message | :heavy_check_mark: |
-| Add support for traditional characters | |
-| Refactor email service from SendGrid to SES + DynamoDB | |
+| Add support for traditional characters | :soon: |
+| Refactor email service from SendGrid to SES + DynamoDB | :heavy_check_mark: |
 | Build interface for quizzes | |
 | Add word audio support for email and website | |
 | Create daily vcocab Alexa skill | |

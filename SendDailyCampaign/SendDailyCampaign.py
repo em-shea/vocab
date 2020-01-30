@@ -65,7 +65,7 @@ def lambda_handler(event, context):
 
             try:
                 response = send_email(campaign_contents, email, level)
-                except Exception as e:
+            except Exception as e:
                 print(f"Error: Failed to send email - {email}, {level}.")
                 print(e)
         else:
