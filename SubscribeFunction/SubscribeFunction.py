@@ -2,7 +2,6 @@ import os
 import json
 import boto3
 from datetime import datetime
-from botocore.vendored import requests
 
 import sys
 sys.path.insert(0, '/opt')
@@ -106,10 +105,6 @@ def send_new_user_confirmation_email_ses(email_address, hsk_level):
                 "Data": "Welcome! 欢迎您!"
                 },
             "Body": {
-                # "Text": {
-                #     "Charset": "UTF-8",
-                #     "Data": "test html api send"
-                # },
                 "Html": {
                     "Charset": "UTF-8",
                     "Data": email_contents

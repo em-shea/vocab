@@ -1,7 +1,6 @@
 import os
 import json
 import boto3
-from botocore.vendored import requests
 from boto3.dynamodb.conditions import Key
 from botocore.exceptions import ClientError
 
@@ -18,10 +17,10 @@ def lambda_handler(event, context):
     hsk_level = body['level']
 
     # Call Dynamo to check if user is subscribed to the given level
-    response, contact_found_count = find_contact(email_address, hsk_level)
-    print("Found contacts: ", contact_found_count)
+    subscriber_list = find_contact(email_address, hsk_level)
+    # print("Found contacts: ", contact_found_count)
 
-    unsubscribe_user(response, contact_found_count)
+    unsubscribe_user(subscriber_list)
 
     return {
         'statusCode': 200,
@@ -40,7 +39,7 @@ def find_contact(email_address, hsk_level):
     if hsk_level == "all":
 
       # Generate a list of all HSK level keys
-      for level_list in range(0,5):
+      for level_list in range(0,6):
         keys.append({
           'ListId': str(level_list+1),
           'SubscriberEmail': email_address
@@ -66,32 +65,27 @@ def find_contact(email_address, hsk_level):
       print(e.response['Error']['Message'])
     else:
       print(response)
-      contact_found_count = len(response["Responses"][table.name])
+      # contact_found_count = len(response["Responses"][table.name])
 
-    return response, contact_found_count
+    return response["Responses"][table.name]
 
-def unsubscribe_user(response, contact_found_count):
-
-    # If user does not exist, return success anyways for security
-    if contact_found_count == 0:
-      return
+def unsubscribe_user(subscriber_list):
 
     # If user does exist, change subscribed status to unsubscribed
-    if contact_found_count != 0:
-      for item in response["Responses"][table.name]:
-        unsub_response = table.update_item(
-          Key = {
-            "SubscriberEmail": item["SubscriberEmail"],
-            "ListId": item["ListId"]
-          },
-          UpdateExpression = "set #s = :status",
-          ExpressionAttributeValues = {
-            ":status": "unsubscribed"
-          },
-          ExpressionAttributeNames = {
-            "#s": "Status"
-          },
-          ReturnValues = "UPDATED_NEW"
-        )
-        # print("Updated contact...", unsub_response)
-      return
+    # If no users in subscriber_list, the loop will do nothing
+    for item in subscriber_list:
+      unsub_response = table.update_item(
+        Key = {
+          "SubscriberEmail": item["SubscriberEmail"],
+          "ListId": item["ListId"]
+        },
+        UpdateExpression = "set #s = :status",
+        ExpressionAttributeValues = {
+          ":status": "unsubscribed"
+        },
+        ExpressionAttributeNames = {
+          "#s": "Status"
+        },
+        ReturnValues = "UPDATED_NEW"
+      )
+      # print("Updated contact...", unsub_response)

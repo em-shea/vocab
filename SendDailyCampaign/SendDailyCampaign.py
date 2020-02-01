@@ -5,7 +5,6 @@ import json
 import time
 import boto3
 from datetime import datetime
-from botocore.vendored import requests
 
 import sys
 sys.path.insert(0, '/opt')
@@ -25,13 +24,13 @@ contacts_table = boto3.resource('dynamodb').Table(os.environ['CONTACT_TABLE_NAME
 def lambda_handler(event, context):
 
     # Select a random word for each level
-    word_list = get_daily_word()
+    word_list = get_daily_words()
 
     # If unable to store word in Dynamo, continue sending campaign
     try:
 
         # Write to Dynamo
-        store_word(word_list)
+        store_words(word_list)
 
     except Exception as e:
         print(e)
@@ -49,45 +48,50 @@ def lambda_handler(event, context):
 
         # Send emails to all subscribed contacts
         if not contact['Status'] == 'unsubscribed':
-            print("Subscribed contact:", contact['SubscriberEmail'])
+            print("Subscribed contact:", contact['SubscriberEmail'][0:5])
             level = contact['ListId']
             email = contact['SubscriberEmail']
             word_index = int(contact['ListId']) - 1
             # print("Word index:", word_index)
 
-            # Future functionality: opportunity to choose simplified or traditional word here
+            # TODO: opportunity to choose simplified or traditional word here
 
             word = word_list[word_index]
             # print("Word for contact:", word)
 
-            # Should these assemble and send function calls be in the handler as opposed to this function?
-            campaign_contents = assemble_html_content(level, email, word)
+            # If the get_daily_words() hit an error and did not select a word for a given HSK level,
+            # word will be None. If so, do not send an email.
+            if word is not None:
 
-            try:
-                response = send_email(campaign_contents, email, level)
-            except Exception as e:
-                print(f"Error: Failed to send email - {email}, {level}.")
-                print(e)
-        else:
-            print("Unsubscribed contact:", contact['SubscriberEmail'])
-            pass
+                campaign_contents = assemble_html_content(level, email, word)
 
-def get_daily_word():
+                try:
+                    response = send_email(campaign_contents, email, level)
+                except Exception as e:
+                    print(f"Error: Failed to send email - {email}, {level}.")
+                    print(e)
+            # else:
+            #     print("Unsubscribed contact:", contact['SubscriberEmail'])
+            #     pass
+
+def get_daily_words():
 
     word_list = []
 
-    # Loop through HSK levels and select and save word
+    # Loop through HSK levels and select word
     for hsk_level in range(0,6):
         level = str(hsk_level + 1)
         try:
             word = select_random_word(level)
             word_list.append(word)
         except Exception as e:
+            # Appending None to the list as a placeholder for the level's word. Emails will not send for this level.
+            word_list.append(None)
             print(e)
 
-    return(word_list)
+    return word_list
 
-def store_word(word_list):
+def store_words(word_list):
 
     for item in word_list:
         word = item
@@ -103,9 +107,6 @@ def store_word(word_list):
                     'Word': word,
                 }
             )
-        # individual_word = item['Word']
-        # print(f"Response from word history table for {individual_word}, {level}...", response['ResponseMetadata']['HTTPStatusCode'])
-    return
 
 def scan_contacts_table():
 

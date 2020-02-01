@@ -4,7 +4,6 @@ import csv
 import os
 import boto3
 import random
-from botocore.vendored import requests
 
 import sys
 sys.path.insert(0, '/opt')
