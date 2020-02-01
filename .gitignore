@@ -1,3 +1,5 @@
+.vscode
+
 #SAM
 env.json
 .aws-sam/build
