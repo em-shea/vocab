@@ -48,7 +48,7 @@ def lambda_handler(event,context):
 
     items = pull_words_with_params(list_id, from_date, todays_date)
 
-  # If no params passed, get all lists words from the last 30 days
+  # If no params passed, get all lists words from the last 7 days
   else:
     items = pull_words_no_params(todays_date)
 

@@ -5,91 +5,127 @@ import json
 import time
 import boto3
 from datetime import datetime
-from botocore.vendored import requests
 
 import sys
 sys.path.insert(0, '/opt')
 from vocab_random_word import select_random_word
-from contact_lists import get_contact_level_list
 
 s3_client = boto3.client('s3')
+ses_client = boto3.client('ses')
 sns_client = boto3.client('sns')
 lambda_client = boto3.client('lambda')
 dynamo_client = boto3.resource('dynamodb')
+word_history_table = boto3.resource('dynamodb').Table(os.environ['TABLE_NAME'])
+contacts_table = boto3.resource('dynamodb').Table(os.environ['CONTACT_TABLE_NAME'])
 
-# Cache contact level list
-contact_level_list = get_contact_level_list()
-
-# For each HSK level: Get a random word, fill in email template, create and send a campaign, send error notification on failure
+# Select a random word for each HSK level and store in word history Dynamo table 
+# Loop through list of contacts, assemble a customized email, and send
+# Log each send and send error notification on failure
 def lambda_handler(event, context):
 
-    # Loop through HSK levels
-    for level_dict in contact_level_list:
+    # Select a random word for each level
+    word_list = get_daily_words()
 
+    # If unable to store word in Dynamo, continue sending campaign
+    try:
+
+        # Write to Dynamo
+        store_words(word_list)
+
+    except Exception as e:
+        print(e)
+
+    # print("Word list for today...", word_list)
+
+    # Scan the contacts table for a list of all contacts
+    all_contacts = scan_contacts_table()
+    # print("Contacts scanned...", all_contacts)
+
+    # contact item example:
+    # {'Date': '2020-01-13', 'CharacterSet': 'simplified', 'Status': 'unsubscribed', 'SubscriberEmail': 'c.emilyshea@gmail.com', 'ListId': '1'}
+
+    for contact in all_contacts:
+
+        # Send emails to all subscribed contacts
+        if not contact['Status'] == 'unsubscribed':
+            print("Subscribed contact:", contact['SubscriberEmail'][0:5])
+            level = contact['ListId']
+            email = contact['SubscriberEmail']
+            word_index = int(contact['ListId']) - 1
+            # print("Word index:", word_index)
+
+            # TODO: opportunity to choose simplified or traditional word here
+
+            word = word_list[word_index]
+            # print("Word for contact:", word)
+
+            # If the get_daily_words() hit an error and did not select a word for a given HSK level,
+            # word will be None. If so, do not send an email.
+            if word is not None:
+
+                campaign_contents = assemble_html_content(level, email, word)
+
+                try:
+                    response = send_email(campaign_contents, email, level)
+                except Exception as e:
+                    print(f"Error: Failed to send email - {email}, {level}.")
+                    print(e)
+            # else:
+            #     print("Unsubscribed contact:", contact['SubscriberEmail'])
+            #     pass
+
+def get_daily_words():
+
+    word_list = []
+
+    # Loop through HSK levels and select word
+    for hsk_level in range(0,6):
+        level = str(hsk_level + 1)
         try:
-
-            level = level_dict["hsk_level"]
-
-            # Get a random word for each level
             word = select_random_word(level)
-            num_level = int(level)
-
-            # If unable to store word in Dynamo, continue sending campaign
-            try:
-
-                # Write to Dynamo
-                store_word(word,level)
-
-            except Exception as e:
-                print(e)
-
-            # Replace campaign HTML placeholders with word and level
-            campaign_contents = assemble_html_content(word,level,num_level)
-
-            # Assemble create campaign API call payload
-            payload = assemble_payload(campaign_contents,level,level_dict)
-
-            print(f"HSK Level {num_level} campaign payload: {payload}")
-
-            # SendGrid requires campaigns to be created and then sent
-            # First create the campaign and retrieve the campaign id to call the send API
-            campaign_id = create_campaign(payload)
-
-            sendgrid_response = send_campaign(campaign_id)
-
-            # Send success/error response and notification
-            if "status" in sendgrid_response and sendgrid_response["status"] == "Scheduled":
-                print(f"Campaign {sendgrid_response['id']} for HSK Level {num_level} scheduled for send successfully.")
-
-            else:
-                failure_message = f"Error: Campaign for {num_level} did not schedule successfully. SendGrid API response: " + sendgrid_response
-
-                print (failure_message)
-
+            word_list.append(word)
         except Exception as e:
+            # Appending None to the list as a placeholder for the level's word. Emails will not send for this level.
+            word_list.append(None)
             print(e)
 
-def store_word(word,level):
+    return word_list
 
-    list_id = "HSKLevel" + level
+def store_words(word_list):
 
-    table = dynamo_client.Table(os.environ['TABLE_NAME'])
+    for item in word_list:
+        word = item
+        level = item['HSK Level']
+        list_id = "HSKLevel" + level
+        date = str(datetime.today().strftime('%Y-%m-%d'))
 
-    date = str(datetime.today().strftime('%Y-%m-%d'))
+        # Write each word to Dynamo word history table
+        response = word_history_table.put_item(
+            Item={
+                    'ListId': list_id,
+                    'Date': date,
+                    'Word': word,
+                }
+            )
 
-    response = table.put_item(
-        Item={
-                'ListId': list_id,
-                'Date': date,
-                'Word': word,
-            }
-        )
+def scan_contacts_table():
 
-    print(f"Word for {list_id} added to table.")
+    # print("Scanning contacts table...")
 
-# There are placeholders in the example template for dynamic content like the daily word
-# Here we swap the relevant content in for those placeholders
-def assemble_html_content(word,level,num_level):
+    # Loop through contacts in Dynamo
+    results = contacts_table.scan(
+        Select = "ALL_ATTRIBUTES"
+    )
+
+    all_contacts = results['Items']
+
+    return all_contacts
+
+# Populate relevant content in for the placeholders in the email template
+def assemble_html_content(level, email, word):
+
+    # print("Assembling HTML content...")
+    num_level = int(level)
 
     # Create example sentence URL
     if num_level in range(1,4):
@@ -109,54 +145,34 @@ def assemble_html_content(word,level,num_level):
     campaign_contents = campaign_contents.replace("{link}", example_link)
     campaign_contents = campaign_contents.replace("{level}", "HSK Level " + level)
     campaign_contents = campaign_contents.replace("{history_link}", "https://haohaotiantian.com/history?list=HSKLevel" + level + "&dates=30")
+    campaign_contents = campaign_contents.replace("{unsubscribe_link}", "https://haohaotiantian.com/unsub?level=" + level + "&email=" + email)
 
     return campaign_contents
 
-# Assemble create campaign payload
-def assemble_payload(campaign_contents,level,level_dict):
+# Send SES email
+def send_email(campaign_contents, email, level):
 
-    payload = {
-        "title": "Daily vocab message - HSK Level " + level,
-        "subject": "Daily vocab word - " + datetime.today().strftime('%b. %d, %Y'),
-        "sender_id": 465706,
-        "suppression_group_id": level_dict["unsub"],
-        "list_ids": [
-            level_dict["level_contact_list"]
-        ],
-        "html_content": campaign_contents
-    }
+    # print("Sending SES email...")
+    response = ses_client.send_email(
+        Source = "Haohaotiantian <vocab@haohaotiantian.com>",
+        Destination = {
+            "ToAddresses" : [
+            email
+            ]
+        },
+        Message = {
+            "Subject": {
+            "Charset": "UTF-8",
+            "Data": "Daily vocab word - " + datetime.today().strftime('%b. %d, %Y')
+            },
+            "Body": {
+                "Html": {
+                    "Charset": "UTF-8",
+                    "Data": campaign_contents
+                }
+            }
+        }
+    )
 
-    return payload
-
-# Create campaign
-def create_campaign(payload):
-
-    # Create campaign API call
-    create_url = "https://api.sendgrid.com/v3/campaigns"
-
-    headers = {
-        'authorization' : "Bearer " + os.environ['SG_API_KEY'],
-        'content-type' : "application/json"
-    }
-
-    response = requests.request("POST", create_url, json=payload, headers=headers)
-
-    print("Create campaign response:", response.text)
-
-    data = response.json()
-    campaign_id = data["id"]
-
-    return campaign_id
-
-# Send campaign
-def send_campaign(campaign_id):
-
-    # Send Campaign API call
-    send_url = "https://api.sendgrid.com/v3/campaigns/" + str(campaign_id) + "/schedules/now"
-
-    payload = "null"
-    headers = {'authorization': 'Bearer ' + os.environ['SG_API_KEY']}
-
-    response = requests.request("POST", send_url, json=payload, headers=headers)
-
-    return response.json()
+    # print("SES response", response)
+    return response
