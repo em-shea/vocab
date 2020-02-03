@@ -76,7 +76,7 @@ def create_contact_dynamo(email_address, hsk_level):
         Item={
                 'ListId': hsk_level,
                 'SubscriberEmail' : email_address,
-                'Date': date,
+                'DateSubscribed': date,
                 'Status': sub_status,
                 'CharacterSet' : character_set
             }
