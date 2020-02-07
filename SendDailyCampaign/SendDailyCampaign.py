@@ -139,7 +139,7 @@ def assemble_html_content(level, email, word):
         contents = fh.read()
 
     # Replace relevant content in example template
-    campaign_contents = contents.replace("{word}", word["Word"])
+    campaign_contents = contents.replace("{word}", word["Word-Traditional"])
     campaign_contents = campaign_contents.replace("{pronunciation}", word["Pronunciation"])
     campaign_contents = campaign_contents.replace("{definition}", word["Definition"])
     campaign_contents = campaign_contents.replace("{link}", example_link)
