@@ -14,6 +14,7 @@ Example query string parameters:
 https://api.haohaotiantian.com/history?list=HSKLevel4
 
 https://api.haohaotiantian.com/history?list=HSKLevel1&date_range=30
+
 ````
 
 Example of the API response:
@@ -26,7 +27,8 @@ Example of the API response:
           "Definition": "dish (type of food); vegetables; vegetable; cuisine; CL:盤|盘[pan2],道[dao4]",
           "HSK Level": "1",
           "Word": "菜",
-          "Pronunciation": "cài"
+          "Pronunciation": "cài",
+          "Word-Traditional": "菜"
       },
       "Date": "2020-01-03",
       "ListId": "HSKLevel1"

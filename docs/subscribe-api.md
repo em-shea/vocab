@@ -7,3 +7,10 @@ Example payload:
   "body": "{\"email\": \"me@testemail.com\", \"level\": \"1\"}"
 }
 ````
+
+Example payload for traditional characters:
+````
+{
+  "body": "{\"email\": \"me@testemail.com\", \"level\": \"1-trd\"}"
+}
+````
