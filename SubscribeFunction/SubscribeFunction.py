@@ -73,15 +73,13 @@ def create_contact_dynamo(email_address, hsk_level, char_set):
 
     sub_status = "subscribed"
 
-    character_set = "simplified"
-
     response = table.put_item(
         Item={
                 'ListId': hsk_level,
                 'SubscriberEmail' : email_address,
                 'DateSubscribed': date,
                 'Status': sub_status,
-                'CharacterSet' : character_set
+                'CharacterSet' : char_set
             }
         )
 
@@ -90,7 +88,7 @@ def create_contact_dynamo(email_address, hsk_level, char_set):
 def send_new_user_confirmation_email_ses(email_address, hsk_level, char_set):
 
     # Change subject_line and template to simplified or traditional char version
-    if char_set = "simplified"
+    if char_set == "simplified":
         subject_line = "Welcome! 欢迎您!"
         email_template = 'confirmation_template_simplified.html'
     else:
