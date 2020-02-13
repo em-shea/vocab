@@ -25,10 +25,10 @@ def lambda_handler(event, context):
 
     # Write contact to DynamoDB
     try:
-        create_contact_dynamo(email_address, hsk_level, char_set)
-        print(f"Success: Contact created in Dynamo - {email_address}, {hsk_level}.")
+        create_contact_dynamo(email_address, list_id, char_set)
+        print(f"Success: Contact created in Dynamo - {email_address}, {list_id}.")
     except Exception as e:
-        print(f"Error: Failed to create contact in Dynamo - {email_address}, {hsk_level}.")
+        print(f"Error: Failed to create contact in Dynamo - {email_address}, {list_id}.")
         print(e)
         return {
             'statusCode': 502,
@@ -65,7 +65,7 @@ def lambda_handler(event, context):
     }
 
 # Write new contact to Dynamo
-def create_contact_dynamo(email_address, hsk_level, char_set):
+def create_contact_dynamo(email_address, list_id, char_set):
 
     table = dynamo_client.Table(os.environ['TABLE_NAME'])
 
@@ -75,7 +75,7 @@ def create_contact_dynamo(email_address, hsk_level, char_set):
 
     response = table.put_item(
         Item={
-                'ListId': hsk_level,
+                'ListId': list_id,
                 'SubscriberEmail' : email_address,
                 'DateSubscribed': date,
                 'Status': sub_status,
@@ -83,7 +83,7 @@ def create_contact_dynamo(email_address, hsk_level, char_set):
             }
         )
 
-    print(f"Contact added to Dynamo - {email_address}, {hsk_level}.")
+    print(f"Contact added to Dynamo - {email_address}, {list_id}.")
 
 def send_new_user_confirmation_email_ses(email_address, hsk_level, char_set):
 
