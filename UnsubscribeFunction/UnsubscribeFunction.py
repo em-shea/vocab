@@ -44,11 +44,11 @@ def find_contact(email_address, list_id):
       # Generate a list of all HSK level keys
       for level_list in range(0,6):
         keys.append({
-          'ListId': str(level_list + 1 + "simplified"),
+          'ListId': f"{level_list + 1}-simplified",
           'SubscriberEmail': email_address
         })
         keys.append({
-          'ListId': str(level_list + 1 + "traditional"),
+          'ListId': f"{level_list + 1}-traditional",
           'SubscriberEmail': email_address
         })
 
