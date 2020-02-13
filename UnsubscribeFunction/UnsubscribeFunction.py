@@ -14,10 +14,13 @@ def lambda_handler(event, context):
 
     # Extract relevant user details
     email_address = body['email']
-    hsk_level = body['level']
+    list_id = body['list']
+    
+    hsk_level = list_id[0]
+    char_set = list_id[2:]
 
     # Call Dynamo to check if user is subscribed to the given level
-    subscriber_list = find_contact(email_address, hsk_level)
+    subscriber_list = find_contact(email_address, list_id)
     # print("Found contacts: ", contact_found_count)
 
     unsubscribe_user(subscriber_list)
@@ -31,24 +34,28 @@ def lambda_handler(event, context):
         'body': '{"success" : true}'
       }
 
-def find_contact(email_address, hsk_level):
+def find_contact(email_address, list_id):
 
     keys = []
 
     # If unsubscribing from all lists, get item from Dynamo by subscriber email and each HSK level list
-    if hsk_level == "all":
+    if list_id == "all":
 
       # Generate a list of all HSK level keys
       for level_list in range(0,6):
         keys.append({
-          'ListId': str(level_list+1),
+          'ListId': str(level_list + 1 + "simplified"),
+          'SubscriberEmail': email_address
+        })
+        keys.append({
+          'ListId': str(level_list + 1 + "traditional"),
           'SubscriberEmail': email_address
         })
 
     # If unsubscribing from a single list, get item from Dynamo by subscriber email and the given HSK level list
     else:
       keys.append({
-          'ListId': hsk_level,
+          'ListId': list_id,
           'SubscriberEmail': email_address
         })
 
