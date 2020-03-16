@@ -17,6 +17,7 @@ def lambda_handler(event, context):
     body = json.loads(event["body"])
 
     # Extract relevant user details
+    # Example parameters: {"email": "me@testemail.com", "list": "1-simplified"}
     email_address = body['email']
     list_id = body['list']
 

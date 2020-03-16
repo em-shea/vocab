@@ -69,7 +69,7 @@ def lambda_handler(event, context):
                 try:
                     response = send_email(campaign_contents, email)
                 except Exception as e:
-                    print(f"Error: Failed to send email - {email}, {hsk_level}.")
+                    print(f"Error: Failed to send email - {email}, {list_id}.")
                     print(e)
             # else:
             #     print("Unsubscribed contact:", contact['SubscriberEmail'])
