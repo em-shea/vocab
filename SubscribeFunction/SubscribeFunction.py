@@ -19,6 +19,7 @@ def lambda_handler(event, context):
     # Extract relevant user details
     # Example parameters: {"email": "me@testemail.com", "list": "1-simplified"}
     email_address = body['email']
+    partial_email = email_address[0:5]
     list_id = body['list']
 
     hsk_level = list_id[0]
@@ -27,9 +28,9 @@ def lambda_handler(event, context):
     # Write contact to DynamoDB
     try:
         create_contact_dynamo(email_address, list_id, char_set)
-        print(f"Success: Contact created in Dynamo - {email_address}, {list_id}.")
+        print(f"Success: Contact created in Dynamo - {partial_email}, {list_id}.")
     except Exception as e:
-        print(f"Error: Failed to create contact in Dynamo - {email_address}, {list_id}.")
+        print(f"Error: Failed to create contact in Dynamo - {partial_email}, {list_id}.")
         print(e)
         return {
             'statusCode': 502,
@@ -43,9 +44,9 @@ def lambda_handler(event, context):
     # Send confirmation email from SES
     try:
         send_new_user_confirmation_email_ses(email_address, hsk_level, char_set)
-        print(f"Success: Confirmation email sent through SES - {email_address}, {hsk_level}.")
+        # print(f"Success: Confirmation email sent through SES - {partial_email}, {hsk_level}.")
     except Exception as e:
-        print(f"Error: Failed to send confirmation email through SES - {email_address}, {hsk_level}.")
+        print(f"Error: Failed to send confirmation email through SES - {partial_email}, {hsk_level}.")
         print(e)
         return {
             'statusCode': 502,
@@ -84,7 +85,7 @@ def create_contact_dynamo(email_address, list_id, char_set):
             }
         )
 
-    print(f"Contact added to Dynamo - {email_address}, {list_id}.")
+    # print(f"Contact added to Dynamo - {email_address[0:5]}, {list_id}.")
 
 def send_new_user_confirmation_email_ses(email_address, hsk_level, char_set):
 

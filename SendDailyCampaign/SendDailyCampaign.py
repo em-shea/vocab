@@ -48,7 +48,8 @@ def lambda_handler(event, context):
 
         # Send emails to all subscribed contacts
         if not contact['Status'] == 'unsubscribed':
-            print("Subscribed contact:", contact['SubscriberEmail'][0:5])
+            partial_email = contact['SubscriberEmail'][0:5]
+            print("Subscribed contact:", partial_email)
             list_id = contact['ListId']
             email = contact['SubscriberEmail']
             word_index = int(contact['ListId']) - 1
@@ -69,7 +70,7 @@ def lambda_handler(event, context):
                 try:
                     response = send_email(campaign_contents, email)
                 except Exception as e:
-                    print(f"Error: Failed to send email - {email}, {list_id}.")
+                    print(f"Error: Failed to send email - {partial_email}, {list_id}.")
                     print(e)
             # else:
             #     print("Unsubscribed contact:", contact['SubscriberEmail'])
