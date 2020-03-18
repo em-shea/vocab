@@ -102,7 +102,7 @@ def send_new_user_confirmation_email_ses(email_address, hsk_level, char_set):
         contents = fh.read()
 
     email_contents = contents.replace("{level}", hsk_level)
-    email_contents = email_contents.replace("{unsubscribe_link}", "https://haohaotiantian.com/unsub?level=" + hsk_level + "&email=" + email + "&char=" + char_set)
+    email_contents = email_contents.replace("{unsubscribe_link}", "https://haohaotiantian.com/unsub?level=" + hsk_level + "&email=" + email_address + "&char=" + char_set)
 
     payload = ses_client.send_email(
         Source = "Haohaotiantian <welcome@haohaotiantian.com>",
