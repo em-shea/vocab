@@ -52,7 +52,8 @@ def lambda_handler(event, context):
             print("Subscribed contact:", partial_email)
             list_id = contact['ListId']
             email = contact['SubscriberEmail']
-            word_index = int(contact['ListId']) - 1
+
+            word_index = int(contact['ListId'][0]) - 1
             # print("Word index:", word_index)
 
             hsk_level = list_id[0]

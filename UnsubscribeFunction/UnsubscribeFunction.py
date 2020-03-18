@@ -16,8 +16,9 @@ def lambda_handler(event, context):
     email_address = body['email']
     list_id = body['list']
     
-    hsk_level = list_id[0]
-    char_set = list_id[2:]
+    if list_id is not "all":
+      hsk_level = list_id[0]
+      char_set = list_id[2:]
 
     # Call Dynamo to check if user is subscribed to the given level
     subscriber_list = find_contact(email_address, list_id)
