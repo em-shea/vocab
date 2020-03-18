@@ -40,7 +40,7 @@ def lambda_handler(event,context):
 
         from_date = format_date(datetime.today() - timedelta(days=int(date_range)))
 
-        # Add error response if date range is longer than a certain quantity?
+        # TODO Add error response if date range is longer than a certain quantity?
 
       # If no date param given, set to 90 days
       else:

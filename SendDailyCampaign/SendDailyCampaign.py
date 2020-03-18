@@ -48,13 +48,16 @@ def lambda_handler(event, context):
 
         # Send emails to all subscribed contacts
         if not contact['Status'] == 'unsubscribed':
-            print("Subscribed contact:", contact['SubscriberEmail'][0:5])
-            level = contact['ListId']
+            partial_email = contact['SubscriberEmail'][0:5]
+            print("Subscribed contact:", partial_email)
+            list_id = contact['ListId']
             email = contact['SubscriberEmail']
-            word_index = int(contact['ListId']) - 1
+
+            word_index = int(contact['ListId'][0]) - 1
             # print("Word index:", word_index)
 
-            # TODO: opportunity to choose simplified or traditional word here
+            hsk_level = list_id[0]
+            char_set = contact['CharacterSet']
 
             word = word_list[word_index]
             # print("Word for contact:", word)
@@ -63,12 +66,12 @@ def lambda_handler(event, context):
             # word will be None. If so, do not send an email.
             if word is not None:
 
-                campaign_contents = assemble_html_content(level, email, word)
+                campaign_contents = assemble_html_content(hsk_level, email, word, char_set)
 
                 try:
-                    response = send_email(campaign_contents, email, level)
+                    response = send_email(campaign_contents, email)
                 except Exception as e:
-                    print(f"Error: Failed to send email - {email}, {level}.")
+                    print(f"Error: Failed to send email - {partial_email}, {list_id}.")
                     print(e)
             # else:
             #     print("Unsubscribed contact:", contact['SubscriberEmail'])
@@ -122,35 +125,41 @@ def scan_contacts_table():
     return all_contacts
 
 # Populate relevant content in for the placeholders in the email template
-def assemble_html_content(level, email, word):
+def assemble_html_content(hsk_level, email, word, char_set):
+
+    # Select simplified or traditional character 
+    if char_set == "simplified":
+        selected_word = word["Word"]
+    else:
+        selected_word = word["Word-Traditional"]
 
     # print("Assembling HTML content...")
-    num_level = int(level)
+    num_level = int(hsk_level)
 
     # Create example sentence URL
     if num_level in range(1,4):
-        example_link = "https://www.yellowbridge.com/chinese/sentsearch.php?word=" + word["Word"]
+        example_link = "https://www.yellowbridge.com/chinese/sentsearch.php?word=" + selected_word
 
     else:
-        example_link = "https://fanyi.baidu.com/#zh/en/" + word["Word"]
+        example_link = "https://fanyi.baidu.com/#zh/en/" + selected_word
 
     # We have an html template file packaged with this function's code which we read here
     with open('template.html') as fh:
         contents = fh.read()
 
     # Replace relevant content in example template
-    campaign_contents = contents.replace("{word}", word["Word"])
+    campaign_contents = contents.replace("{word}", selected_word)
     campaign_contents = campaign_contents.replace("{pronunciation}", word["Pronunciation"])
     campaign_contents = campaign_contents.replace("{definition}", word["Definition"])
     campaign_contents = campaign_contents.replace("{link}", example_link)
-    campaign_contents = campaign_contents.replace("{level}", "HSK Level " + level)
-    campaign_contents = campaign_contents.replace("{history_link}", "https://haohaotiantian.com/history?list=HSKLevel" + level + "&dates=30")
-    campaign_contents = campaign_contents.replace("{unsubscribe_link}", "https://haohaotiantian.com/unsub?level=" + level + "&email=" + email)
+    campaign_contents = campaign_contents.replace("{level}", "HSK Level " + hsk_level)
+    campaign_contents = campaign_contents.replace("{history_link}", "https://haohaotiantian.com/history?list=HSKLevel" + hsk_level + "&dates=30&char=" + char_set)
+    campaign_contents = campaign_contents.replace("{unsubscribe_link}", "https://haohaotiantian.com/unsub?level=" + hsk_level + "&email=" + email + "&char=" + char_set)
 
     return campaign_contents
 
 # Send SES email
-def send_email(campaign_contents, email, level):
+def send_email(campaign_contents, email):
 
     # print("Sending SES email...")
     response = ses_client.send_email(
