@@ -16,6 +16,8 @@ Parameters:
     Type: String
   SubNotifyEmail:
     Type: String
+  DynamoBackupsS3BucketName:
+    Type: String
   Stage:
     Type: String
 
@@ -199,6 +201,33 @@ Resources:
           Properties:
             Path: /unsub
             Method: POST
+  
+  BackupDynamoToS3:
+    # A function that scans the contact list database in DynamoDB and saves a back-up to S3
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      FunctionName: !Sub BackupDynamoToS3-${Stage}
+      Handler: BackupDynamoToS3.lambda_handler
+      Runtime: python3.7
+      CodeUri: ./BackupDynamoToS3
+      Description: A function that scans the contact list database in DynamoDB and saves a back-up to S3
+      MemorySize: 128
+      Timeout: 120
+      Policies:
+       - AWSLambdaExecute
+       - S3WritePolicy:
+          BucketName: !Ref DynamoBackupsS3BucketName
+       - DynamoDBCrudPolicy:
+          TableName: !Ref SubscriberContactListDynamoDBTable
+      Environment:
+        Variables:
+          BACKUPS_BUCKET_NAME: !Ref DynamoBackupsS3BucketName
+          TABLE_NAME: !Ref SubscriberContactListDynamoDBTable
+      Events:
+        WeeklyCloudWatchEvent:
+          Type: Schedule
+          Properties:
+            Schedule: cron(0 16 ? * FRI *)
 
   SubscribeLambdaPermission:
     # Permissions for API Gateway to invoke this function. Using a workaround described here:
