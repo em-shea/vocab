@@ -227,7 +227,7 @@ Resources:
         WeeklyCloudWatchEvent:
           Type: Schedule
           Properties:
-            Schedule: cron(0 16 * * FRI *)
+            Schedule: cron(0 16 ? * FRI *)
 
   SubscribeLambdaPermission:
     # Permissions for API Gateway to invoke this function. Using a workaround described here:
