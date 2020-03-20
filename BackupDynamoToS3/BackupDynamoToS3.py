@@ -1,3 +1,4 @@
+import os
 import json
 import boto3
 from datetime import datetime
@@ -5,7 +6,7 @@ from datetime import datetime
 dynamo_client = boto3.resource('dynamodb')
 table = boto3.resource('dynamodb').Table(os.environ['TABLE_NAME'])
 
-s3 = boto3.client('s3')
+s3 = boto3.resource('s3')
 bucket = s3.Bucket(os.environ['BACKUPS_BUCKET_NAME'])
 
 def lambda_handler(event, context):
