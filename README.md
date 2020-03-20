@@ -12,7 +12,10 @@ To subscribe, visit https://haohaotiantian.com, where you can preview sample wor
 
 ## Architecture
 
-You can read about the development process and architecture here: https://emshea.com/post/chinese-vocab-app
+You can read about the development process and architecture in this blog post series: 
+- [Developing a daily Chinese vocab app](https://emshea.com/post/chinese-vocab-app)
+- [Integrating DynamoDB in my Chinese vocab app](https://emshea.com/post/vocab-app-database)
+- [Migrating to a serverless contact management backend](https://emshea.com/post/vocab-subscriber-backend)
 
 Link to the [frontend repo](https://github.com/em-shea/vocab-frontend-vue).
 
@@ -22,13 +25,14 @@ Link to the [frontend repo](https://github.com/em-shea/vocab-frontend-vue).
 
 | Roadmap item  | Status |
 | ------------- | :-------------: |
-| Write daily words to DynamoDB table | :heavy_check_mark:  |
-| Create API to serve daily word history | :heavy_check_mark:  |
-| Refactor homepage to Vue | :heavy_check_mark: |
-| Build interface for users to explore and export word history | :heavy_check_mark: |
-| Add links to word history to daily email message | :heavy_check_mark: |
-| Add support for traditional characters | :soon: |
-| Refactor email service from SendGrid to SES + DynamoDB | :heavy_check_mark: |
 | Build interface for quizzes | |
 | Add word audio support for email and website | |
-| Create daily vcocab Alexa skill | |
+| Create daily vocab Alexa skill | |
+| Build subscriber analytics QuickSight dashboard | :heavy_check_mark: |
+| Add support for traditional characters | :heavy_check_mark: |
+| Refactor email service from SendGrid to SES + DynamoDB | :heavy_check_mark: |
+| Add links to word history to daily email message | :heavy_check_mark: |
+| Build interface for users to explore and export word history | :heavy_check_mark: |
+| Refactor homepage to Vue | :heavy_check_mark: |
+| Create API to serve daily word history | :heavy_check_mark:  |
+| Write daily words to DynamoDB table | :heavy_check_mark:  |
