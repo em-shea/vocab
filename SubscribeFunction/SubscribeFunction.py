@@ -71,7 +71,7 @@ def create_contact_dynamo(email_address, list_id, char_set):
 
     table = dynamo_client.Table(os.environ['TABLE_NAME'])
 
-    date = str(datetime.today().strftime('%m/%d/%y%'))
+    date = str(datetime.today().strftime('%-m/%d/%y'))
 
     sub_status = "subscribed"
 
