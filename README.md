@@ -19,7 +19,7 @@ You can read about the development process and architecture in this blog post se
 
 Link to the [frontend repo](https://github.com/em-shea/vocab-frontend-vue).
 
-![Architectural diagram](https://hsk-vocab.s3.amazonaws.com/vocab-app-v5.png)
+![Architectural diagram](https://hsk-vocab.s3.amazonaws.com/vocab-app-v6-quicksight5.png)
 
 ## Roadmap
 
