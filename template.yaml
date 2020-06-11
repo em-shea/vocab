@@ -12,8 +12,6 @@ Parameters:
     Type: String
   DomainName:
     Type: String
-  SGApiKey:
-    Type: String
   SubNotifyEmail:
     Type: String
   DynamoBackupsS3BucketName:
@@ -31,33 +29,33 @@ Globals:
       AllowOrigin: "'*'"
 
 Resources:
-  SendDailyCampaign:
-    # A function that sends a daily SendGrid campaign with a vocab word for each HSK level
+
+### Lambda functions
+
+  SendDailyEmail:
     Type: 'AWS::Serverless::Function'
     Properties:
-      FunctionName: !Sub SendDailyCampaign-${Stage}
-      Handler: SendDailyCampaign.lambda_handler
+      FunctionName: !Sub SendDailyEmail-${Stage}
+      Handler: app.lambda_handler
       Runtime: python3.7
-      CodeUri: ./SendDailyCampaign
-      Description: A function that sends a daily SendGrid campaign with a vocab word for each HSK level
+      CodeUri: src/send_daily_email
+      Description: A function that sends a daily email to subscribers with a vocab word for each HSK level
       Timeout: 120
       Policies:
-       - AWSLambdaExecute
-       - SESCrudPolicy:
-          IdentityName: haohaotiantian.com
-       - DynamoDBCrudPolicy:
-          TableName: !Ref DynamoDBTable
-       - DynamoDBCrudPolicy:
-          TableName: !Ref SubscriberContactListDynamoDBTable
+      - SESCrudPolicy:
+        IdentityName: haohaotiantian.com
+      - DynamoDBCrudPolicy:
+        TableName: !Ref WordHistoryDynamoDBTable
+      - DynamoDBCrudPolicy:
+        TableName: !Ref SubscriberContactListDynamoDBTable
       Environment:
         Variables:
-          SG_API_KEY: !Ref SGApiKey
           SUB_TOPIC_ARN: !Ref NotificationTopic
           WORDS_BUCKET_NAME: !Ref WordsBucketName
           WORDS_BUCKET_KEY: !Ref WordsBucketKey
           LISTS_BUCKET_NAME: !Ref ListsBucketName
           LISTS_BUCKET_KEY: !Ref ListsBucketKey
-          TABLE_NAME: !Ref DynamoDBTable
+          TABLE_NAME: !Ref WordHistoryDynamoDBTable
           CONTACT_TABLE_NAME: !Ref SubscriberContactListDynamoDBTable
           STAGE: !Ref Stage
       Events:
@@ -66,159 +64,125 @@ Resources:
           Properties:
             Schedule: cron(0 20 * * ? *)
       Layers:
-       - !Ref Layer
+      - !Ref Layer
 
-  SampleVocabFunction:
-    # A function that returns five random words for each HSK level
+  SampleVocab:
     Type: 'AWS::Serverless::Function'
     Properties:
-      FunctionName: !Sub SampleVocabFunction-${Stage}
-      Handler: SampleVocabFunction.lambda_handler
+      FunctionName: !Sub SampleVocab-${Stage}
+      Handler: app.lambda_handler
       Runtime: python3.7
-      CodeUri: ./SampleVocabFunction
+      CodeUri: src/sample_vocab
       Description: A function that returns five random words for each HSK level
       MemorySize: 128
       Timeout: 120
-      Policies:
-       - AWSLambdaExecute
       Environment:
         Variables:
           WORDS_BUCKET_NAME: !Ref WordsBucketName
           WORDS_BUCKET_KEY: !Ref WordsBucketKey
       Events:
-        SampleVocabFunctionApi:
-          # An API Gateway endpoint that responds to HTTP GET
+        SampleVocabApi:
           Type: Api
           Properties:
             Path: /sample_vocab
             Method: GET
       Layers:
-       - !Ref Layer
+      - !Ref Layer
 
-  SampleVocabLambdaPermission:
-    # Permissions for API Gateway to invoke this function. Using a workaround described here:
-    # https://github.com/awslabs/serverless-application-model/issues/59
-    Type: "AWS::Lambda::Permission"
-    Properties:
-      Action: lambda:InvokeFunction
-      FunctionName: !Ref SampleVocabFunction
-      Principal: apigateway.amazonaws.com
-
-  DailyWordHistory:
-    # A function that returns all previous daily words
+  WordHistory:
     Type: 'AWS::Serverless::Function'
     Properties:
-      FunctionName: !Sub DailyWordHistory-${Stage}
-      Handler: DailyWordHistory.lambda_handler
+      FunctionName: !Sub WordHistory-${Stage}
+      Handler: app.lambda_handler
       Runtime: python3.7
-      CodeUri: ./DailyWordHistory
-      Description: A function that returns all previous daily words
+      CodeUri: src/word_history
+      Description: A function that returns a list of previous daily words.
       MemorySize: 128
       Timeout: 120
       Policies:
-       - AWSLambdaExecute
-       - DynamoDBCrudPolicy:
-          TableName: !Ref DynamoDBTable
+      - DynamoDBCrudPolicy:
+        TableName: !Ref WordHistoryDynamoDBTable
       Environment:
         Variables:
-          TABLE_NAME: !Ref DynamoDBTable
+          TABLE_NAME: !Ref WordHistoryDynamoDBTable
       Events:
-        DailyWordHistoryApi:
-          # An API Gateway endpoint that responds to HTTP GET
+        WordHistoryApi:
           Type: Api
           Properties:
             Path: /history
             Method: GET
 
-  DailyWordHistoryPermission:
-    # Permissions for API Gateway to invoke this function. Using a workaround described here:
-    # https://github.com/awslabs/serverless-application-model/issues/59
-    Type: "AWS::Lambda::Permission"
-    Properties:
-      Action: lambda:InvokeFunction
-      FunctionName: !Ref DailyWordHistory
-      Principal: apigateway.amazonaws.com
-
-  SubscribeFunction:
-    # A function that takes an HSK level and email address inputs and subscribes to a topic
+  Subscribe:
     Type: 'AWS::Serverless::Function'
     Properties:
-      FunctionName: !Sub SubscribeFunction-${Stage}
-      Handler: SubscribeFunction.lambda_handler
+      FunctionName: !Sub VocabSubscribe-${Stage}
+      Handler: app.lambda_handler
       Runtime: python3.7
-      CodeUri: ./SubscribeFunction
+      CodeUri: src/subscribe
       Description: A function that takes an HSK level and email address inputs and subscribes to a topic.
       MemorySize: 128
       Timeout: 120
       Policies:
-       - AWSLambdaExecute
-       - SESCrudPolicy:
-          IdentityName: haohaotiantian.com
-       - DynamoDBCrudPolicy:
-          TableName: !Ref SubscriberContactListDynamoDBTable
+      - SESCrudPolicy:
+        IdentityName: haohaotiantian.com
+      - DynamoDBCrudPolicy:
+        TableName: !Ref SubscriberContactListDynamoDBTable
       Environment:
         Variables:
-          SG_API_KEY: !Ref SGApiKey
           SUB_TOPIC_ARN: !Ref NotificationTopic
           LISTS_BUCKET_NAME: !Ref ListsBucketName
           LISTS_BUCKET_KEY: !Ref ListsBucketKey
           STAGE: !Ref Stage
           TABLE_NAME: !Ref SubscriberContactListDynamoDBTable
       Events:
-        SubscribeFunctionApi:
-          # An API Gateway endpoint that responds to HTTP POST
+        SubscribeApi:
           Type: Api
           Properties:
             Path: /sub
             Method: POST
       Layers:
-       - !Ref Layer
+      - !Ref Layer
 
-  UnsubscribeFunction:
-    # A function that unsubscribes the user from the given HSK level or from all levels.
+  Unsubscribe:
     Type: 'AWS::Serverless::Function'
     Properties:
-      FunctionName: !Sub UnsubscribeFunction-${Stage}
-      Handler: UnsubscribeFunction.lambda_handler
+      FunctionName: !Sub VocabUnsubscribe-${Stage}
+      Handler: app.lambda_handler
       Runtime: python3.7
-      CodeUri: ./UnsubscribeFunction
+      CodeUri: src/unsubscribe
       Description: A function that unsubscribes the user from the given HSK level or from all levels.
       MemorySize: 128
       Timeout: 120
       Policies:
-       - AWSLambdaExecute
-       - DynamoDBCrudPolicy:
-          TableName: !Ref SubscriberContactListDynamoDBTable
+      - DynamoDBCrudPolicy:
+        TableName: !Ref SubscriberContactListDynamoDBTable
       Environment:
         Variables:
           SUB_TOPIC_ARN: !Ref NotificationTopic
           STAGE: !Ref Stage
           TABLE_NAME: !Ref SubscriberContactListDynamoDBTable
       Events:
-        SubscribeFunctionApi:
-          # An API Gateway endpoint that responds to HTTP POST
+        SubscribeApi:
           Type: Api
           Properties:
             Path: /unsub
             Method: POST
   
   BackupDynamoToS3:
-    # A function that scans the contact list database in DynamoDB and saves a back-up to S3
     Type: 'AWS::Serverless::Function'
     Properties:
       FunctionName: !Sub BackupDynamoToS3-${Stage}
-      Handler: BackupDynamoToS3.lambda_handler
+      Handler: app.lambda_handler
       Runtime: python3.7
-      CodeUri: ./BackupDynamoToS3
+      CodeUri: src/backup_dynamo_s3
       Description: A function that scans the contact list database in DynamoDB and saves a back-up to S3
       MemorySize: 128
       Timeout: 120
       Policies:
-       - AWSLambdaExecute
-       - S3WritePolicy:
-          BucketName: !Ref DynamoBackupsS3BucketName
-       - DynamoDBCrudPolicy:
-          TableName: !Ref SubscriberContactListDynamoDBTable
+      - S3WritePolicy:
+        BucketName: !Ref DynamoBackupsS3BucketName
+      - DynamoDBCrudPolicy:
+        TableName: !Ref SubscriberContactListDynamoDBTable
       Environment:
         Variables:
           BACKUPS_BUCKET_NAME: !Ref DynamoBackupsS3BucketName
@@ -229,39 +193,52 @@ Resources:
           Properties:
             Schedule: cron(0 16 ? * FRI *)
 
-  SubscribeLambdaPermission:
-    # Permissions for API Gateway to invoke this function. Using a workaround described here:
-    # https://github.com/awslabs/serverless-application-model/issues/59
-    Type: "AWS::Lambda::Permission"
-    Properties:
-      Action: lambda:InvokeFunction
-      FunctionName: !Ref SubscribeFunction
-      Principal: apigateway.amazonaws.com
-
-  UnsubscribeLambdaPermission:
-    # Permissions for API Gateway to invoke this function. Using a workaround described here:
-    # https://github.com/awslabs/serverless-application-model/issues/59
-    Type: "AWS::Lambda::Permission"
-    Properties:
-      Action: lambda:InvokeFunction
-      FunctionName: !Ref UnsubscribeFunction
-      Principal: apigateway.amazonaws.com
-
   Layer:
-    # A Layer that holds several Python modules
-    # Contact lists returns the prod/staging SendGrid contact lists for each HSK level
-    # Vocab random word returns a random word for a given HSK level
+    # Shared Python modules, namely returning a random vocab word
     Type: 'AWS::Serverless::LayerVersion'
     Properties:
       ContentUri: ./layer
       CompatibleRuntimes:
         - python3.7
 
-  DynamoDBTable:
+### API Gateway permissions
+### Using a workaround described here: https://github.com/awslabs/serverless-application-model/issues/59
+
+  SampleVocabLambdaPermission:
+    Type: "AWS::Lambda::Permission"
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref SampleVocab
+      Principal: apigateway.amazonaws.com
+
+  WordHistoryPermission:
+    Type: "AWS::Lambda::Permission"
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref WordHistory
+      Principal: apigateway.amazonaws.com
+
+  SubscribeLambdaPermission:
+    Type: "AWS::Lambda::Permission"
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref Subscribe
+      Principal: apigateway.amazonaws.com
+
+  UnsubscribeLambdaPermission:
+    Type: "AWS::Lambda::Permission"
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref Unsubscribe
+      Principal: apigateway.amazonaws.com
+
+### DynamoDB tables
+
+  WordHistoryDynamoDBTable:
     Type: AWS::DynamoDB::Table
     DeletionPolicy: Retain
     Properties:
-      TableName: !Sub DailyWordHistory-${Stage}
+      TableName: !Sub WordHistory-${Stage}
       AttributeDefinitions:
         - AttributeName: ListId
           AttributeType: S
@@ -297,25 +274,25 @@ Resources:
         ReadCapacityUnits: 0
         WriteCapacityUnits: 0
 
+### Receiving function error notifications
+
   CWLogsNotifications:
-    # A function that filters function logs for error messages and publishes to SNS
     Type: 'AWS::Serverless::Function'
     DependsOn:
-      - SubscribeFunctionLogGroup
-      - SendDailyCampaignLogGroup
-      - SampleVocabFunctionLogGroup
+      - SubscribeLogGroup
+      - SendDailyEmailLogGroup
+      - SampleVocabLogGroup
     Properties:
       FunctionName: !Sub CWLogsNotifications-${Stage}
-      Handler: CWLogsNotifications.lambda_handler
+      Handler: app.lambda_handler
       Runtime: python3.7
-      CodeUri: ./CWLogsNotifications
-      Description: A function that send notifications to an SNS topic for based on CW logs metric filters
+      CodeUri: src/cw_logs_notifications
+      Description: A function that filters function logs for error messages and publishes to SNS
       MemorySize: 128
       Timeout: 120
       Policies:
-       - AWSLambdaExecute
-       - SNSPublishMessagePolicy:
-           TopicName: !GetAtt NotificationTopic.TopicName
+      - SNSPublishMessagePolicy:
+          TopicName: !GetAtt NotificationTopic.TopicName
       Environment:
         Variables:
           SUB_TOPIC_ARN: !Ref NotificationTopic
@@ -335,7 +312,7 @@ Resources:
             LogGroupName:
               !Join [
           '',
-          ['/aws/lambda/', !Sub 'SendDailyCampaign-${Stage}']
+          ['/aws/lambda/', !Sub 'SendDailyEmail-${Stage}']
         ]
             FilterPattern: Error
         SampleVocabLogs:
@@ -344,12 +321,12 @@ Resources:
             LogGroupName:
               !Join [
           '',
-          ['/aws/lambda/', !Sub 'SampleVocabFunction-${Stage}']
+          ['/aws/lambda/', !Sub 'SampleVocab-${Stage}']
         ]
             FilterPattern: Error
 
   NotificationTopic:
-    # A topic that error notifications will be published to
+    # A topic that error notifications are published to
     Type: AWS::SNS::Topic
     Properties:
       Subscription:
@@ -359,46 +336,46 @@ Resources:
   # Creating CloudWatch Logs groups for each function.
   # By default, a log group is only created for a function once the function is invoked.
   # We are creating log groups here to be able to subscribe the CWLogsNotification function to those log groups.
-  SubscribeFunctionLogGroup:
+  SubscribeLogGroup:
     Type: AWS::Logs::LogGroup
     DependsOn:
-      - SubscribeFunction
+      - Subscribe
     Properties:
       LogGroupName:
         !Join [
           '',
-          ['/aws/lambda/', !Sub 'SubscribeFunction-${Stage}']
+          ['/aws/lambda/', !Sub 'VocabSubscribe-${Stage}']
         ]
 
-  SendDailyCampaignLogGroup:
+  SendDailyEmailLogGroup:
     Type: AWS::Logs::LogGroup
     DependsOn:
-      - SendDailyCampaign
+      - SendDailyEmail
     Properties:
       LogGroupName:
         !Join [
           '',
-          ['/aws/lambda/', !Sub 'SendDailyCampaign-${Stage}']
+          ['/aws/lambda/', !Sub 'SendDailyEmail-${Stage}']
         ]
 
-  SampleVocabFunctionLogGroup:
+  SampleVocabLogGroup:
     Type: AWS::Logs::LogGroup
     DependsOn:
-      - SampleVocabFunction
+      - SampleVocab
     Properties:
       LogGroupName:
         !Join [
           '',
-          ['/aws/lambda/', !Sub 'SampleVocabFunction-${Stage}']
+          ['/aws/lambda/', !Sub 'SampleVocab-${Stage}']
         ]
 
-  UnsubscribeFunctionLogGroup:
+  UnsubscribeLogGroup:
     Type: AWS::Logs::LogGroup
     DependsOn:
-      - UnsubscribeFunction
+      - Unsubscribe
     Properties:
       LogGroupName:
         !Join [
           '',
-          ['/aws/lambda/', !Sub 'UnsubscribeFunction-${Stage}']
+          ['/aws/lambda/', !Sub 'VocabUnsubscribe-${Stage}']
         ]
