@@ -155,7 +155,7 @@ Resources:
       Timeout: 120
       Policies:
         - DynamoDBCrudPolicy:
-            ableName: !Ref SubscriberContactListDynamoDBTable
+            TableName: !Ref SubscriberContactListDynamoDBTable
       Environment:
         Variables:
           SUB_TOPIC_ARN: !Ref NotificationTopic
