@@ -44,6 +44,8 @@ Resources:
       Policies:
         - SESCrudPolicy:
             IdentityName: haohaotiantian.com
+        - S3ReadPolicy:
+            BucketName: !Ref WordsBucketName
         - DynamoDBCrudPolicy:
             TableName: !Ref WordHistoryDynamoDBTable
         - DynamoDBCrudPolicy:
@@ -76,6 +78,9 @@ Resources:
       Description: A function that returns five random words for each HSK level
       MemorySize: 128
       Timeout: 120
+      Policies:
+        - S3ReadPolicy:
+            BucketName: !Ref WordsBucketName
       Environment:
         Variables:
           WORDS_BUCKET_NAME: !Ref WordsBucketName
@@ -123,10 +128,10 @@ Resources:
       MemorySize: 128
       Timeout: 120
       Policies:
-       - SESCrudPolicy:
-          IdentityName: haohaotiantian.com
-       - DynamoDBCrudPolicy:
-          TableName: !Ref SubscriberContactListDynamoDBTable
+        - SESCrudPolicy:
+            IdentityName: haohaotiantian.com
+        - DynamoDBCrudPolicy:
+            TableName: !Ref SubscriberContactListDynamoDBTable
       Environment:
         Variables:
           SUB_TOPIC_ARN: !Ref NotificationTopic
@@ -154,11 +159,10 @@ Resources:
       MemorySize: 128
       Timeout: 120
       Policies:
-       - DynamoDBCrudPolicy:
-          TableName: !Ref SubscriberContactListDynamoDBTable
+        - DynamoDBCrudPolicy:
+            TableName: !Ref SubscriberContactListDynamoDBTable
       Environment:
         Variables:
-          SUB_TOPIC_ARN: !Ref NotificationTopic
           STAGE: !Ref Stage
           TABLE_NAME: !Ref SubscriberContactListDynamoDBTable
       Events:
