@@ -201,7 +201,7 @@ Resources:
     # Shared Python modules, namely returning a random vocab word
     Type: 'AWS::Serverless::LayerVersion'
     Properties:
-      ContentUri: ./layer
+      ContentUri: src/layer
       CompatibleRuntimes:
         - python3.7
 
