@@ -123,10 +123,10 @@ Resources:
       MemorySize: 128
       Timeout: 120
       Policies:
-        - SESCrudPolicy:
-            IdentityName: haohaotiantian.com
-        - DynamoDBCrudPolicy:
-            TableName: !Ref SubscriberContactListDynamoDBTable
+       - SESCrudPolicy:
+          IdentityName: haohaotiantian.com
+       - DynamoDBCrudPolicy:
+          TableName: !Ref SubscriberContactListDynamoDBTable
       Environment:
         Variables:
           SUB_TOPIC_ARN: !Ref NotificationTopic
@@ -154,8 +154,8 @@ Resources:
       MemorySize: 128
       Timeout: 120
       Policies:
-        - DynamoDBCrudPolicy:
-            TableName: !Ref SubscriberContactListDynamoDBTable
+       - DynamoDBCrudPolicy:
+          TableName: !Ref SubscriberContactListDynamoDBTable
       Environment:
         Variables:
           SUB_TOPIC_ARN: !Ref NotificationTopic
