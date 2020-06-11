@@ -42,12 +42,12 @@ Resources:
       Description: A function that sends a daily email to subscribers with a vocab word for each HSK level
       Timeout: 120
       Policies:
-      - SESCrudPolicy:
-        IdentityName: haohaotiantian.com
-      - DynamoDBCrudPolicy:
-        TableName: !Ref WordHistoryDynamoDBTable
-      - DynamoDBCrudPolicy:
-        TableName: !Ref SubscriberContactListDynamoDBTable
+        - SESCrudPolicy:
+          IdentityName: haohaotiantian.com
+        - DynamoDBCrudPolicy:
+          TableName: !Ref WordHistoryDynamoDBTable
+        - DynamoDBCrudPolicy:
+          TableName: !Ref SubscriberContactListDynamoDBTable
       Environment:
         Variables:
           SUB_TOPIC_ARN: !Ref NotificationTopic
