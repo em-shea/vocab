@@ -2,16 +2,12 @@ import json
 import io
 import csv
 import os
-import boto3
-import random
 
 import sys
 sys.path.insert(0, '/opt')
 from vocab_random_word import select_random_word
 
-s3 = boto3.client('s3')
-
-# Pull data from given S3 file and select 5 random entries from each level
+# Selects 5 random entries from each level
 def lambda_handler(event, context):
 
     # Create an empty dictionary that will hold the 5 words for each level

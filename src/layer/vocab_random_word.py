@@ -14,7 +14,8 @@ def select_random_word(hsk_level):
     
     # Only generate vocab list if the global variable is not yet assigned
     if vocab_lists is None:
-        vocab_lists = get_vocab_lists()
+        csv_file = get_s3_file()
+        vocab_lists = get_vocab_lists(csv_file)
 
     index_hsk_level = int(hsk_level) - 1
 
@@ -23,13 +24,18 @@ def select_random_word(hsk_level):
 
     return word
 
-def get_vocab_lists():
+def get_s3_file():
 
     s3 = boto3.client('s3')
 
-    # Read file from S3
-    csv_file = s3.get_object(Bucket=os.environ['WORDS_BUCKET_NAME'], Key=os.environ['WORDS_BUCKET_KEY'])
-    csv_response = csv_file['Body'].read()
+    s3_file = s3.get_object(Bucket=os.environ['WORDS_BUCKET_NAME'], Key=os.environ['WORDS_BUCKET_KEY'])
+    s3_file_contents = s3_file['Body']
+
+    return s3_file_contents
+
+def get_vocab_lists(csv_file):
+
+    csv_response = csv_file.read()
     stream = io.StringIO(csv_response.decode("utf-8"))
     reader = csv.DictReader(stream)
 

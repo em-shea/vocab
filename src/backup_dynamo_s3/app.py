@@ -3,19 +3,20 @@ import json
 import boto3
 from datetime import datetime
 
-dynamo_client = boto3.resource('dynamodb')
-table = boto3.resource('dynamodb').Table(os.environ['TABLE_NAME'])
-
 s3 = boto3.resource('s3')
 bucket = s3.Bucket(os.environ['BACKUPS_BUCKET_NAME'])
+dynamo_client = boto3.resource('dynamodb', region_name=os.environ['AWS_REGION'])
+table = boto3.resource('dynamodb', region_name=os.environ['AWS_REGION']).Table(os.environ['TABLE_NAME'])
 
 def lambda_handler(event, context):
 
     all_contacts_data = scan_contacts_table()
 
-    data_rows = convert_to_rows(all_contacts_data)
+    todays_date = format_date(datetime.today())
 
-    response = write_to_s3(data_rows)
+    data_rows = convert_to_rows(all_contacts_data, todays_date)
+
+    response = write_to_s3(data_rows, todays_date)
 
 def scan_contacts_table():
 
@@ -28,11 +29,9 @@ def scan_contacts_table():
 
     return all_contacts
 
-def convert_to_rows(all_contacts_data):
+def convert_to_rows(all_contacts_data, todays_date):
 
     data_rows = []
-
-    todays_date = format_date(datetime.today())
 
     # append today's date to each item as date of data pull
     for item in all_contacts_data:
@@ -41,10 +40,8 @@ def convert_to_rows(all_contacts_data):
 
     return data_rows
 
-def write_to_s3(data_rows):
+def write_to_s3(data_rows, todays_date):
     
-    todays_date = format_date(datetime.today())
-
     response = bucket.put_object(
         Body = json.dumps(data_rows).encode('UTF-8'),
         Key = f'{todays_date}.json'
@@ -54,6 +51,6 @@ def write_to_s3(data_rows):
 
 def format_date(date_object):
 
-  formatted_date = date_object.strftime('%Y-%m-%d')
+    formatted_date = date_object.strftime('%Y-%m-%d')
 
-  return formatted_date
+    return formatted_date

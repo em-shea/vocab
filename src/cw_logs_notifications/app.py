@@ -6,7 +6,7 @@ import boto3
 import base64
 from datetime import datetime
 
-sns_client = boto3.client('sns')
+sns_client = boto3.client('sns', region_name=os.environ['AWS_REGION'])
 
 def lambda_handler(event, context):
   
@@ -14,13 +14,7 @@ def lambda_handler(event, context):
 
   message = json.dumps(compose_message(log_json), indent=4)
 
-  response = sns_client.publish(
-          TargetArn = os.environ['SUB_TOPIC_ARN'], 
-          Message=json.dumps({'default': message}),
-          MessageStructure='json'
-      )
-
-  print("SNS Response", response)
+  response = publish_to_sns(message)
 
 def decode_and_decompress_log(event):
 
@@ -60,3 +54,13 @@ def compose_message(log_json):
     message_dict["event list"].append(error_dict)
 
   return message_dict
+
+def publish_to_sns(message):
+
+  response = sns_client.publish(
+        TargetArn = os.environ['SUB_TOPIC_ARN'], 
+        Message=json.dumps({'default': message}),
+        MessageStructure='json'
+      )
+  
+  return response

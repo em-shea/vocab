@@ -6,7 +6,6 @@ from datetime import datetime
 import sys
 sys.path.insert(0, '/opt')
 
-sns_client = boto3.client('sns')
 ses_client = boto3.client('ses')
 lambda_client = boto3.client('lambda')
 dynamo_client = boto3.resource('dynamodb')
