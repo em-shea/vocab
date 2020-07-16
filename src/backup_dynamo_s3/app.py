@@ -5,6 +5,8 @@ from datetime import datetime
 
 s3 = boto3.resource('s3')
 bucket = s3.Bucket(os.environ['BACKUPS_BUCKET_NAME'])
+
+# region_name specified in order to mock in unit tests
 dynamo_client = boto3.resource('dynamodb', region_name=os.environ['AWS_REGION'])
 table = boto3.resource('dynamodb', region_name=os.environ['AWS_REGION']).Table(os.environ['TABLE_NAME'])
 

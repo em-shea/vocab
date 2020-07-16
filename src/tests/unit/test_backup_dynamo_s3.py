@@ -46,7 +46,7 @@ class BackupDynamoS3Test(unittest.TestCase):
     self.assertEqual(s3_put_mock.call_count, 1)
 
   def scheduled_event(self):
-    {
+    return {
       "version": "0",
       "id": "d77bcbc4-0b2b-4d45-9694-b1df99175cfb",
       "detail-type": "Scheduled Event",

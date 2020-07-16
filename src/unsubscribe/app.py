@@ -4,8 +4,9 @@ import boto3
 from boto3.dynamodb.conditions import Key
 from botocore.exceptions import ClientError
 
-dynamo_client = boto3.resource('dynamodb')
-table = boto3.resource('dynamodb').Table(os.environ['TABLE_NAME'])
+# region_name specified in order to mock in unit tests
+dynamo_client = boto3.resource('dynamodb', region_name=os.environ['AWS_REGION'])
+table = boto3.resource('dynamodb', region_name=os.environ['AWS_REGION']).Table(os.environ['TABLE_NAME'])
 
 # Unsubscribe a user from the given HSK level or all levels.
 def lambda_handler(event, context):
@@ -16,12 +17,13 @@ def lambda_handler(event, context):
     email_address = body['email']
     list_id = body['list']
     
-    if list_id is not "all":
+    if list_id != "all":
       hsk_level = list_id[0]
       char_set = list_id[2:]
 
     # Call Dynamo to check if user is subscribed to the given level
-    subscriber_list = find_contact(email_address, list_id)
+    contact_keys = list_contacts(email_address, list_id)
+    subscriber_list = get_dynamo_contacts(contact_keys)
     # print("Found contacts: ", contact_found_count)
 
     unsubscribe_user(subscriber_list)
@@ -35,7 +37,7 @@ def lambda_handler(event, context):
         'body': '{"success" : true}'
       }
 
-def find_contact(email_address, list_id):
+def list_contacts(email_address, list_id):
 
     keys = []
 
@@ -59,8 +61,12 @@ def find_contact(email_address, list_id):
           'ListId': list_id,
           'SubscriberEmail': email_address
         })
+    
+    return keys
 
-    # Batch get item from Dynamo
+def get_dynamo_contacts(contact_keys):
+
+  # Batch get item from Dynamo
     try:
       response = dynamo_client.batch_get_item(
         RequestItems={

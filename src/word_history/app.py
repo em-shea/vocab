@@ -6,7 +6,8 @@ from datetime import timedelta
 from boto3.dynamodb.conditions import Key
 from botocore.exceptions import ClientError
 
-dynamo = boto3.resource('dynamodb')
+# region_name specified in order to mock in unit tests
+dynamo = boto3.resource('dynamodb', region_name=os.environ['AWS_REGION'])
 table = dynamo.Table(os.environ['TABLE_NAME'])
 
 all_lists = [

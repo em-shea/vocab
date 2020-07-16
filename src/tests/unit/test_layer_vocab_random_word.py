@@ -5,39 +5,44 @@ import os
 import json
 import unittest
 from unittest import mock
+from io import BytesIO
 
-with mock.patch.dict('os.environ', {'AWS_REGION': 'us-east-1', 'WORDS_BUCKET_NAME': 'mock-bucket-name', 'WORDS_BUCKET_KEY': 'mock-bucket-key'}):
-  from layer.vocab_random_word import select_random_word
+# done
+
+from layer import vocab_random_word
+
+print('starting test')
 
 def mocked_get_s3_file():
-  
-  # get contents from example_words_list.py
 
-  return csv_file
+  csv_file = "example_words_list.csv"
+  with open(csv_file) as fh:
+    contents = fh.read()
+
+  return contents
 
 class VocabRandomWordTest(unittest.TestCase):
 
-  @mock.patch('backup_dynamo_s3.app.write_to_s3', side_effect=mocked_get_s3_file)
+  @mock.patch('layer.vocab_random_word.get_s3_file', side_effect=mocked_get_s3_file)
   def test_build(self, s3_get_file_mock):
     
-    response = lambda_handler(self.scheduled_event(), "")
+    hsk_level = 2
+
+    response = vocab_random_word.select_random_word(hsk_level)
 
     self.assertEqual(s3_get_file_mock.call_count, 1)
+    self.assertEqual(response['HSK Level'], "2")
+  
+  @mock.patch('layer.vocab_random_word.get_s3_file', side_effect=mocked_get_s3_file)
+  def test_input_fail(self, s3_get_file_mock):
+    
+    hsk_level = "invalid hsk_level format"
 
-  def scheduled_event(self):
-    {
-      "version": "0",
-      "id": "d77bcbc4-0b2b-4d45-9694-b1df99175cfb",
-      "detail-type": "Scheduled Event",
-      "source": "aws.events",
-      "account": "123456789",
-      "time": "2016-09-25T04:55:26Z",
-      "region": "us-east-1",
-      "resources": [
-        "arn:aws:events:us-east-1:123456789:rule/test-scheduled-event"
-      ],
-      "detail": {}
-    }
+    response = vocab_random_word.select_random_word(hsk_level)
+    print("response: ", response)
+
+    self.assertEqual(s3_get_file_mock.call_count, 0)
+    self.assertEqual(response, "Invalid HSK level. HSK level should be a string representing an integer between 1 and 6.")
 
 if __name__ == '__main__':
     unittest.main()

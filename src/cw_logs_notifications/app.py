@@ -6,6 +6,7 @@ import boto3
 import base64
 from datetime import datetime
 
+# region_name specified in order to mock in unit tests
 sns_client = boto3.client('sns', region_name=os.environ['AWS_REGION'])
 
 def lambda_handler(event, context):

@@ -46,7 +46,7 @@ class CWLogsNotificationsTest(unittest.TestCase):
     self.assertEqual(decode_logs_mock.call_count, 1)
 
   def cw_logs_event(self):
-    {
+    return {
       "awslogs": {
         "data": "H4sIAIOmuFwAA8tJLVGvUqjKLFAoycgsBgAzQsm5DgAAAA=="
       }

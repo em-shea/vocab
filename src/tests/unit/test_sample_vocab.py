@@ -1,37 +1,95 @@
 import sys
 sys.path.append('../../')
+sys.path.append('../../layer')
 
 import os
 import json
 import unittest
 from unittest import mock
 
-# wip, unclear on how to mock layer and mock S3 data
-# input: apig call, no params
-# output: json, 5 random words for each level
+# done
 
-with mock.patch.dict('os.environ', {'AWS_REGION': 'us-east-1', 'WORDS_BUCKET_NAME': 'mock-bucket-name', 'WORDS_BUCKET_KEY': 'mock-bucket-key'}):
-  from sample_vocab.app import lambda_handler
+from sample_vocab.app import lambda_handler
 
-def mocked_get_vocab_lists():
-  local_vocab_lists: [
+def mocked_get_random(hsk_level):
+  
+  hsk_level_index = int(hsk_level) - 1
 
-  ]
-  return local_vocab_lists
+  local_vocab_lists = [
+        [
+          {
+            "Word": "怎么样",
+            "Pronunciation": "zěn me yàng",
+            "Definition": "how?; how about?; how was it?; how are things?",
+            "HSK Level": "1",
+            "Word-Traditional": "怎麼樣"
+          }
+        ],
+        [
+          {
+            "Word": "回答",
+            "Pronunciation": "huí dá",
+            "Definition": "to reply; to answer; the answer; CL:個|个[ge4]",
+            "HSK Level": "2",
+            "Word-Traditional": "回答"
+          }
+        ],
+        [
+          {
+            "Word": "腿",
+            "Pronunciation": "tuǐ",
+            "Definition": "leg; CL:條|条[tiao2]",
+            "HSK Level": "3",
+            "Word-Traditional": "腿"
+          }
+        ],
+        [
+          {
+            "Word": "乱",
+            "Pronunciation": "luàn",
+            "Definition": "in confusion or disorder; in a confused state of mind; disorder; upheaval; riot; illicit sexual relations; to throw into disorder; to mix up; indiscriminate; random; arbitrary",
+            "HSK Level": "4",
+            "Word-Traditional": "亂"
+          }
+        ],
+        [
+          {
+            "Word": "叉子",
+            "Pronunciation": "chā zi",
+            "Definition": "fork; CL:把[ba3]",
+            "HSK Level": "5",
+            "Word-Traditional": "叉子"
+          }
+        ],
+        [
+          {
+            "Word": "注视",
+            "Pronunciation": "zhù shì",
+            "Definition": "to watch attentively; to gaze",
+            "HSK Level": "6",
+            "Word-Traditional": "注視"
+          }
+        ],
+    ]
+
+  return local_vocab_lists[hsk_level_index]
 
 class SampleVocabTest(unittest.TestCase):
 
-  @mock.patch('cw_logs_notifications.app.publish_to_sns', side_effect=mocked_sns_publish)
-  @mock.patch('cw_logs_notifications.app.decode_and_decompress_log', side_effect=mocked_decode_decompress_log_data)
-  def test_build(self, sns_publish_mock, decode_logs_mock):
+  @mock.patch('sample_vocab.app.select_random_word', side_effect=mocked_get_random)
+  def test_build(self, get_random_mock):
     
     response = lambda_handler(self.apig_event(), "")
+    response_body = json.loads(response["body"])
 
-    self.assertEqual(sns_publish_mock.call_count, 1)
-    self.assertEqual(decode_logs_mock.call_count, 1)
+    self.assertEqual(get_random_mock.call_count, 30)
+    self.assertEqual(response["statusCode"], 200)
+    self.assertIn("headers", response)
+    self.assertIn("body", response)
+    self.assertEqual(len(response_body), 6)
 
   def apig_event(self):
-    {
+    return {
       "body": "",
       "path": "/sample_vocab",
       "headers": {
@@ -54,7 +112,7 @@ class SampleVocabTest(unittest.TestCase):
         "X-Forwarded-Proto": "https"
       },
       "multiValueHeaders": {},
-      "isBase64Encoded": false,
+      "isBase64Encoded": False,
       "multiValueQueryStringParameters": {},
       "requestContext": {
         "accountId": "123456789012",

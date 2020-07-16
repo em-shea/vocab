@@ -10,13 +10,11 @@ import sys
 sys.path.insert(0, '/opt')
 from vocab_random_word import select_random_word
 
-s3_client = boto3.client('s3')
-ses_client = boto3.client('ses')
-sns_client = boto3.client('sns')
-lambda_client = boto3.client('lambda')
-dynamo_client = boto3.resource('dynamodb')
-word_history_table = boto3.resource('dynamodb').Table(os.environ['TABLE_NAME'])
-contacts_table = boto3.resource('dynamodb').Table(os.environ['CONTACT_TABLE_NAME'])
+# region_name specified in order to mock in unit tests
+ses_client = boto3.client('ses', region_name=os.environ['AWS_REGION'])
+sns_client = boto3.client('sns', region_name=os.environ['AWS_REGION'])
+word_history_table = boto3.resource('dynamodb', region_name=os.environ['AWS_REGION']).Table(os.environ['TABLE_NAME'])
+contacts_table = boto3.resource('dynamodb', region_name=os.environ['AWS_REGION']).Table(os.environ['CONTACT_TABLE_NAME'])
 
 # Select a random word for each HSK level and store in word history Dynamo table 
 # Loop through list of contacts, assemble a customized email, and send
@@ -42,7 +40,7 @@ def lambda_handler(event, context):
     # print("Contacts scanned...", all_contacts)
 
     # contact item example:
-    # {'Date': '2020-01-13', 'CharacterSet': 'simplified', 'Status': 'unsubscribed', 'SubscriberEmail': 'c.emilyshea@gmail.com', 'ListId': '1'}
+    # {'Date': '2020-01-13', 'CharacterSet': 'simplified', 'Status': 'unsubscribed', 'SubscriberEmail': 'user@example.com', 'ListId': '1'}
 
     for contact in all_contacts:
 
@@ -127,6 +125,7 @@ def scan_contacts_table():
 # Populate relevant content in for the placeholders in the email template
 def assemble_html_content(hsk_level, email, word, char_set):
 
+    print("assembling content for...", email, word)
     # Select simplified or traditional character 
     if char_set == "simplified":
         selected_word = word["Word"]
@@ -144,7 +143,9 @@ def assemble_html_content(hsk_level, email, word, char_set):
         example_link = "https://fanyi.baidu.com/#zh/en/" + selected_word
 
     # We have an html template file packaged with this function's code which we read here
-    with open('template.html') as fh:
+    # To run unit tests for this function, we need to specify an absolute file path
+    abs_dir = os.path.dirname(os.path.abspath(__file__))
+    with open(os.path.join(abs_dir, 'template.html')) as fh:
         contents = fh.read()
 
     # Replace relevant content in example template

@@ -6,51 +6,32 @@ import json
 import unittest
 from unittest import mock
 
-# ses, dynamo, lambda clients
-# input: api gateway call w email, hsk list params
-# output: create dynamo user, send conf email
+# wip - any more assertions to add?
 
-with mock.patch.dict('os.environ', {'AWS_REGION': 'us-east-1', 'SUB_TOPIC_ARN': 'mock-topic'}):
-  from cw_logs_notifications.app import lambda_handler
+with mock.patch.dict('os.environ', {'AWS_REGION': 'us-east-1', 'TABLE_NAME': 'mock-table-name'}):
+  from subscribe.app import lambda_handler
 
-def mocked_sns_publish(message):
+def mocked_create_contact_dynamo(email_address, list_id, char_set):
+  return "Contact created in DynamoDB"
+
+def mocked_send_new_user_confirmation_email(email_address, subject_line, email_contents):
   return
 
-def mocked_decode_decompress_log_data(event):
-  log_json = {
-      "messageType": "DATA_MESSAGE",
-      "owner": "123456789012",
-      "logGroup": "/aws/lambda/mock-function-name",
-      "logStream": "2019/03/13/[$LATEST]94fa867e5374431291a7fc14e2f56ae7",
-      "subscriptionFilters": [
-          "LambdaStream_cloudwatchlogs"
-      ],
-      "logEvents": [
-        {
-          "id": "34622316099697884706540976068822859012661220141643892546",
-          "timestamp": 1552518348220,
-          "message": "REPORT RequestId: 6234bffe-149a-b642-81ff-2e8e376d8aff\tDuration: 46.84 ms\tBilled Duration: 100 ms \tMemory Size: 192 MB\tMax Memory Used: 72 MB\t\n"
-        }
-      ]
-    }
+class SubscribeTest(unittest.TestCase):
 
-  return log_json
+  @mock.patch('subscribe.app.create_contact_dynamo', side_effect=mocked_create_contact_dynamo)
+  @mock.patch('subscribe.app.send_new_user_confirmation_email', side_effect=mocked_send_new_user_confirmation_email)
+  def test_build(self, create_contact_mock, send_email_mock):
 
-class CWLogsNotificationsTest(unittest.TestCase):
+    response = lambda_handler(self.sub_apig_event(), "")
 
-  @mock.patch('cw_logs_notifications.app.publish_to_sns', side_effect=mocked_sns_publish)
-  @mock.patch('cw_logs_notifications.app.decode_and_decompress_log', side_effect=mocked_decode_decompress_log_data)
-  def test_build(self, sns_publish_mock, decode_logs_mock):
-    
-    response = lambda_handler(self.cw_logs_event(), "")
-
-    self.assertEqual(sns_publish_mock.call_count, 1)
-    self.assertEqual(decode_logs_mock.call_count, 1)
-
-  def apig_event(self):
-    {
-      "body": "",
-      "path": "/sample_vocab",
+    self.assertEqual(create_contact_mock.call_count, 1)
+    self.assertEqual(send_email_mock.call_count, 1)
+  
+  def sub_apig_event(self):
+    return {
+      "body": "{\"email\":\"user@example.com\",\"list\":\"4-traditional\"}",
+      "path": "/sub",
       "headers": {
         "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
         "Accept-Encoding": "gzip, deflate, lzma, sdch, br",
@@ -71,7 +52,7 @@ class CWLogsNotificationsTest(unittest.TestCase):
         "X-Forwarded-Proto": "https"
       },
       "multiValueHeaders": {},
-      "isBase64Encoded": false,
+      "isBase64Encoded": False,
       "multiValueQueryStringParameters": {},
       "requestContext": {
         "accountId": "123456789012",
@@ -102,7 +83,8 @@ class CWLogsNotificationsTest(unittest.TestCase):
       "resource": "/{proxy+}",
       "httpMethod": "GET",
       "queryStringParameters": {
-        "name": "me"
+        "email":"user@example.com",
+        "list":"4-traditional"
       },
       "stageVariables": {
         "stageVarName": "stageVarValue"
