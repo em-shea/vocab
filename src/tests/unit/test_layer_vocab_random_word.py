@@ -7,8 +7,6 @@ import unittest
 from unittest import mock
 from io import BytesIO
 
-# done
-
 from layer import vocab_random_word
 
 print('starting test')

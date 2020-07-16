@@ -102,7 +102,7 @@ class SendDailyEmailTest(unittest.TestCase):
   @mock.patch('send_daily_email.app.scan_contacts_table', side_effect=mocked_scan_contacts)
   @mock.patch('send_daily_email.app.select_random_word', side_effect=mocked_get_random)
   @mock.patch('send_daily_email.app.send_email', side_effect=mocked_send_email)
-  def test_build(self, scan_contacts_mock, get_random_mock, send_email_mock):
+  def test_build(self, send_email_mock, get_random_mock, scan_contacts_mock):
 
     response = lambda_handler(self.scheduled_event(), "")
 

@@ -6,8 +6,6 @@ import json
 import unittest
 from unittest import mock
 
-# done
-
 with mock.patch.dict('os.environ', {'AWS_REGION': 'us-east-1', 'SUB_TOPIC_ARN': 'mock-topic'}):
   from cw_logs_notifications.app import lambda_handler
 
@@ -38,7 +36,7 @@ class CWLogsNotificationsTest(unittest.TestCase):
 
   @mock.patch('cw_logs_notifications.app.publish_to_sns', side_effect=mocked_sns_publish)
   @mock.patch('cw_logs_notifications.app.decode_and_decompress_log', side_effect=mocked_decode_decompress_log_data)
-  def test_build(self, sns_publish_mock, decode_logs_mock):
+  def test_build(self, decode_logs_mock, sns_publish_mock):
     
     response = lambda_handler(self.cw_logs_event(), "")
 

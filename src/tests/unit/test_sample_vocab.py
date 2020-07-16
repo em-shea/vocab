@@ -7,8 +7,6 @@ import json
 import unittest
 from unittest import mock
 
-# done
-
 from sample_vocab.app import lambda_handler
 
 def mocked_get_random(hsk_level):

@@ -21,7 +21,7 @@ class SubscribeTest(unittest.TestCase):
 
   @mock.patch('subscribe.app.create_contact_dynamo', side_effect=mocked_create_contact_dynamo)
   @mock.patch('subscribe.app.send_new_user_confirmation_email', side_effect=mocked_send_new_user_confirmation_email)
-  def test_build(self, create_contact_mock, send_email_mock):
+  def test_build(self, send_email_mock, create_contact_mock):
 
     response = lambda_handler(self.sub_apig_event(), "")
 

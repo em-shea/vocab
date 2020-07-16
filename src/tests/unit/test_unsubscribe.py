@@ -6,18 +6,45 @@ import json
 import unittest
 from unittest import mock
 
-# wip
-
-# dynamo clients
-# input: api gateway call w email, hsk list params
-# output: create dynamo user, send conf email
-
-# test cases: if list = all, if list = 1-simplified; if subscribed email found, if not found
-
 with mock.patch.dict('os.environ', {'AWS_REGION': 'us-east-1', 'TABLE_NAME': 'mock-table-name'}):
   from unsubscribe.app import lambda_handler
 
-def mocked_get_dynamo_contacts(contact_keys):
+def mocked_get_dynamo_contacts_contact_found(contact_keys):
+
+  subscriber_list = [
+        {
+          "DateSubscribed":"6/12/20",
+          "CharacterSet":"simplified",
+          "Status":"subscribed",
+          "SubscriberEmail":"user@example.com",
+          "ListId":"4-traditional"
+        }
+      ]
+
+  return subscriber_list
+
+def mocked_get_dynamo_contacts_multiple_contacts(contact_keys):
+
+  subscriber_list = [
+        {
+          "DateSubscribed":"6/12/20",
+          "CharacterSet":"simplified",
+          "Status":"subscribed",
+          "SubscriberEmail":"user@example.com",
+          "ListId":"1-traditional"
+        },
+        {
+          "DateSubscribed":"6/12/20",
+          "CharacterSet":"simplified",
+          "Status":"subscribed",
+          "SubscriberEmail":"user@example.com",
+          "ListId":"4-traditional"
+        }
+      ]
+
+  return subscriber_list
+
+def mocked_get_dynamo_contacts_not_found(contact_keys):
 
   subscriber_list = []
 
@@ -29,16 +56,38 @@ def mocked_unsubscribe_user(subscriber_list):
 
 class UnsubscribeTest(unittest.TestCase):
 
-  @mock.patch('unsubscribe.app.get_dynamo_contacts', side_effect=mocked_get_dynamo_contacts)
+  @mock.patch('unsubscribe.app.get_dynamo_contacts', side_effect=mocked_get_dynamo_contacts_contact_found)
   @mock.patch('unsubscribe.app.unsubscribe_user', side_effect=mocked_unsubscribe_user)
-  def test_build(self, get_dynamo_contacts_mock, unsubscribe_user_mock):
+  def test_build(self, unsubscribe_user_mock, get_contacts_found_mock):
 
     unsub_list = "4-traditional"
 
     response = lambda_handler(self.unsub_apig_event(unsub_list), "")
 
-    self.assertEqual(get_dynamo_contacts_mock.call_count, 1)
+    self.assertEqual(get_contacts_found_mock.call_count, 1)
     self.assertEqual(unsubscribe_user_mock.call_count, 1)
+  
+  @mock.patch('unsubscribe.app.get_dynamo_contacts', side_effect=mocked_get_dynamo_contacts_multiple_contacts)
+  @mock.patch('unsubscribe.app.unsubscribe_user', side_effect=mocked_unsubscribe_user)
+  def test_unsub_all(self, unsubscribe_user_mock, get_contacts_multiple_mock):
+
+    unsub_list = "all"
+
+    response = lambda_handler(self.unsub_apig_event(unsub_list), "")
+
+    self.assertEqual(get_contacts_multiple_mock.call_count, 1)
+    self.assertEqual(unsubscribe_user_mock.call_count, 2)
+  
+  @mock.patch('unsubscribe.app.get_dynamo_contacts', side_effect=mocked_get_dynamo_contacts_not_found)
+  @mock.patch('unsubscribe.app.unsubscribe_user', side_effect=mocked_unsubscribe_user)
+  def test_user_not_found(self, unsubscribe_user_mock, get_contacts_not_found_mock):
+
+    unsub_list = "2-simplified"
+
+    response = lambda_handler(self.unsub_apig_event(unsub_list), "")
+
+    self.assertEqual(get_contacts_not_found_mock.call_count, 1)
+    self.assertEqual(unsubscribe_user_mock.call_count, 0)
   
   def unsub_apig_event(self, unsub_list):
     event_body = json.dumps({'email':'user@example.com', 'list':unsub_list})
