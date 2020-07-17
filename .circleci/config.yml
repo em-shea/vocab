@@ -8,20 +8,19 @@ jobs:
       - checkout
 
       - run:
-          name: Install awscli
-          command: sudo pip install awscli
-      
+          name: Install dependencies
+          command: |
+            sudo pip install awscli
+            sudo pip install aws-sam-cli
+            sudo pip install coverage
+
       - run:
-          name: Install SAM
-          command: sudo pip install aws-sam-cli
-      
-      - run:
-          name: Run Tests
+          name: Run tests
           working_directory: src/tests/unit
           command: coverage run -m unittest discover
         
       - run:
-          name: Run Coverage Report
+          name: Run coverage report
           working_directory: src/tests/unit
           command: coverage report -m --fail-under 80
 
