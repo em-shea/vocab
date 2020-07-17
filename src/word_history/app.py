@@ -47,7 +47,7 @@ def lambda_handler(event,context):
       else:
         from_date = format_date(datetime.today() - timedelta(days=int(90)))
 
-    items = pull_words_with_params(list_id, from_date, todays_date)
+      items = pull_words_with_params(list_id, from_date, todays_date)
 
   # If no params passed, get all lists words from the last 7 days
   else:

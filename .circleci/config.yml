@@ -14,6 +14,16 @@ jobs:
       - run:
           name: Install SAM
           command: sudo pip install aws-sam-cli
+      
+      - run:
+          name: Run Tests
+          working_directory: src/tests/unit
+          command: coverage run -m unittest discover
+        
+      - run:
+          name: Run Coverage Report
+          working_directory: src/tests/unit
+          command: coverage report -m --fail-under 80
 
       - run: 
           name: Deploy with SAM

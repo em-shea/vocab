@@ -26,7 +26,10 @@ def lambda_handler(event, context):
     subscriber_list = get_dynamo_contacts(contact_keys)
     # print("Found contacts: ", contact_found_count)
 
-    unsubscribe_user(subscriber_list)
+    # If user does exist, change subscribed status to unsubscribed
+    # If no users in subscriber_list, do nothing
+    for user in subscriber_list:
+      unsubscribe_user(user)
 
     return {
         'statusCode': 200,
@@ -62,16 +65,17 @@ def list_contacts(email_address, list_id):
           'SubscriberEmail': email_address
         })
     
+    print(keys)
     return keys
 
 def get_dynamo_contacts(contact_keys):
 
-  # Batch get item from Dynamo
+    # Batch get item from Dynamo
     try:
       response = dynamo_client.batch_get_item(
         RequestItems={
           table.name : {
-            'Keys' : keys
+            'Keys' : contact_keys
           }
         }
       )
@@ -83,23 +87,20 @@ def get_dynamo_contacts(contact_keys):
 
     return response["Responses"][table.name]
 
-def unsubscribe_user(subscriber_list):
+def unsubscribe_user(user):
 
-    # If user does exist, change subscribed status to unsubscribed
-    # If no users in subscriber_list, the loop will do nothing
-    for item in subscriber_list:
-      unsub_response = table.update_item(
-        Key = {
-          "SubscriberEmail": item["SubscriberEmail"],
-          "ListId": item["ListId"]
-        },
-        UpdateExpression = "set #s = :status",
-        ExpressionAttributeValues = {
-          ":status": "unsubscribed"
-        },
-        ExpressionAttributeNames = {
-          "#s": "Status"
-        },
-        ReturnValues = "UPDATED_NEW"
-      )
-      # print("Updated contact...", unsub_response)
+    unsub_response = table.update_item(
+      Key = {
+        "SubscriberEmail": user["SubscriberEmail"],
+        "ListId": user["ListId"]
+      },
+      UpdateExpression = "set #s = :status",
+      ExpressionAttributeValues = {
+        ":status": "unsubscribed"
+      },
+      ExpressionAttributeNames = {
+        "#s": "Status"
+      },
+      ReturnValues = "UPDATED_NEW"
+    )
+    # print("Updated contact...", unsub_response)

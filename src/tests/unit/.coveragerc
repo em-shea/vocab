@@ -1,0 +1,9 @@
+[run]
+# include src/ dir
+include =
+    ../../*
+
+# omit current dir (tests/unit) and __init__.py
+omit =
+    ./*
+    */__init__.py
