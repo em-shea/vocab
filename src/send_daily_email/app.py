@@ -5,6 +5,7 @@ import json
 import time
 import boto3
 from datetime import datetime
+from botocore.exceptions import ClientError
 
 import sys
 sys.path.insert(0, '/opt')
@@ -16,8 +17,6 @@ sns_client = boto3.client('sns', region_name=os.environ['AWS_REGION'])
 word_history_table = boto3.resource('dynamodb', region_name=os.environ['AWS_REGION']).Table(os.environ['TABLE_NAME'])
 contacts_table = boto3.resource('dynamodb', region_name=os.environ['AWS_REGION']).Table(os.environ['CONTACT_TABLE_NAME'])
 
-todays_announcement = get_announcement()
-
 # Select a random word for each HSK level and store in word history Dynamo table 
 # Loop through list of contacts, assemble a customized email, and send
 # Log each send and send error notification on failure
@@ -28,12 +27,13 @@ def lambda_handler(event, context):
 
     # If unable to store word in Dynamo, continue sending campaign
     try:
-
         # Write to Dynamo
         store_words(word_list)
 
     except Exception as e:
         print(e)
+
+    todays_announcement = get_announcement()
 
     # Scan the contacts table for a list of all contacts
     all_contacts = scan_contacts_table()
@@ -75,10 +75,13 @@ def lambda_handler(event, context):
 def get_announcement():
 
     todays_date = str(datetime.today().strftime('%Y-%m-%d'))
+    file_name = todays_date + ".json"
+
+    s3 = boto3.client('s3')
 
     try:
-        s3_file = s3.Object(Bucket=os.environ['WORDS_BUCKET_NAME'], todays_date + '.json').load()
-    except botocore.exceptions.ClientError as e:
+        s3_file = s3.get_object(Bucket=os.environ['ANNOUNCEMENTS_BUCKET'], Key=file_name)
+    except ClientError as e:
         if e.response['Error']['Code'] == "404":
             return None
         else:
