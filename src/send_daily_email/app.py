@@ -16,6 +16,8 @@ sns_client = boto3.client('sns', region_name=os.environ['AWS_REGION'])
 word_history_table = boto3.resource('dynamodb', region_name=os.environ['AWS_REGION']).Table(os.environ['TABLE_NAME'])
 contacts_table = boto3.resource('dynamodb', region_name=os.environ['AWS_REGION']).Table(os.environ['CONTACT_TABLE_NAME'])
 
+todays_announcement = get_announcement()
+
 # Select a random word for each HSK level and store in word history Dynamo table 
 # Loop through list of contacts, assemble a customized email, and send
 # Log each send and send error notification on failure
@@ -33,11 +35,8 @@ def lambda_handler(event, context):
     except Exception as e:
         print(e)
 
-    # print("Word list for today...", word_list)
-
     # Scan the contacts table for a list of all contacts
     all_contacts = scan_contacts_table()
-    # print("Contacts scanned...", all_contacts)
 
     # contact item example:
     # {'Date': '2020-01-13', 'CharacterSet': 'simplified', 'Status': 'unsubscribed', 'SubscriberEmail': 'user@example.com', 'ListId': '1'}
@@ -52,13 +51,11 @@ def lambda_handler(event, context):
             email = contact['SubscriberEmail']
 
             word_index = int(contact['ListId'][0]) - 1
-            # print("Word index:", word_index)
 
             hsk_level = list_id[0]
             char_set = contact['CharacterSet']
 
             word = word_list[word_index]
-            # print("Word for contact:", word)
 
             # If the get_daily_words() hit an error and did not select a word for a given HSK level,
             # word will be None. If so, do not send an email.
@@ -74,6 +71,22 @@ def lambda_handler(event, context):
             # else:
             #     print("Unsubscribed contact:", contact['SubscriberEmail'])
             #     pass
+
+def get_announcement():
+
+    todays_date = str(datetime.today().strftime('%Y-%m-%d'))
+
+    try:
+        s3_file = s3.Object(Bucket=os.environ['WORDS_BUCKET_NAME'], todays_date + '.json').load()
+    except botocore.exceptions.ClientError as e:
+        if e.response['Error']['Code'] == "404":
+            return None
+        else:
+            raise
+    else:
+        s3_file_content = s3_file['Body'].read().decode('utf-8')
+        json_content = json.loads(s3_file_content)
+        return json_content['message']
 
 def get_daily_words():
 
