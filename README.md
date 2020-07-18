@@ -25,10 +25,10 @@ Link to the [frontend repo](https://github.com/em-shea/vocab-frontend-vue).
 
 | Roadmap item  | Status |
 | ------------- | :-------------: |
-| Build interface for quizzes | |
+| Build interface for quizzes | :soon: |
+| Chengyu vocab list | :soon: |
 | Add word audio support for email and website | |
 | Create daily vocab Alexa skill | |
-| Chengyu vocab list | |
 | Build subscriber analytics QuickSight dashboard | :heavy_check_mark: |
 | Add support for traditional characters | :heavy_check_mark: |
 | Refactor email service from SendGrid to SES + DynamoDB | :heavy_check_mark: |
