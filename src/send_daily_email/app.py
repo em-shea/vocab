@@ -33,7 +33,7 @@ def lambda_handler(event, context):
     except Exception as e:
         print(e)
 
-    todays_announcement = get_announcement()
+    todays_announcement_html = get_announcement()
 
     # Scan the contacts table for a list of all contacts
     all_contacts = scan_contacts_table()
@@ -61,7 +61,7 @@ def lambda_handler(event, context):
             # word will be None. If so, do not send an email.
             if word is not None:
 
-                campaign_contents = assemble_html_content(hsk_level, email, word, char_set)
+                campaign_contents = assemble_html_content(hsk_level, email, word, char_set, todays_announcement_html)
 
                 try:
                     response = send_email(campaign_contents, email)
@@ -79,6 +79,8 @@ def get_announcement():
 
     s3 = boto3.client('s3')
 
+    announcement_file_message = ""
+
     try:
         s3_file = s3.get_object(Bucket=os.environ['ANNOUNCEMENTS_BUCKET'], Key=file_name)
     except ClientError as e:
@@ -89,7 +91,16 @@ def get_announcement():
     else:
         s3_file_content = s3_file['Body'].read().decode('utf-8')
         json_content = json.loads(s3_file_content)
-        return json_content['message']
+        announcement_file_message = json_content['message']
+
+        # We have an html template file packaged with this function's code which we read here
+        # To run unit tests for this function, we need to specify an absolute file path
+        abs_dir = os.path.dirname(os.path.abspath(__file__))
+        with open(os.path.join(abs_dir, 'announcements.html')) as fh:
+            announcement_html = fh.read()
+
+        announcement_html = announcement_html.replace("{announcement_message}", announcement_file_message)
+        return announcement_html
 
 def get_daily_words():
 
@@ -139,7 +150,7 @@ def scan_contacts_table():
     return all_contacts
 
 # Populate relevant content in for the placeholders in the email template
-def assemble_html_content(hsk_level, email, word, char_set):
+def assemble_html_content(hsk_level, email, word, char_set, todays_announcement_html):
 
     print("assembling content for...", email, word)
     # Select simplified or traditional character 
@@ -172,6 +183,10 @@ def assemble_html_content(hsk_level, email, word, char_set):
     campaign_contents = campaign_contents.replace("{level}", "HSK Level " + hsk_level)
     campaign_contents = campaign_contents.replace("{history_link}", "https://haohaotiantian.com/history?list=HSKLevel" + hsk_level + "&dates=30&char=" + char_set)
     campaign_contents = campaign_contents.replace("{unsubscribe_link}", "https://haohaotiantian.com/unsub?level=" + hsk_level + "&email=" + email + "&char=" + char_set)
+    if todays_announcement_html is not None:
+        campaign_contents = campaign_contents.replace("{announcement_slot}", todays_announcement_html)
+    else:
+        campaign_contents = campaign_contents.replace("{announcement_slot}", "")
 
     return campaign_contents
 
