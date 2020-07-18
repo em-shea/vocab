@@ -8,12 +8,21 @@ jobs:
       - checkout
 
       - run:
-          name: Install awscli
-          command: sudo pip install awscli
-      
+          name: Install dependencies
+          command: |
+            sudo pip install awscli
+            sudo pip install aws-sam-cli
+            sudo pip install coverage
+
       - run:
-          name: Install SAM
-          command: sudo pip install aws-sam-cli
+          name: Run tests
+          working_directory: src/tests/unit
+          command: coverage run -m unittest discover
+        
+      - run:
+          name: Run coverage report
+          working_directory: src/tests/unit
+          command: coverage report -m --fail-under 80
 
       - run: 
           name: Deploy with SAM
@@ -21,9 +30,8 @@ jobs:
             sam package --s3-bucket hsk-vocab --output-template-file packaged-template.yaml 
             
             if [ "${CIRCLE_BRANCH}" == "master" ]; then              
-              sam deploy --template-file ./packaged-template.yaml --stack-name vocab --region us-east-1 --capabilities CAPABILITY_IAM --parameter-overrides WordsBucketName=hsk-vocab WordsBucketKey=HSK_Level_6.csv ListsBucketName=hsk-vocab ListsBucketKey=Contact_Lists.csv DomainName=https://haohaotiantian.com SGApiKey=$SGApiKey SubNotifyEmail=$SubNotifyEmail DynamoBackupsS3BucketName=hhtt-backups Stage=prod
+              sam deploy --template-file ./packaged-template.yaml --stack-name vocab --region us-east-1 --capabilities CAPABILITY_IAM --parameter-overrides WordsBucketName=hsk-vocab WordsBucketKey=HSK_Level_6.csv ListsBucketName=hsk-vocab ListsBucketKey=Contact_Lists.csv DomainName=https://haohaotiantian.com SubNotifyEmail=$SubNotifyEmail DynamoBackupsS3BucketName=hhtt-backups Stage=prod
             fi
             if [ "${CIRCLE_BRANCH}" == "staging" ]; then
-              sam deploy --template-file ./packaged-template.yaml --stack-name vocab-staging --region us-east-1 --capabilities CAPABILITY_IAM --parameter-overrides WordsBucketName=hsk-vocab-staging WordsBucketKey=HSK_Level_6.csv ListsBucketName=hsk-vocab-staging ListsBucketKey=Contact_Lists.csv DomainName=https://staging.haohaotiantian.com SGApiKey=$SGApiKeyStaging SubNotifyEmail=$SubNotifyEmail DynamoBackupsS3BucketName=hhtt-backups-staging Stage=staging
+              sam deploy --template-file ./packaged-template.yaml --stack-name vocab-staging --region us-east-1 --capabilities CAPABILITY_IAM --parameter-overrides WordsBucketName=hsk-vocab-staging WordsBucketKey=HSK_Level_6.csv ListsBucketName=hsk-vocab-staging ListsBucketKey=Contact_Lists.csv DomainName=https://staging.haohaotiantian.com SubNotifyEmail=$SubNotifyEmail DynamoBackupsS3BucketName=hhtt-backups-staging Stage=staging
             fi
-           

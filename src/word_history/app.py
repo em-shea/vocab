@@ -6,7 +6,8 @@ from datetime import timedelta
 from boto3.dynamodb.conditions import Key
 from botocore.exceptions import ClientError
 
-dynamo = boto3.resource('dynamodb')
+# region_name specified in order to mock in unit tests
+dynamo = boto3.resource('dynamodb', region_name=os.environ['AWS_REGION'])
 table = dynamo.Table(os.environ['TABLE_NAME'])
 
 all_lists = [
@@ -46,7 +47,7 @@ def lambda_handler(event,context):
       else:
         from_date = format_date(datetime.today() - timedelta(days=int(90)))
 
-    items = pull_words_with_params(list_id, from_date, todays_date)
+      items = pull_words_with_params(list_id, from_date, todays_date)
 
   # If no params passed, get all lists words from the last 7 days
   else:

@@ -6,13 +6,15 @@ from datetime import datetime
 import sys
 sys.path.insert(0, '/opt')
 
-sns_client = boto3.client('sns')
-ses_client = boto3.client('ses')
-lambda_client = boto3.client('lambda')
-dynamo_client = boto3.resource('dynamodb')
+# region_name specified in order to mock in unit tests
+ses_client = boto3.client('ses', region_name=os.environ['AWS_REGION'])
+lambda_client = boto3.client('lambda', region_name=os.environ['AWS_REGION'])
+dynamo_client = boto3.resource('dynamodb', region_name=os.environ['AWS_REGION'])
 
 # Subscribe a new user, including sending an email confirmation to the user and a notification to the app owner
 def lambda_handler(event, context):
+
+    print(event)
 
     body = json.loads(event["body"])
 
@@ -41,9 +43,11 @@ def lambda_handler(event, context):
             'body': '{"success" : false}'
         }
 
+    email_address, subject_line, email_contents = assemble_email_contents(email_address, hsk_level, char_set)
+
     # Send confirmation email from SES
     try:
-        send_new_user_confirmation_email_ses(email_address, hsk_level, char_set)
+        send_new_user_confirmation_email(email_address, subject_line, email_contents)
         # print(f"Success: Confirmation email sent through SES - {partial_email}, {hsk_level}.")
     except Exception as e:
         print(f"Error: Failed to send confirmation email through SES - {partial_email}, {hsk_level}.")
@@ -87,7 +91,7 @@ def create_contact_dynamo(email_address, list_id, char_set):
 
     # print(f"Contact added to Dynamo - {email_address[0:5]}, {list_id}.")
 
-def send_new_user_confirmation_email_ses(email_address, hsk_level, char_set):
+def assemble_email_contents(email_address, hsk_level, char_set):
 
     # Change subject_line and template to simplified or traditional char version
     if char_set == "simplified":
@@ -98,12 +102,18 @@ def send_new_user_confirmation_email_ses(email_address, hsk_level, char_set):
         email_template = 'confirmation_template_traditional.html'
 
     # Open html template file that is packaged with this function's code
-    with open(email_template) as fh:
+    # To run unit tests for this function, we need to specify an absolute file path
+    abs_dir = os.path.dirname(os.path.abspath(__file__))
+    with open(os.path.join(abs_dir, email_template)) as fh:
         contents = fh.read()
 
     email_contents = contents.replace("{level}", hsk_level)
     email_contents = email_contents.replace("{unsubscribe_link}", "https://haohaotiantian.com/unsub?level=" + hsk_level + "&email=" + email_address + "&char=" + char_set)
 
+    return email_address, subject_line, email_contents
+
+def send_new_user_confirmation_email(email_address, subject_line, email_contents):
+    
     payload = ses_client.send_email(
         Source = "Haohaotiantian <welcome@haohaotiantian.com>",
         Destination = {

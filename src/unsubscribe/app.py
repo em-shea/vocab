@@ -4,8 +4,9 @@ import boto3
 from boto3.dynamodb.conditions import Key
 from botocore.exceptions import ClientError
 
-dynamo_client = boto3.resource('dynamodb')
-table = boto3.resource('dynamodb').Table(os.environ['TABLE_NAME'])
+# region_name specified in order to mock in unit tests
+dynamo_client = boto3.resource('dynamodb', region_name=os.environ['AWS_REGION'])
+table = boto3.resource('dynamodb', region_name=os.environ['AWS_REGION']).Table(os.environ['TABLE_NAME'])
 
 # Unsubscribe a user from the given HSK level or all levels.
 def lambda_handler(event, context):
@@ -16,15 +17,19 @@ def lambda_handler(event, context):
     email_address = body['email']
     list_id = body['list']
     
-    if list_id is not "all":
+    if list_id != "all":
       hsk_level = list_id[0]
       char_set = list_id[2:]
 
     # Call Dynamo to check if user is subscribed to the given level
-    subscriber_list = find_contact(email_address, list_id)
+    contact_keys = list_contacts(email_address, list_id)
+    subscriber_list = get_dynamo_contacts(contact_keys)
     # print("Found contacts: ", contact_found_count)
 
-    unsubscribe_user(subscriber_list)
+    # If user does exist, change subscribed status to unsubscribed
+    # If no users in subscriber_list, do nothing
+    for user in subscriber_list:
+      unsubscribe_user(user)
 
     return {
         'statusCode': 200,
@@ -35,7 +40,7 @@ def lambda_handler(event, context):
         'body': '{"success" : true}'
       }
 
-def find_contact(email_address, list_id):
+def list_contacts(email_address, list_id):
 
     keys = []
 
@@ -59,13 +64,18 @@ def find_contact(email_address, list_id):
           'ListId': list_id,
           'SubscriberEmail': email_address
         })
+    
+    print(keys)
+    return keys
+
+def get_dynamo_contacts(contact_keys):
 
     # Batch get item from Dynamo
     try:
       response = dynamo_client.batch_get_item(
         RequestItems={
           table.name : {
-            'Keys' : keys
+            'Keys' : contact_keys
           }
         }
       )
@@ -77,23 +87,20 @@ def find_contact(email_address, list_id):
 
     return response["Responses"][table.name]
 
-def unsubscribe_user(subscriber_list):
+def unsubscribe_user(user):
 
-    # If user does exist, change subscribed status to unsubscribed
-    # If no users in subscriber_list, the loop will do nothing
-    for item in subscriber_list:
-      unsub_response = table.update_item(
-        Key = {
-          "SubscriberEmail": item["SubscriberEmail"],
-          "ListId": item["ListId"]
-        },
-        UpdateExpression = "set #s = :status",
-        ExpressionAttributeValues = {
-          ":status": "unsubscribed"
-        },
-        ExpressionAttributeNames = {
-          "#s": "Status"
-        },
-        ReturnValues = "UPDATED_NEW"
-      )
-      # print("Updated contact...", unsub_response)
+    unsub_response = table.update_item(
+      Key = {
+        "SubscriberEmail": user["SubscriberEmail"],
+        "ListId": user["ListId"]
+      },
+      UpdateExpression = "set #s = :status",
+      ExpressionAttributeValues = {
+        ":status": "unsubscribed"
+      },
+      ExpressionAttributeNames = {
+        "#s": "Status"
+      },
+      ReturnValues = "UPDATED_NEW"
+    )
+    # print("Updated contact...", unsub_response)
