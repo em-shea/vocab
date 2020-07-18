@@ -22,7 +22,7 @@ jobs:
       - run:
           name: Run coverage report
           working_directory: src/tests/unit
-          command: coverage report -m --fail-under 50
+          command: coverage report -m
 
       - run: 
           name: Deploy with SAM

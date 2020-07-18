@@ -283,14 +283,14 @@ Resources:
 
   VocabAnnouncementsBucket:
     Type: AWS::S3::Bucket
-      Properties:
-        AccessControl: Private
-        BucketName: !Sub hhtt-email-announcements-${Stage}
-        PublicAccessBlockConfiguration:
-          BlockPublicAcls: true
-          BlockPublicPolicy: true
-          IgnorePublicAcls: true
-          RestrictPublicBuckets: true
+    Properties:
+      AccessControl: Private
+      BucketName: !Sub hhtt-email-announcements-${Stage}
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
 
 ### Receiving function error notifications
 
