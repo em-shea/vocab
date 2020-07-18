@@ -46,6 +46,8 @@ Resources:
             IdentityName: haohaotiantian.com
         - S3ReadPolicy:
             BucketName: !Ref WordsBucketName
+        - S3ReadPolicy:
+            BucketName: !Ref VocabAnnouncementsBucket
         - DynamoDBCrudPolicy:
             TableName: !Ref WordHistoryDynamoDBTable
         - DynamoDBCrudPolicy:
