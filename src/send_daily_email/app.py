@@ -83,11 +83,9 @@ def get_announcement():
 
     try:
         s3_file = s3.get_object(Bucket=os.environ['ANNOUNCEMENTS_BUCKET'], Key=file_name)
-    except ClientError as e:
-        if e.response['Error']['Code'] == "404":
-            return None
-        else:
-            raise
+    except Exception as e:
+        # Return None if file not found or other error
+        return None
     else:
         s3_file_content = s3_file['Body'].read().decode('utf-8')
         json_content = json.loads(s3_file_content)
