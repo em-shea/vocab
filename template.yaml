@@ -46,6 +46,8 @@ Resources:
             IdentityName: haohaotiantian.com
         - S3ReadPolicy:
             BucketName: !Ref WordsBucketName
+        - S3ReadPolicy:
+            BucketName: !Ref VocabAnnouncementsBucket
         - DynamoDBCrudPolicy:
             TableName: !Ref WordHistoryDynamoDBTable
         - DynamoDBCrudPolicy:
@@ -57,6 +59,7 @@ Resources:
           WORDS_BUCKET_KEY: !Ref WordsBucketKey
           LISTS_BUCKET_NAME: !Ref ListsBucketName
           LISTS_BUCKET_KEY: !Ref ListsBucketKey
+          ANNOUNCEMENTS_BUCKET: !Ref VocabAnnouncementsBucket
           TABLE_NAME: !Ref WordHistoryDynamoDBTable
           CONTACT_TABLE_NAME: !Ref SubscriberContactListDynamoDBTable
           STAGE: !Ref Stage
@@ -277,6 +280,19 @@ Resources:
       ProvisionedThroughput:
         ReadCapacityUnits: 0
         WriteCapacityUnits: 0
+
+### S3 bucket for email announcements
+
+  VocabAnnouncementsBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      AccessControl: Private
+      BucketName: !Sub hhtt-email-announcements-${Stage}
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
 
 ### Receiving function error notifications
 

@@ -10,8 +10,11 @@ from unittest import mock
 # wip
 # No such file or directory: 'template.html'
 
-with mock.patch.dict('os.environ', {'AWS_REGION': 'us-east-1', 'TABLE_NAME': 'mock-table', 'CONTACT_TABLE_NAME': 'mock-contact-table'}):
+with mock.patch.dict('os.environ', {'AWS_REGION': 'us-east-1', 'TABLE_NAME': 'mock-table', 'ANNOUNCEMENTS_BUCKET': 'mock-bucket', 'CONTACT_TABLE_NAME': 'mock-contact-table'}):
   from send_daily_email.app import lambda_handler
+
+def mocked_get_announcement():
+  return None
 
 def mocked_store_words(word_list):
   return
@@ -99,13 +102,15 @@ def mocked_get_random(hsk_level):
 
 class SendDailyEmailTest(unittest.TestCase):
 
+  @mock.patch('send_daily_email.app.get_announcement', side_effect=mocked_get_announcement)
   @mock.patch('send_daily_email.app.scan_contacts_table', side_effect=mocked_scan_contacts)
   @mock.patch('send_daily_email.app.select_random_word', side_effect=mocked_get_random)
   @mock.patch('send_daily_email.app.send_email', side_effect=mocked_send_email)
-  def test_build(self, send_email_mock, get_random_mock, scan_contacts_mock):
+  def test_build(self, send_email_mock, get_random_mock, scan_contacts_mock, get_announcement_mock):
 
     response = lambda_handler(self.scheduled_event(), "")
 
+    self.assertEqual(get_announcement_mock.call_count, 1)
     self.assertEqual(scan_contacts_mock.call_count, 1)
     self.assertEqual(get_random_mock.call_count, 6)
     self.assertEqual(send_email_mock.call_count, 2)
