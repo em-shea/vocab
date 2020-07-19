@@ -29,7 +29,6 @@ def lambda_handler(event, context):
     try:
         # Write to Dynamo
         store_words(word_list)
-
     except Exception as e:
         print(e)
 
@@ -46,9 +45,9 @@ def lambda_handler(event, context):
         # Send emails to all subscribed contacts
         if not contact['Status'] == 'unsubscribed':
             partial_email = contact['SubscriberEmail'][0:5]
-            print("Subscribed contact:", partial_email)
             list_id = contact['ListId']
             email = contact['SubscriberEmail']
+            print("Subscribed contact: ", partial_email, list_id)
 
             word_index = int(contact['ListId'][0]) - 1
 
@@ -68,9 +67,6 @@ def lambda_handler(event, context):
                 except Exception as e:
                     print(f"Error: Failed to send email - {partial_email}, {list_id}.")
                     print(e)
-            # else:
-            #     print("Unsubscribed contact:", contact['SubscriberEmail'])
-            #     pass
 
 def get_announcement():
 
@@ -136,8 +132,6 @@ def store_words(word_list):
 
 def scan_contacts_table():
 
-    # print("Scanning contacts table...")
-
     # Loop through contacts in Dynamo
     results = contacts_table.scan(
         Select = "ALL_ATTRIBUTES"
@@ -150,14 +144,12 @@ def scan_contacts_table():
 # Populate relevant content in for the placeholders in the email template
 def assemble_html_content(hsk_level, email, word, char_set, todays_announcement_html):
 
-    print("assembling content for...", email, word)
     # Select simplified or traditional character 
     if char_set == "simplified":
         selected_word = word["Word"]
     else:
         selected_word = word["Word-Traditional"]
 
-    # print("Assembling HTML content...")
     num_level = int(hsk_level)
 
     # Create example sentence URL
@@ -170,7 +162,7 @@ def assemble_html_content(hsk_level, email, word, char_set, todays_announcement_
     # We have an html template file packaged with this function's code which we read here
     # To run unit tests for this function, we need to specify an absolute file path
     abs_dir = os.path.dirname(os.path.abspath(__file__))
-    with open(os.path.join(abs_dir, 'template2.html')) as fh:
+    with open(os.path.join(abs_dir, 'template.html')) as fh:
         contents = fh.read()
 
     # Replace relevant content in example template
@@ -191,7 +183,6 @@ def assemble_html_content(hsk_level, email, word, char_set, todays_announcement_
 # Send SES email
 def send_email(campaign_contents, email):
 
-    # print("Sending SES email...")
     response = ses_client.send_email(
         Source = "Haohaotiantian <vocab@haohaotiantian.com>",
         Destination = {
@@ -213,5 +204,4 @@ def send_email(campaign_contents, email):
         }
     )
 
-    # print("SES response", response)
     return response
