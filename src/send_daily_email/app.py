@@ -170,7 +170,7 @@ def assemble_html_content(hsk_level, email, word, char_set, todays_announcement_
     # We have an html template file packaged with this function's code which we read here
     # To run unit tests for this function, we need to specify an absolute file path
     abs_dir = os.path.dirname(os.path.abspath(__file__))
-    with open(os.path.join(abs_dir, 'template.html')) as fh:
+    with open(os.path.join(abs_dir, 'template2.html')) as fh:
         contents = fh.read()
 
     # Replace relevant content in example template
