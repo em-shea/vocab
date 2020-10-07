@@ -171,6 +171,7 @@ def assemble_html_content(hsk_level, email, word, char_set, todays_announcement_
     campaign_contents = campaign_contents.replace("{definition}", word["Definition"])
     campaign_contents = campaign_contents.replace("{link}", example_link)
     campaign_contents = campaign_contents.replace("{level}", "HSK Level " + hsk_level)
+    campaign_contents = campaign_contents.replace("{quiz_link}", "https://haohaotiantian.com/quiz?list=HSKLevel" + hsk_level + + "&days=14&ques=10&char=" + char_set)
     campaign_contents = campaign_contents.replace("{history_link}", "https://haohaotiantian.com/history?list=HSKLevel" + hsk_level + "&dates=30&char=" + char_set)
     campaign_contents = campaign_contents.replace("{unsubscribe_link}", "https://haohaotiantian.com/unsub?level=" + hsk_level + "&email=" + email + "&char=" + char_set)
     if todays_announcement_html is not None:
