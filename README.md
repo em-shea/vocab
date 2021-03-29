@@ -25,14 +25,11 @@ You can read about the development process and architecture in this blog post se
 
 | Roadmap item | Status |
 | ------------- | :-------------: |
-
 | Add user profiles | :soon: |
 | Chengyu vocab list | |
 | Add word audio support for email and website | |
 | Auto-generated quizzes | :heavy_check_mark: |
 | Build subscriber analytics QuickSight dashboard | :heavy_check_mark: |
 | Add support for traditional characters | :heavy_check_mark: |
-| Refactor email service from SendGrid to SES + DynamoDB | :heavy_check_mark: |
 | Build interface for users to explore and export word history | :heavy_check_mark: |
-| Refactor homepage to Vue | :heavy_check_mark: |
 | Create API to serve daily word history | :heavy_check_mark: |
