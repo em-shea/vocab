@@ -12,7 +12,10 @@ To subscribe, visit https://haohaotiantian.com, where you can preview sample wor
 
 ## Architecture
 
-You can read about the development process and architecture in this blog post series: 
+You can learn about the development process and architecture decisions in this talk:
+- [Getting started building your first serverless web application](https://www.youtube.com/watch?v=DdyhdnWVukc)
+
+And in this blog post series:
 - [Developing a daily Chinese vocab app](https://emshea.com/post/chinese-vocab-app)
 - [Integrating DynamoDB in my Chinese vocab app](https://emshea.com/post/vocab-app-database)
 - [Migrating to a serverless contact management backend](https://emshea.com/post/vocab-subscriber-backend)
@@ -26,7 +29,7 @@ You can read about the development process and architecture in this blog post se
 | Roadmap item | Status |
 | ------------- | :-------------: |
 | Add user profiles | :soon: |
-| Chengyu vocab list | |
+| 成语 vocab list | |
 | Add word audio support for email and website | |
 | Auto-generated quizzes | :heavy_check_mark: |
 | Build subscriber analytics QuickSight dashboard | :heavy_check_mark: |
