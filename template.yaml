@@ -21,8 +21,6 @@ Parameters:
 
 Globals:
   Api:
-    # Add AllowMethods with a list of methods for this domain name to call the API in this template
-    # Cors: !Sub "'${DomainName}'"
     Cors:
       AllowMethods: "'OPTIONS,POST,GET'"
       AllowHeaders: "'*'"
@@ -30,7 +28,9 @@ Globals:
 
 Resources:
 
-### Lambda functions
+####################################################################################################
+# Lambda functions
+####################################################################################################
 
   SendDailyEmail:
     Type: 'AWS::Serverless::Function'
@@ -201,15 +201,17 @@ Resources:
             Schedule: cron(0 16 ? * FRI *)
 
   Layer:
-    # Shared Python modules, namely returning a random vocab word
+    # Shared Python modules that returns a random vocab word
     Type: 'AWS::Serverless::LayerVersion'
     Properties:
       ContentUri: src/layer
       CompatibleRuntimes:
         - python3.7
 
-### API Gateway permissions
-### Using a workaround described here: https://github.com/awslabs/serverless-application-model/issues/59
+####################################################################################################
+# API Gateway permissions
+# Using a workaround described here: https://github.com/awslabs/serverless-application-model/issues/59
+####################################################################################################
 
   SampleVocabLambdaPermission:
     Type: "AWS::Lambda::Permission"
@@ -239,7 +241,9 @@ Resources:
       FunctionName: !Ref Unsubscribe
       Principal: apigateway.amazonaws.com
 
-### DynamoDB tables
+####################################################################################################
+# DynamoDB tables
+####################################################################################################
 
   WordHistoryDynamoDBTable:
     Type: AWS::DynamoDB::Table
@@ -281,7 +285,9 @@ Resources:
         ReadCapacityUnits: 0
         WriteCapacityUnits: 0
 
-### S3 bucket for email announcements
+####################################################################################################
+# S3 bucket for email announcements
+####################################################################################################
 
   VocabAnnouncementsBucket:
     Type: AWS::S3::Bucket
@@ -294,7 +300,162 @@ Resources:
         IgnorePublicAcls: true
         RestrictPublicBuckets: true
 
-### Receiving function error notifications
+####################################################################################################
+# Cognito & authentication workflow
+####################################################################################################
+
+  UserPool:
+    Type: "AWS::Cognito::UserPool"
+    Properties:
+      UserPoolName: vocab-app-user-pool-${Stage}
+      Schema:
+        - Name: email
+          AttributeDataType: String
+          Mutable: true
+          Required: true
+      Policies:
+        PasswordPolicy:
+          MinimumLength: 8
+          RequireLowercase: false
+          RequireNumbers: false
+          RequireSymbols: false
+          RequireUppercase: false
+      UsernameAttributes:
+        - email
+      MfaConfiguration: "OFF"
+      LambdaConfig:
+        CreateAuthChallenge: !GetAtt CreateAuthChallenge.Arn
+        DefineAuthChallenge: !GetAtt DefineAuthChallenge.Arn
+        PreSignUp: !GetAtt PreSignUp.Arn
+        VerifyAuthChallengeResponse: !GetAtt VerifyAuthChallengeResponse.Arn
+        PostAuthentication: !GetAtt PostAuthentication.Arn
+
+  DefineAuthChallenge:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/user_pool_triggers/define_auth_challenge/
+      Handler: app.lambda_handler
+      Runtime: python3.7
+  
+  CreateAuthChallenge:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/user_pool_triggers/create_auth_challenge/
+      Handler: app.lambda_handler
+      Runtime: python3.7
+      Policies:
+        - Version: "2012-10-17"
+          Statement:
+            - Effect: Allow
+              Action:
+                - ses:SendEmail
+              Resource: "*"
+  
+  VerifyAuthChallengeResponse:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/user_pool_triggers/verify_auth_challenge_response/
+      Handler: app.lambda_handler
+      Runtime: python3.7
+  
+  PreSignUp:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/user_pool_triggers/pre_sign_up/
+      Handler: app.lambda_handler
+      Runtime: python3.7
+  
+  PostAuthentication:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/user_pool_triggers/post_authentication/
+      Handler: app.lambda_handler
+      Runtime: python3.7
+      Role: !GetAtt PostAuthenticationRole.Arn
+  
+  # Creatinging a role to attach SetUserAttributesPolicy to
+  PostAuthenticationRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+
+  # Giving the PostAuthentication role the permissions to update the user's email to verified
+  SetUserAttributesPolicy:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: allow-set-user-attributes
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Action:
+              - cognito-idp:AdminUpdateUserAttributes
+            Resource:
+              - !GetAtt UserPool.Arn
+      Roles:
+        - !Ref PostAuthenticationRole
+  
+ # Giving the user pool permissions to invoke the Lambda functions
+  DefineAuthChallengeInvocationPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !GetAtt DefineAuthChallenge.Arn
+      Principal: cognito-idp.amazonaws.com
+      SourceArn: !GetAtt UserPool.Arn
+  CreateAuthChallengeInvocationPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !GetAtt CreateAuthChallenge.Arn
+      Principal: cognito-idp.amazonaws.com
+      SourceArn: !GetAtt UserPool.Arn
+  VerifyAuthChallengeResponseInvocationPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !GetAtt VerifyAuthChallengeResponse.Arn
+      Principal: cognito-idp.amazonaws.com
+      SourceArn: !GetAtt UserPool.Arn
+  PreSignUpInvocationPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !GetAtt PreSignUp.Arn
+      Principal: cognito-idp.amazonaws.com
+      SourceArn: !GetAtt UserPool.Arn
+  PostAuthenticationInvocationPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !GetAtt PostAuthentication.Arn
+      Principal: cognito-idp.amazonaws.com
+      SourceArn: !GetAtt UserPool.Arn
+  
+  # User pool client only allows custom auth
+  # A password is generated for each user, but they are not able to use it to login (since they will be using email)
+  UserPoolClient:
+    Type: "AWS::Cognito::UserPoolClient"
+    Properties:
+      ClientName: email-auth-client
+      GenerateSecret: false
+      UserPoolId: !Ref UserPool
+      ExplicitAuthFlows:
+        - CUSTOM_AUTH_FLOW_ONLY
+
+####################################################################################################
+# Receiving function error notifications
+####################################################################################################
 
   CWLogsNotifications:
     Type: 'AWS::Serverless::Function'
@@ -399,3 +560,15 @@ Resources:
           '',
           ['/aws/lambda/', !Sub 'VocabUnsubscribe-${Stage}']
         ]
+
+####################################################################################################
+# Outputs
+####################################################################################################
+
+Outputs:
+  UserPoolId:
+    Description: ID of the User Pool
+    Value: !Ref UserPool
+  UserPoolClientId:
+    Description: ID of the User Pool Client
+    Value: !Ref UserPoolClient
