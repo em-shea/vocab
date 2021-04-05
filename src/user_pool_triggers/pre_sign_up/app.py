@@ -10,4 +10,12 @@
 # };
 
 def lambda_handler(event, context):
-    return
+    
+    print(response)
+
+    response = event.get('response')
+    response.update({
+        'autoConfirmUser': True
+    })
+    
+    return event

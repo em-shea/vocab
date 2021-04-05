@@ -1,6 +1,7 @@
 def lambda_handler(event, context):
 
     response = event.get('response')
+    print(response)
     request = event.get('request')
     session = request.get('session')
 
@@ -26,7 +27,7 @@ def lambda_handler(event, context):
             'issueTokens': False,
             'failAuthentication': True
         })
-    # Wrong OTP but less than 3 attemps, present auth challenge
+    # Wrong OTP but less than 3 attempts, present auth challenge
     else:
         response.update({
             'issueTokens': False,
