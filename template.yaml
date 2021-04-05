@@ -307,7 +307,7 @@ Resources:
   UserPool:
     Type: "AWS::Cognito::UserPool"
     Properties:
-      UserPoolName: vocab-app-user-pool-${Stage}
+      UserPoolName: !Sub VocabAppUserPool-${Stage}
       Schema:
         - Name: email
           AttributeDataType: String
