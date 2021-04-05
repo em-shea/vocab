@@ -27,7 +27,7 @@ jobs:
       - run: 
           name: Deploy with SAM
           command: |
-            sam package --s3-bucket hsk-vocab --output-template-file packaged-template.yaml 
+            sam package --s3-bucket hsk-vocab --output-template-file packaged-template.yaml --region us-east-1
             
             if [ "${CIRCLE_BRANCH}" == "master" ]; then              
               sam deploy --template-file ./packaged-template.yaml --stack-name vocab --region us-east-1 --capabilities CAPABILITY_IAM --parameter-overrides WordsBucketName=hsk-vocab WordsBucketKey=HSK_Level_6.csv ListsBucketName=hsk-vocab ListsBucketKey=Contact_Lists.csv DomainName=https://haohaotiantian.com SubNotifyEmail=$SubNotifyEmail DynamoBackupsS3BucketName=hhtt-backups Stage=prod
