@@ -1,14 +1,15 @@
 def lambda_handler(event, context):
 
+    print(event)
+
     response = event.get('response')
-    print(response)
     request = event.get('request')
     session = request.get('session')
 
     current_session = len(session) - 1
 
     # If user does not go through custom auth challenge flow, fail auth
-    if current_session.get('challengeName') !=== 'CUSTOM_CHALLENGE':
+    if current_session.get('challengeName') != 'CUSTOM_CHALLENGE':
         response.update({
             'issueTokens': False,
             'failAuthentication': True,
@@ -22,7 +23,7 @@ def lambda_handler(event, context):
             'msg': 'Incorrect OTP after 3 attempts'
         })
     # Correct custom auth flow and OTP, succeed auth
-    elif current_session.get('challengeName') === 'CUSTOM_CHALLENGE' and current_session.get('challengeResult') is True:
+    elif current_session.get('challengeName') == 'CUSTOM_CHALLENGE' and current_session.get('challengeResult') is True:
         response.update({
             'issueTokens': False,
             'failAuthentication': True

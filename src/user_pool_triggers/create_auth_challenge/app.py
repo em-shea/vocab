@@ -12,7 +12,7 @@ def lambda_handler(event, context):
     user_email = request.get('userAttributes').get('email')
 
     # Generate a sign-in code if this is the first attempt
-    if (not session) or len(session) === 0:
+    if (not session) or len(session) == 0:
         secret_login_code = generate_login_code(event)
         try:
             send_notification_email(user_email, secret_login_code)

@@ -17,7 +17,7 @@ def lambda_handler(event, context):
     expectedAnswer = request.get('privateChallengeParameters').get('answer') 
     challengeAnswer = request.get('challengeAnswer')
 
-    if expectedAnswer === challengeAnswer:
+    if expectedAnswer == challengeAnswer:
         user_pool_id = event.get('userPoolId')
         user_name = event.get('userName')
 
