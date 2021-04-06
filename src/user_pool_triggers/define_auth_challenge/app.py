@@ -8,14 +8,21 @@ def lambda_handler(event, context):
 
     current_session = len(session) - 1
 
+    # If user not found, fail auth
+    if request.get('userNotFound') is True:
+        response.update({
+            'issueTokens': False,
+            'failAuthentication': True,+
+            'msg': "User does not exist"
+        })
     # If user does not go through custom auth challenge flow, fail auth
-    if current_session.get('challengeName') != 'CUSTOM_CHALLENGE':
+    elif session.get('challengeName') != 'CUSTOM_CHALLENGE':
         response.update({
             'issueTokens': False,
             'failAuthentication': True,
             'msg': 'User must use custom challenge to sign in'
         })
-    # If user attemps 3 times with the wrong OTP, fail auth
+    # If user attempts 3 times with the wrong OTP, fail auth
     elif len(session) >= 3 and session[2].get('challengeResult') is False:
         response.update({
             'issueTokens': False,
@@ -23,12 +30,12 @@ def lambda_handler(event, context):
             'msg': 'Incorrect OTP after 3 attempts'
         })
     # Correct custom auth flow and OTP, succeed auth
-    elif current_session.get('challengeName') == 'CUSTOM_CHALLENGE' and current_session.get('challengeResult') is True:
+    elif len(session) >0 and session[current_session].get('challengeName') == 'CUSTOM_CHALLENGE' and session[current_session].get('challengeResult') is True:
         response.update({
             'issueTokens': False,
             'failAuthentication': True
         })
-    # Wrong OTP but less than 3 attempts, present auth challenge
+    # User did not provide the right answer yet (under 3 attempts), present auth challenge
     else:
         response.update({
             'issueTokens': False,
