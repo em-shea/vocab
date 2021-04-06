@@ -142,6 +142,8 @@ Resources:
           LISTS_BUCKET_KEY: !Ref ListsBucketKey
           STAGE: !Ref Stage
           TABLE_NAME: !Ref SubscriberContactListDynamoDBTable
+          # USER_POOL_CLIENT_ID: !Ref UserPoolClientId
+          # USER_POOL_ID: !Ref UserPoolId
       Events:
         SubscribeApi:
           Type: Api
@@ -328,7 +330,7 @@ Resources:
         DefineAuthChallenge: !GetAtt DefineAuthChallenge.Arn
         PreSignUp: !GetAtt PreSignUp.Arn
         VerifyAuthChallengeResponse: !GetAtt VerifyAuthChallengeResponse.Arn
-        PostAuthentication: !GetAtt PostAuthentication.Arn
+        # PostAuthentication: !GetAtt PostAuthentication.Arn
 
   DefineAuthChallenge:
     Type: AWS::Serverless::Function
@@ -357,6 +359,7 @@ Resources:
       CodeUri: src/user_pool_triggers/verify_auth_challenge_response/
       Handler: app.lambda_handler
       Runtime: python3.7
+      Role: !GetAtt VerifyAuthChallengeRole.Arn
   
   PreSignUp:
     Type: AWS::Serverless::Function
@@ -365,16 +368,16 @@ Resources:
       Handler: app.lambda_handler
       Runtime: python3.7
   
-  PostAuthentication:
-    Type: AWS::Serverless::Function
-    Properties:
-      CodeUri: src/user_pool_triggers/post_authentication/
-      Handler: app.lambda_handler
-      Runtime: python3.7
-      Role: !GetAtt PostAuthenticationRole.Arn
+  # PostAuthentication:
+  #   Type: AWS::Serverless::Function
+  #   Properties:
+  #     CodeUri: src/user_pool_triggers/post_authentication/
+  #     Handler: app.lambda_handler
+  #     Runtime: python3.7
+  #     Role: !GetAtt PostAuthenticationRole.Arn
   
   # Creatinging a role to attach SetUserAttributesPolicy to
-  PostAuthenticationRole:
+  VerifyAuthChallengeRole:
     Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
@@ -403,7 +406,7 @@ Resources:
             Resource:
               - !GetAtt UserPool.Arn
       Roles:
-        - !Ref PostAuthenticationRole
+        - !Ref VerifyAuthChallengeRole
   
  # Giving the user pool permissions to invoke the Lambda functions
   DefineAuthChallengeInvocationPermission:
