@@ -1,4 +1,5 @@
 # This function creates and sends a sign-in code to the user
+import os
 import jwt
 import boto3
 
@@ -9,6 +10,7 @@ def lambda_handler(event, context):
     response = event.get('response')
     print(response)
     request = event.get('request')
+    session = request.get('session')
     user_email = request.get('userAttributes').get('email')
 
     # Generate a sign-in code if this is the first attempt

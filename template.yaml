@@ -326,9 +326,9 @@ Resources:
         - email
       MfaConfiguration: "OFF"
       LambdaConfig:
-        CreateAuthChallenge: !GetAtt CreateAuthChallenge.Arn
-        DefineAuthChallenge: !GetAtt DefineAuthChallenge.Arn
         PreSignUp: !GetAtt PreSignUp.Arn
+        DefineAuthChallenge: !GetAtt DefineAuthChallenge.Arn
+        CreateAuthChallenge: !GetAtt CreateAuthChallenge.Arn
         VerifyAuthChallengeResponse: !GetAtt VerifyAuthChallengeResponse.Arn
         # PostAuthentication: !GetAtt PostAuthentication.Arn
 

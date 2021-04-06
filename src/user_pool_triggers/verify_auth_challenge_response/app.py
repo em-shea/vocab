@@ -3,6 +3,7 @@
 
 # https://github.com/aws-samples/amazon-cognito-passwordless-email-auth/tree/master/cognito/lambda-triggers/verify-auth-challenge-response
 
+import os
 import jwt
 import boto3
 
