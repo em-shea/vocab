@@ -56,4 +56,5 @@ def lambda_handler(event, context):
     #         'challengeName': 'CUSTOM_CHALLENGE'
     #     })
 
+    print(event)
     return event

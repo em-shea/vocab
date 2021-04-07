@@ -17,7 +17,8 @@ def lambda_handler(event, context):
     if (not session) or len(session) == 0:
         secret_login_code = generate_login_code(event)
         try:
-            send_notification_email(user_email, secret_login_code)
+            email_content = assemble_email_contents(secret_login_code)
+            send_notification_email(user_email, email_content)
         except Exception as e:
             print(f"Error: Failed to send sign-in code - { user_email }.")
             print(e)
@@ -43,6 +44,7 @@ def lambda_handler(event, context):
         }
     })
 
+    print(event)
     return event
 
 def generate_login_code(event):
@@ -59,9 +61,23 @@ def generate_login_code(event):
     print(encoded)
     return encoded
 
-def send_notification_email(user_email, secret_login_code):
+def assemble_email_contents(secret_login_code):
 
-    subject_line = "Please follow this link or enter this sign-in code."
+    email_template = 'signin_code_template.html'
+    login_link = 'https://haohaotiantian/verification?code=' + secret_login_code
+    
+    abs_dir = os.path.dirname(os.path.abspath(__file__))
+    with open(os.path.join(abs_dir, email_template)) as fh:
+        contents = fh.read()
+
+    email_contents = contents.replace("{secret_login_code}", secret_login_code)
+    email_contents = email_contents.replace("{login_link}", login_link)
+
+    return email_contents
+
+def send_notification_email(user_email, email_content):
+
+    subject_line = "Follow this link or enter this code to sign in to Haohaotiantian."
     
     payload = ses_client.send_email(
         Source = "Haohaotiantian <signin@haohaotiantian.com>",
@@ -78,7 +94,7 @@ def send_notification_email(user_email, secret_login_code):
             "Body": {
                 "Html": {
                     "Charset": "UTF-8",
-                    "Data": secret_login_code
+                    "Data": email_content
                 }
             }
         }

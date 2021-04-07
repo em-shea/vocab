@@ -8,4 +8,5 @@ def lambda_handler(event, context):
         'autoConfirmUser': True
     })
     
+    print(event)
     return event
