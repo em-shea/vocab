@@ -368,14 +368,6 @@ Resources:
       Handler: app.lambda_handler
       Runtime: python3.7
   
-  # PostAuthentication:
-  #   Type: AWS::Serverless::Function
-  #   Properties:
-  #     CodeUri: src/user_pool_triggers/post_authentication/
-  #     Handler: app.lambda_handler
-  #     Runtime: python3.7
-  #     Role: !GetAtt PostAuthenticationRole.Arn
-  
   # Creatinging a role to attach SetUserAttributesPolicy to
   VerifyAuthChallengeRole:
     Type: AWS::IAM::Role
@@ -392,7 +384,7 @@ Resources:
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
 
-  # Giving the PostAuthentication role the permissions to update the user's email to verified
+  # Giving the VerifyAuthChallenge role the permissions to update the user's email to verified
   SetUserAttributesPolicy:
     Type: AWS::IAM::Policy
     Properties:
@@ -437,13 +429,6 @@ Resources:
       FunctionName: !GetAtt PreSignUp.Arn
       Principal: cognito-idp.amazonaws.com
       SourceArn: !GetAtt UserPool.Arn
-  # PostAuthenticationInvocationPermission:
-  #   Type: AWS::Lambda::Permission
-  #   Properties:
-  #     Action: lambda:InvokeFunction
-  #     FunctionName: !GetAtt PostAuthentication.Arn
-  #     Principal: cognito-idp.amazonaws.com
-  #     SourceArn: !GetAtt UserPool.Arn
   
   # User pool client only allows custom auth
   # A password is generated for each user, but they are not able to use it to login (since they will be using email)
