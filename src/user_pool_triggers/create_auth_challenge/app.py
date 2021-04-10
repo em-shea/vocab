@@ -37,9 +37,9 @@ def lambda_handler(event, context):
         secret_login_code = previous_challenge.get('challengeMetadata')
     
     response.update({
-        'privateChallengeParamters': {'answer': secret_login_code},
+        'privateChallengeParameters': {'answer': secret_login_code},
         'challengeMetadata': secret_login_code,
-        'publicChallengeParamters': {
+        'publicChallengeParameters': {
             'answer': secret_login_code
         }
     })

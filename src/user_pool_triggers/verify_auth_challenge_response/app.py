@@ -35,11 +35,10 @@ def lambda_handler(event, context):
         response.update({
             'answerCorrect': True
         })
-    else {
+    else:
         response.update({
             'answerCorrect': False
         })
-    }
 
     print(event)
     return event
