@@ -3,7 +3,7 @@
 
 #SAM
 env.json
-.aws-sam/build
+.aws-sam
 packaged-template.yaml
 output.txt
 
