@@ -1,4 +1,3 @@
-# This function auto-confirms new users at sign-up
 def lambda_handler(event, context):
     
     print(event)

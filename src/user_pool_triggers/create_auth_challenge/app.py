@@ -1,4 +1,3 @@
-# This function creates and sends a sign-in code to the user
 import os
 import jwt
 import boto3
