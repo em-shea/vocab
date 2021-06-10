@@ -346,7 +346,7 @@ Resources:
         RestrictPublicBuckets: true
 
 ####################################################################################################
-# Cognito & authentication workflow
+# Cognito & authentication workflow Lambda functions
 ####################################################################################################
 
   UserPool:
@@ -370,10 +370,24 @@ Resources:
       MfaConfiguration: "OFF"
       LambdaConfig:
         PreSignUp: !GetAtt PreSignUp.Arn
+        PostConfirmation: !GetAtt PostConfirmation.Arn
         DefineAuthChallenge: !GetAtt DefineAuthChallenge.Arn
         CreateAuthChallenge: !GetAtt CreateAuthChallenge.Arn
         VerifyAuthChallengeResponse: !GetAtt VerifyAuthChallengeResponse.Arn
-        # PostAuthentication: !GetAtt PostAuthentication.Arn
+
+  PreSignUp:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/user_pool_triggers/pre_sign_up/
+      Handler: app.lambda_handler
+      Runtime: python3.7
+
+  PostConfirmation:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/user_pool_triggers/post_confirmation/
+      Handler: app.lambda_handler
+      Runtime: python3.7
 
   DefineAuthChallenge:
     Type: AWS::Serverless::Function
@@ -403,13 +417,6 @@ Resources:
       Handler: app.lambda_handler
       Runtime: python3.7
       Role: !GetAtt VerifyAuthChallengeRole.Arn
-  
-  PreSignUp:
-    Type: AWS::Serverless::Function
-    Properties:
-      CodeUri: src/user_pool_triggers/pre_sign_up/
-      Handler: app.lambda_handler
-      Runtime: python3.7
   
   # Creatinging a role to attach SetUserAttributesPolicy to
   VerifyAuthChallengeRole:
@@ -470,6 +477,13 @@ Resources:
     Properties:
       Action: lambda:InvokeFunction
       FunctionName: !GetAtt PreSignUp.Arn
+      Principal: cognito-idp.amazonaws.com
+      SourceArn: !GetAtt UserPool.Arn
+  PostConfirmationPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !GetAtt PostConfirmation.Arn
       Principal: cognito-idp.amazonaws.com
       SourceArn: !GetAtt UserPool.Arn
   
