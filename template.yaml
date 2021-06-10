@@ -49,6 +49,8 @@ Resources:
         - S3ReadPolicy:
             BucketName: !Ref VocabAnnouncementsBucket
         - DynamoDBCrudPolicy:
+            TableName: !Ref DynamoDBTable
+        - DynamoDBCrudPolicy:
             TableName: !Ref WordHistoryDynamoDBTable
         - DynamoDBCrudPolicy:
             TableName: !Ref SubscriberContactListDynamoDBTable
@@ -60,6 +62,7 @@ Resources:
           LISTS_BUCKET_NAME: !Ref ListsBucketName
           LISTS_BUCKET_KEY: !Ref ListsBucketKey
           ANNOUNCEMENTS_BUCKET: !Ref VocabAnnouncementsBucket
+          DYNAMODB_TABLE_NAME: !Ref DynamoDBTable
           TABLE_NAME: !Ref WordHistoryDynamoDBTable
           CONTACT_TABLE_NAME: !Ref SubscriberContactListDynamoDBTable
           STAGE: !Ref Stage
@@ -112,6 +115,7 @@ Resources:
             TableName: !Ref WordHistoryDynamoDBTable
       Environment:
         Variables:
+          DYNAMODB_TABLE_NAME: !Ref DynamoDBTable
           TABLE_NAME: !Ref WordHistoryDynamoDBTable
       Events:
         WordHistoryApi:
@@ -135,12 +139,15 @@ Resources:
             IdentityName: haohaotiantian.com
         - DynamoDBCrudPolicy:
             TableName: !Ref SubscriberContactListDynamoDBTable
+        - DynamoDBCrudPolicy:
+            TableName: !Ref DynamoDBTable
       Environment:
         Variables:
           SUB_TOPIC_ARN: !Ref NotificationTopic
           LISTS_BUCKET_NAME: !Ref ListsBucketName
           LISTS_BUCKET_KEY: !Ref ListsBucketKey
           STAGE: !Ref Stage
+          DYNAMODB_TABLE_NAME: !Ref DynamoDBTable
           TABLE_NAME: !Ref SubscriberContactListDynamoDBTable
           # USER_POOL_CLIENT_ID: !Ref UserPoolClientId
           # USER_POOL_ID: !Ref UserPoolId
@@ -166,10 +173,13 @@ Resources:
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref SubscriberContactListDynamoDBTable
+        - DynamoDBCrudPolicy:
+            TableName: !Ref DynamoDBTable
       Environment:
         Variables:
           STAGE: !Ref Stage
           TABLE_NAME: !Ref SubscriberContactListDynamoDBTable
+          DYNAMODB_TABLE_NAME: !Ref DynamoDBTable
       Events:
         SubscribeApi:
           Type: Api
@@ -246,6 +256,33 @@ Resources:
 ####################################################################################################
 # DynamoDB tables
 ####################################################################################################
+
+  DynamoDBTable:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    Properties:
+      TableName: !Sub DynamoDBTable-${Stage}
+      AttributeDefinitions:
+        - AttributeName: PK
+          AttributeType: S
+        - AttributeName: SK
+          AttributeType: S
+      KeySchema:
+        - AttributeName: PK
+          KeyType: HASH
+        - AttributeName: SK
+          KeyType: RANGE
+      GlobalSecondaryIndexes:
+        - IndexName: GSI1
+          KeySchema:
+            - AttributeName: GSI1PK
+              KeyType: HASH
+            - AttributeName: GSI1SK
+              KeyType: RANGE
+      BillingMode: PAY_PER_REQUEST
+      ProvisionedThroughput:
+        ReadCapacityUnits: 0
+        WriteCapacityUnits: 0
 
   WordHistoryDynamoDBTable:
     Type: AWS::DynamoDB::Table
