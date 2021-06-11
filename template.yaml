@@ -370,7 +370,7 @@ Resources:
       MfaConfiguration: "OFF"
       LambdaConfig:
         PreSignUp: !GetAtt PreSignUp.Arn
-        PostConfirmation: !GetAtt PostConfirmation.Arn
+        # PostConfirmation: !GetAtt PostConfirmation.Arn
         DefineAuthChallenge: !GetAtt DefineAuthChallenge.Arn
         CreateAuthChallenge: !GetAtt CreateAuthChallenge.Arn
         VerifyAuthChallengeResponse: !GetAtt VerifyAuthChallengeResponse.Arn
@@ -382,12 +382,12 @@ Resources:
       Handler: app.lambda_handler
       Runtime: python3.7
 
-  PostConfirmation:
-    Type: AWS::Serverless::Function
-    Properties:
-      CodeUri: src/user_pool_triggers/post_confirmation/
-      Handler: app.lambda_handler
-      Runtime: python3.7
+  # PostConfirmation:
+  #   Type: AWS::Serverless::Function
+  #   Properties:
+  #     CodeUri: src/user_pool_triggers/post_confirmation/
+  #     Handler: app.lambda_handler
+  #     Runtime: python3.7
 
   DefineAuthChallenge:
     Type: AWS::Serverless::Function
@@ -479,13 +479,13 @@ Resources:
       FunctionName: !GetAtt PreSignUp.Arn
       Principal: cognito-idp.amazonaws.com
       SourceArn: !GetAtt UserPool.Arn
-  PostConfirmationPermission:
-    Type: AWS::Lambda::Permission
-    Properties:
-      Action: lambda:InvokeFunction
-      FunctionName: !GetAtt PostConfirmation.Arn
-      Principal: cognito-idp.amazonaws.com
-      SourceArn: !GetAtt UserPool.Arn
+  # PostConfirmationPermission:
+  #   Type: AWS::Lambda::Permission
+  #   Properties:
+  #     Action: lambda:InvokeFunction
+  #     FunctionName: !GetAtt PostConfirmation.Arn
+  #     Principal: cognito-idp.amazonaws.com
+  #     SourceArn: !GetAtt UserPool.Arn
   
   # User pool client only allows custom auth
   # A password is generated for each user, but they are not able to use it to login (since they will be using email)
