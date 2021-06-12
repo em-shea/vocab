@@ -63,14 +63,18 @@ def generate_login_code(event):
 def assemble_email_contents(secret_login_code):
 
     email_template = 'signin_code_template.html'
-    login_link = 'https://haohaotiantian/verification?code=' + secret_login_code
+    login_link_staging = 'https://staging.haohaotiantian/verification?code=' + secret_login_code
+    login_link_prod = 'https://haohaotiantian/verification?code=' + secret_login_code
     
     abs_dir = os.path.dirname(os.path.abspath(__file__))
     with open(os.path.join(abs_dir, email_template)) as fh:
         contents = fh.read()
 
     email_contents = contents.replace("{secret_login_code}", secret_login_code)
-    email_contents = email_contents.replace("{login_link}", login_link)
+    if os.environ["STAGE"] == "staging":
+        email_contents = email_contents.replace("{login_link}", login_link_staging)
+    if os.environ["STAGE"] == "prod":
+        email_contents = email_contents.replace("{login_link}", login_link_prod)
 
     return email_contents
 

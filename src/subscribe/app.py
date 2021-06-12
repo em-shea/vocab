@@ -1,17 +1,16 @@
 import os
 import json
 import boto3
-from datetime import datetime
+import datetime
 
 import sys
 sys.path.insert(0, '/opt')
 
 # region_name specified in order to mock in unit tests
-ses_client = boto3.client('ses', region_name=os.environ['AWS_REGION'])
-lambda_client = boto3.client('lambda', region_name=os.environ['AWS_REGION'])
 dynamo_client = boto3.resource('dynamodb', region_name=os.environ['AWS_REGION'])
+table = dynamo_client.Table(os.environ['DYNAMODB_TABLE_NAME'])
 
-# Subscribe a new user, including sending an email confirmation to the user and a notification to the app owner
+# Create a new subscription and/or user in DynamoDB
 def lambda_handler(event, context):
 
     print(event)
@@ -19,47 +18,35 @@ def lambda_handler(event, context):
     body = json.loads(event["body"])
 
     # Extract relevant user details
-    # Example parameters: {"email": "me@testemail.com", "list": "1-simplified"}
+    # Example event body: {"subType": "newUser", "cognitoId": "123", "email": "me@testemail.com", "listId": "123", "listName": "HSK Level 1" "charSet": "simplified"}
     email_address = body['email']
     partial_email = email_address[0:5]
     list_id = body['list']
 
-    hsk_level = list_id[0]
-    char_set = list_id[2:]
+    error_message = {
+        'statusCode': 502,
+        'headers': {
+            'Access-Control-Allow-Methods': 'POST,OPTIONS',
+            'Access-Control-Allow-Origin': '*',
+        },
+        'body': '{"success" : false}'
+    }
 
-    # Write contact to DynamoDB
-    try:
-        create_contact_dynamo(email_address, list_id, char_set)
-        print(f"Success: Contact created in Dynamo - {partial_email}, {list_id}.")
+    if body['subType'] == "newUser":
+        # Create new user in DynamoDB
+        try:
+            create_user(body['cognitoId'], body['email'], body['charSet'])
+            print(f"Success: Contact created in Dynamo - {partial_email}, {list_id}.")
+        except Exception as e:
+            print(f"Error: Failed to create contact in Dynamo - {partial_email}, {list_id}.")
+            print(e)
+            return error_message
+
+    # Create new subscription in DynamoDB
+    try: 
+        create_subscription(body['cognitoId'], body['charSet'], body['listId'], body['listName'])
     except Exception as e:
-        print(f"Error: Failed to create contact in Dynamo - {partial_email}, {list_id}.")
-        print(e)
-        return {
-            'statusCode': 502,
-            'headers': {
-                'Access-Control-Allow-Methods': 'POST,OPTIONS',
-                'Access-Control-Allow-Origin': '*',
-            },
-            'body': '{"success" : false}'
-        }
-
-    email_address, subject_line, email_contents = assemble_email_contents(email_address, hsk_level, char_set)
-
-    # Send confirmation email from SES
-    try:
-        send_new_user_confirmation_email(email_address, subject_line, email_contents)
-        # print(f"Success: Confirmation email sent through SES - {partial_email}, {hsk_level}.")
-    except Exception as e:
-        print(f"Error: Failed to send confirmation email through SES - {partial_email}, {hsk_level}.")
-        print(e)
-        return {
-            'statusCode': 502,
-            'headers': {
-                'Access-Control-Allow-Methods': 'POST,OPTIONS',
-                'Access-Control-Allow-Origin': '*',
-            },
-            'body': '{"success" : false}'
-        }
+        return error_message
 
     return {
         'statusCode': 200,
@@ -71,66 +58,31 @@ def lambda_handler(event, context):
     }
 
 # Write new contact to Dynamo
-def create_contact_dynamo(email_address, list_id, char_set):
-
-    table = dynamo_client.Table(os.environ['TABLE_NAME'])
-
-    date = str(datetime.today().strftime('%-m/%d/%y'))
-
-    sub_status = "subscribed"
+def create_user(cognito_id, email_address, char_set):
+    date = str(datetime.datetime.now().isoformat())
 
     response = table.put_item(
         Item={
-                'ListId': list_id,
-                'SubscriberEmail' : email_address,
-                'DateSubscribed': date,
-                'Status': sub_status,
-                'CharacterSet' : char_set
+                'PK': "USER#" + cognito_id,
+                'SK': "USER#" + cognito_id,
+                'Email address': email_address,
+                'Date created': date,
+                'Character set preference': char_set
             }
         )
+    return response
 
-    # print(f"Contact added to Dynamo - {email_address[0:5]}, {list_id}.")
+def create_subscription(cognito_id, char_set, list_id, list_name):
+    date = str(datetime.datetime.now().isoformat())
 
-def assemble_email_contents(email_address, hsk_level, char_set):
-
-    # Change subject_line and template to simplified or traditional char version
-    if char_set == "simplified":
-        subject_line = "Welcome! 欢迎您!"
-        email_template = 'confirmation_template_simplified.html'
-    else:
-        subject_line = "Welcome! 歡迎您!"
-        email_template = 'confirmation_template_traditional.html'
-
-    # Open html template file that is packaged with this function's code
-    # To run unit tests for this function, we need to specify an absolute file path
-    abs_dir = os.path.dirname(os.path.abspath(__file__))
-    with open(os.path.join(abs_dir, email_template)) as fh:
-        contents = fh.read()
-
-    email_contents = contents.replace("{level}", hsk_level)
-    email_contents = email_contents.replace("{unsubscribe_link}", "https://haohaotiantian.com/unsub?level=" + hsk_level + "&email=" + email_address + "&char=" + char_set)
-
-    return email_address, subject_line, email_contents
-
-def send_new_user_confirmation_email(email_address, subject_line, email_contents):
-    
-    payload = ses_client.send_email(
-        Source = "Haohaotiantian <welcome@haohaotiantian.com>",
-        Destination = {
-            "ToAddresses" : [
-            email_address
-            ]
-        },
-        Message = {
-            "Subject": {
-                "Charset": "UTF-8",
-                "Data": subject_line
-                },
-            "Body": {
-                "Html": {
-                    "Charset": "UTF-8",
-                    "Data": email_contents
-                }
+    response = table.put_item(
+        Item={
+                'PK': "USER#" + cognito_id,
+                'SK': "LIST#" + list_id,
+                'List name': list_name,
+                'Date subscribed': date,
+                'Status': 'SUBSCRIBED',
+                'Character set': char_set
             }
-        }
-    )
+        )
+    return response

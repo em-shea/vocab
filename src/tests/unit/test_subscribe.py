@@ -6,27 +6,25 @@ import json
 import unittest
 from unittest import mock
 
-# wip - any more assertions to add?
-
-with mock.patch.dict('os.environ', {'AWS_REGION': 'us-east-1', 'TABLE_NAME': 'mock-table-name'}):
+with mock.patch.dict('os.environ', {'AWS_REGION': 'us-east-1', 'DYNAMODB_TABLE_NAME': 'mock-table-name'}):
   from subscribe.app import lambda_handler
 
-def mocked_create_contact_dynamo(email_address, list_id, char_set):
+def mocked_create_user(cognito_id, email_address, char_set):
   return "Contact created in DynamoDB"
 
-def mocked_send_new_user_confirmation_email(email_address, subject_line, email_contents):
+def mocked_create_subscription(cognito_id, char_set, list_id, list_name):
   return
 
 class SubscribeTest(unittest.TestCase):
 
-  @mock.patch('subscribe.app.create_contact_dynamo', side_effect=mocked_create_contact_dynamo)
-  @mock.patch('subscribe.app.send_new_user_confirmation_email', side_effect=mocked_send_new_user_confirmation_email)
-  def test_build(self, send_email_mock, create_contact_mock):
+  @mock.patch('subscribe.app.create_user', side_effect=mocked_create_user)
+  @mock.patch('subscribe.app.create_subscription', side_effect=mocked_create_subscription)
+  def test_build(self, create_sub_mock, create_user_mock):
 
     response = lambda_handler(self.sub_apig_event(), "")
 
-    self.assertEqual(create_contact_mock.call_count, 1)
-    self.assertEqual(send_email_mock.call_count, 1)
+    self.assertEqual(create_user_mock.call_count, 1)
+    self.assertEqual(create_sub_mock.call_count, 1)
   
   def sub_apig_event(self):
     return {

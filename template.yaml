@@ -402,6 +402,9 @@ Resources:
       CodeUri: src/user_pool_triggers/create_auth_challenge/
       Handler: app.lambda_handler
       Runtime: python3.7
+      Environment:
+        Variables:
+          STAGE: !Ref Stage
       Policies:
         - Version: "2012-10-17"
           Statement:
