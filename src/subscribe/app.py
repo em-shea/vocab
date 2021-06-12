@@ -18,10 +18,9 @@ def lambda_handler(event, context):
     body = json.loads(event["body"])
 
     # Extract relevant user details
-    # Example event body: {"subType": "newUser", "cognitoId": "123", "email": "me@testemail.com", "listId": "123", "listName": "HSK Level 1" "charSet": "simplified"}
-    email_address = body['email']
-    partial_email = email_address[0:5]
-    list_id = body['list']
+    # Example event body: {"subType": "newUser", "cognitoId": "123", "email": "me@testemail.com", "listId": "123", "listName": "HSK Level 1", "charSet": "simplified"}
+    partial_email = body['email'][0:5]
+    list_id = body['listId']
 
     error_message = {
         'statusCode': 502,

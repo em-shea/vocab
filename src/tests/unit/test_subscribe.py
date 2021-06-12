@@ -28,7 +28,7 @@ class SubscribeTest(unittest.TestCase):
   
   def sub_apig_event(self):
     return {
-      "body": "{\"email\":\"user@example.com\",\"list\":\"4-traditional\"}",
+      "body": "{\"subType\":\"newUser\",\"cognitoId\":\"123\",\"email\":\"me@testemail.com\",\"listId\":\"123\",\"listName\":\"HSK Level 1\",\"charSet\":\"simplified\"}",
       "path": "/sub",
       "headers": {
         "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
