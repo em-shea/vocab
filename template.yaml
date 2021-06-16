@@ -213,7 +213,7 @@ Resources:
             Schedule: cron(0 16 ? * FRI *)
 
   Layer:
-    # Shared Python modules that returns a random vocab word
+    # Shared Python module that returns a random vocab word
     Type: 'AWS::Serverless::LayerVersion'
     Properties:
       ContentUri: src/layer
