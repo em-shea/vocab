@@ -40,6 +40,13 @@ from unittest import mock
 
 # def mocked_scan_contacts():
 
+    # all_users_and_subscriptions = [
+    #   {'GSI1PK': 'USER', 'SK': 'USER#00d76509-253e-4eff-bfd8-e35d1b0f822c', 'PK': 'USER#00d76509-253e-4eff-bfd8-e35d1b0f822c', 'GSI1SK': 'USER#00d76509-253e-4eff-bfd8-e35d1b0f822c'}, 
+    #   {'GSI1PK': 'USER', 'SK': 'LIST#1ebcad3f-adc0-6f42-b8b1-acde48001122', 'PK': 'USER#00d76509-253e-4eff-bfd8-e35d1b0f822c', 'GSI1SK': 'USER#00d76509-253e-4eff-bfd8-e35d1b0f822c#LIST#1ebcad3f-adc0-6f42-b8b1-acde48001122#SIMPLIFIED'}, 
+    #   {'GSI1PK': 'USER', 'SK': 'USER#834e267c-792a-45a4-8e55-fa1ba37c9800', 'PK': 'USER#834e267c-792a-45a4-8e55-fa1ba37c9800', 'GSI1SK': 'USER#834e267c-792a-45a4-8e55-fa1ba37c9800'}, 
+    #   {'GSI1PK': 'USER', 'SK': 'LIST#1ebcad40-414f-6bc8-859d-acde48001122', 'PK': 'USER#834e267c-792a-45a4-8e55-fa1ba37c9800', 'GSI1SK': 'USER#834e267c-792a-45a4-8e55-fa1ba37c9800#LIST#1ebcad40-414f-6bc8-859d-acde48001122#TRADITIONAL'}]
+    # ]
+
 #   all_contacts = [
 #     {'Date': '2020-01-13', 'CharacterSet': 'simplified', 'Status': 'subscribed', 'SubscriberEmail': 'user@example.com', 'ListId': '1'},
 #     {'Date': '2020-01-13', 'CharacterSet': 'simplified', 'Status': 'unsubscribed', 'SubscriberEmail': 'user@example.com', 'ListId': '6'},
