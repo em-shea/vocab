@@ -5,6 +5,7 @@ import json
 import time
 import boto3
 from datetime import datetime
+from boto3.dynamodb.conditions import Key
 from botocore.exceptions import ClientError
 
 import sys
