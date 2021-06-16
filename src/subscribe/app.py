@@ -7,8 +7,9 @@ import sys
 sys.path.insert(0, '/opt')
 
 # region_name specified in order to mock in unit tests
-dynamo_client = boto3.resource('dynamodb', region_name=os.environ['AWS_REGION'])
-table = dynamo_client.Table(os.environ['DYNAMODB_TABLE_NAME'])
+# dynamo_client = boto3.resource('dynamodb', region_name=os.environ['AWS_REGION'])
+# table = dynamo_client.Table(os.environ['DYNAMODB_TABLE_NAME'])
+table = boto3.resource('dynamodb', region_name=os.environ['AWS_REGION']).Table(os.environ['DYNAMODB_TABLE_NAME'])
 
 # Create a new subscription and/or user in DynamoDB
 def lambda_handler(event, context):
@@ -66,7 +67,9 @@ def create_user(cognito_id, email_address, char_set):
                 'SK': "USER#" + cognito_id,
                 'Email address': email_address,
                 'Date created': date,
-                'Character set preference': char_set
+                'Character set preference': char_set,
+                'GS1PK': "USER",
+                'GSISK': "USER#" + cognito_id
             }
         )
     return response
@@ -81,7 +84,10 @@ def create_subscription(cognito_id, char_set, list_id, list_name):
                 'List name': list_name,
                 'Date subscribed': date,
                 'Status': 'SUBSCRIBED',
-                'Character set': char_set
-            }
+                'Character set': char_set,
+                'GS1PK': "USER",
+                'GSISK': "USER#" + cognito_id + "#LIST" + list_id + "#" + char_set.upper()
+        },
+        ConditionExpression='attribute_not_exists(PK)'
         )
     return response

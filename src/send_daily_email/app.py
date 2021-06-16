@@ -13,9 +13,12 @@ from vocab_random_word import select_random_word
 
 # region_name specified in order to mock in unit tests
 ses_client = boto3.client('ses', region_name=os.environ['AWS_REGION'])
-sns_client = boto3.client('sns', region_name=os.environ['AWS_REGION'])
-word_history_table = boto3.resource('dynamodb', region_name=os.environ['AWS_REGION']).Table(os.environ['TABLE_NAME'])
-contacts_table = boto3.resource('dynamodb', region_name=os.environ['AWS_REGION']).Table(os.environ['CONTACT_TABLE_NAME'])
+table = boto3.resource('dynamodb', region_name=os.environ['AWS_REGION']).Table(os.environ['DYNAMODB_TABLE_NAME'])
+
+# sns_client = boto3.client('sns', region_name=os.environ['AWS_REGION'])
+# word_history_table = boto3.resource('dynamodb', region_name=os.environ['AWS_REGION']).Table(os.environ['TABLE_NAME'])
+# contacts_table = boto3.resource('dynamodb', region_name=os.environ['AWS_REGION']).Table(os.environ['CONTACT_TABLE_NAME'])
+
 
 # Select a random word for each HSK level and store in word history Dynamo table 
 # Loop through list of contacts, assemble a customized email, and send
@@ -25,48 +28,48 @@ def lambda_handler(event, context):
     # Select a random word for each level
     word_list = get_daily_words()
 
-    # If unable to store word in Dynamo, continue sending campaign
-    try:
-        # Write to Dynamo
-        store_words(word_list)
-    except Exception as e:
-        print(e)
+    # If unable to store word in Dynamo, continue sending emails
+    # try:
+    #     # Write to Dynamo
+    #     store_words(word_list)
+    # except Exception as e:
+    #     print(e)
 
     todays_announcement_html = get_announcement()
 
     # Scan the contacts table for a list of all contacts
-    all_contacts = scan_contacts_table()
+    all_contacts = get_users_and_subscriptions()
 
     # contact item example:
     # {'Date': '2020-01-13', 'CharacterSet': 'simplified', 'Status': 'unsubscribed', 'SubscriberEmail': 'user@example.com', 'ListId': '1'}
 
-    for contact in all_contacts:
+    # for contact in all_contacts:
 
-        # Send emails to all subscribed contacts
-        if not contact['Status'] == 'unsubscribed':
-            partial_email = contact['SubscriberEmail'][0:5]
-            list_id = contact['ListId']
-            email = contact['SubscriberEmail']
-            print("Subscribed contact: ", partial_email, list_id)
+    #     # Send emails to all subscribed contacts
+    #     if not contact['Status'] == 'unsubscribed':
+    #         partial_email = contact['SubscriberEmail'][0:5]
+    #         list_id = contact['ListId']
+    #         email = contact['SubscriberEmail']
+    #         print("Subscribed contact: ", partial_email, list_id)
 
-            word_index = int(contact['ListId'][0]) - 1
+    #         word_index = int(contact['ListId'][0]) - 1
 
-            hsk_level = list_id[0]
-            char_set = contact['CharacterSet']
+    #         hsk_level = list_id[0]
+    #         char_set = contact['CharacterSet']
 
-            word = word_list[word_index]
+    #         word = word_list[word_index]
 
-            # If the get_daily_words() hit an error and did not select a word for a given HSK level,
-            # word will be None. If so, do not send an email.
-            if word is not None:
+    #         # If the get_daily_words() hit an error and did not select a word for a given HSK level,
+    #         # word will be None. If so, do not send an email.
+    #         if word is not None:
 
-                campaign_contents = assemble_html_content(hsk_level, email, word, char_set, todays_announcement_html)
+    #             campaign_contents = assemble_html_content(hsk_level, email, word, char_set, todays_announcement_html)
 
-                try:
-                    response = send_email(campaign_contents, email)
-                except Exception as e:
-                    print(f"Error: Failed to send email - {partial_email}, {list_id}.")
-                    print(e)
+    #             try:
+    #                 response = send_email(campaign_contents, email)
+    #             except Exception as e:
+    #                 print(f"Error: Failed to send email - {partial_email}, {list_id}.")
+    #                 print(e)
 
 def get_announcement():
 
@@ -130,7 +133,13 @@ def store_words(word_list):
                 }
             )
 
-def scan_contacts_table():
+def get_users_and_subscriptions():
+
+    users_and_subscriptions = table.query(
+        IndexName='GSI1',
+        KeyConditionExpression=Key('GS1PK').eq('USER')
+    )
+    return users_and_subscriptions
 
     # Loop through contacts in Dynamo
     results = contacts_table.scan(
