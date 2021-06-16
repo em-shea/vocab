@@ -86,7 +86,7 @@ def create_subscription(cognito_id, char_set, list_id, list_name):
                 'Status': 'SUBSCRIBED',
                 'Character set': char_set,
                 'GS1PK': "USER",
-                'GSISK': "USER#" + cognito_id + "#LIST" + list_id + "#" + char_set.upper()
+                'GSISK': "USER#" + cognito_id + "#LIST#" + list_id + "#" + char_set.upper()
         },
         ConditionExpression='attribute_not_exists(PK)'
         )
