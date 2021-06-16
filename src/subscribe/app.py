@@ -68,8 +68,8 @@ def create_user(cognito_id, email_address, char_set):
                 'Email address': email_address,
                 'Date created': date,
                 'Character set preference': char_set,
-                'GS1PK': "USER",
-                'GSISK': "USER#" + cognito_id
+                'GSI1PK': "USER",
+                'GSIISK': "USER#" + cognito_id
             }
         )
     return response
@@ -85,8 +85,8 @@ def create_subscription(cognito_id, char_set, list_id, list_name):
                 'Date subscribed': date,
                 'Status': 'SUBSCRIBED',
                 'Character set': char_set,
-                'GS1PK': "USER",
-                'GSISK': "USER#" + cognito_id + "#LIST#" + list_id + "#" + char_set.upper()
+                'GSI1PK': "USER",
+                'GSI1SK': "USER#" + cognito_id + "#LIST#" + list_id + "#" + char_set.upper()
         },
         ConditionExpression='attribute_not_exists(PK)'
         )

@@ -138,9 +138,10 @@ def get_users_and_subscriptions():
 
     users_and_subscriptions = table.query(
         IndexName='GSI1',
-        KeyConditionExpression=Key('GS1PK').eq('USER')
+        KeyConditionExpression=Key('GSI1PK').eq('USER')
     )
-    return users_and_subscriptions
+    print(users_and_subscriptions['Items'])
+    return users_and_subscriptions['Items']
 
     # Loop through contacts in Dynamo
     results = contacts_table.scan(
