@@ -35,6 +35,7 @@ Resources:
   UserDataApi:
     Type: AWS::Serverless::Api
     Properties:
+      StageName: Prod
       Auth:
         DefaultAuthorizer: CognitoAuthorizer
         Authorizers:
