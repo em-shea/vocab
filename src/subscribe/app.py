@@ -67,6 +67,7 @@ def create_user(cognito_id, email_address, char_set):
                 'SK': "USER#" + cognito_id,
                 'Email address': email_address,
                 'Date created': date,
+                'Last login': date,
                 'Character set preference': char_set,
                 'GSI1PK': "USER",
                 'GSI1SK': "USER#" + cognito_id

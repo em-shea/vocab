@@ -29,6 +29,19 @@ Globals:
 Resources:
 
 ####################################################################################################
+# API Gateway
+####################################################################################################
+
+  UserDataApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      Auth:
+        DefaultAuthorizer: CognitoAuthorizer
+        Authorizers:
+          CognitoAuthorizer:
+            UserPoolArn: !GetAtt UserPool
+
+####################################################################################################
 # Lambda functions
 ####################################################################################################
 
@@ -186,7 +199,28 @@ Resources:
           Properties:
             Path: /unsub
             Method: POST
-  
+
+    GetUserData:
+      Type: 'AWS::Serverless::Function'
+      Properties:
+        FunctionName: !Sub GetUserData-${Stage}
+        Handler: app.lambda_handler
+        Runtime: python3.7
+        CodeUri: src/get_user_data
+        Description: A function that returns details for a specific user.
+        MemorySize: 128
+        Timeout: 120
+        Policies:
+          - DynamoDBCrudPolicy:
+              TableName: !Ref DynamoDBTable
+        Events:
+          GetUserDataApi:
+            Type: Api
+            Properties:
+              RestApiId: !Ref UserDataApi
+              Path: /user_data
+              Method: GET
+
   BackupDynamoToS3:
     Type: 'AWS::Serverless::Function'
     Properties:

@@ -17,9 +17,8 @@ ses_client = boto3.client('ses', region_name=os.environ['AWS_REGION'])
 table = boto3.resource('dynamodb', region_name=os.environ['AWS_REGION']).Table(os.environ['DYNAMODB_TABLE_NAME'])
 
 # sns_client = boto3.client('sns', region_name=os.environ['AWS_REGION'])
-# word_history_table = boto3.resource('dynamodb', region_name=os.environ['AWS_REGION']).Table(os.environ['TABLE_NAME'])
+word_history_table = boto3.resource('dynamodb', region_name=os.environ['AWS_REGION']).Table(os.environ['TABLE_NAME'])
 # contacts_table = boto3.resource('dynamodb', region_name=os.environ['AWS_REGION']).Table(os.environ['CONTACT_TABLE_NAME'])
-
 
 # Select a random word for each HSK level and store in word history Dynamo table 
 # Loop through list of contacts, assemble a customized email, and send
@@ -30,16 +29,32 @@ def lambda_handler(event, context):
     word_list = get_daily_words()
 
     # If unable to store word in Dynamo, continue sending emails
-    # try:
-    #     # Write to Dynamo
-    #     store_words(word_list)
-    # except Exception as e:
-    #     print(e)
+    try:
+        # Write to Dynamo
+        store_words(word_list)
+    except Exception as e:
+        print(e)
 
     todays_announcement_html = get_announcement()
 
     # Scan the contacts table for a list of all contacts
-    all_contacts = get_users_and_subscriptions()
+    users_and_subscriptions = get_users_and_subscriptions()
+
+    users_and_subscriptions_grouped = process_users_and_subscriptions(users_and_subscriptions)
+
+    for user in users_and_subscriptions_grouped:
+        email_content = assemble_html_content(user)
+
+# dictionary = {
+#     'a': 1,
+#     'b': 2
+# }
+# for key, val in dictionary.items():
+#     print(key, val)
+
+    for user in users_and_subscriptions_grouped:
+        if not user['Status'] == 'UNSUBSCRIBED':
+            return
 
     # contact item example:
     # {'Date': '2020-01-13', 'CharacterSet': 'simplified', 'Status': 'unsubscribed', 'SubscriberEmail': 'user@example.com', 'ListId': '1'}
@@ -136,21 +151,71 @@ def store_words(word_list):
 
 def get_users_and_subscriptions():
 
-    users_and_subscriptions = table.query(
+    response = table.query(
         IndexName='GSI1',
         KeyConditionExpression=Key('GSI1PK').eq('USER')
     )
-    print(users_and_subscriptions['Items'])
-    return users_and_subscriptions['Items']
+    print(response['Items'])
+    return response['Items']
 
-    # Loop through contacts in Dynamo
-    results = contacts_table.scan(
-        Select = "ALL_ATTRIBUTES"
-    )
+def process_users_and_subscriptions(users_and_subscriptions):
 
-    all_contacts = results['Items']
+    users_and_subscriptions_grouped = {}
+    # users_and_subscriptions_grouped = {
+    #     user_id: {
+    #         'user_data': {user metadata},
+    #         'lists': [
+    #             {sub metadata}
+    #         ]
+    #     }
+    # }
 
-    return all_contacts
+    # Loop through all users and subs
+    for item in users_and_subscriptions:
+        if item['PK'] not in users_and_subscriptions_grouped:
+            users_and_subscriptions_grouped[item['PK']] = {'user_data': None, 'lists': []}
+        
+        # If user, create new entry in grouped dict
+        if 'Email address' in item:
+            print('user metadata', item['Email address'])
+            users_and_subscriptions_grouped[item['PK']]['user_data'] = item
+
+        if 'List name' in item:
+            print('user list', item['List name'])
+            users_and_subscriptions_grouped[item['PK']]['lists'].append(item)
+
+    print(users_and_subscriptions_grouped)
+
+    return users_and_subscriptions_grouped
+
+def assemble_html_content(user):
+    # Open HTML template files
+    # To run unit tests, we need to specify an absolute file path
+    abs_dir = os.path.dirname(os.path.abspath(__file__))
+    with open(os.path.join(abs_dir, 'email_template.html')) as fh:
+        email_template = fh.read()
+
+    for list in user['lists']:
+
+
+
+    return email_contents
+
+def assemble_word_html_content(list):
+    abs_dir = os.path.dirname(os.path.abspath(__file__))
+    with open(os.path.join(abs_dir, 'word_template.html')) as fh:
+        word_template = fh.read()
+
+    word_contents = word_template.replace("{word}", selected_word)
+    word_contents = word_contents.replace("{pronunciation}", word["Pronunciation"])
+    word_contents = word_contents.replace("{definition}", word["Definition"])
+    word_contents = word_contents.replace("{link}", example_link)
+    word_contents = word_contents.replace("{level}", "HSK Level " + hsk_level)
+    word_contents = word_contents.replace("{quiz_link}", "https://haohaotiantian.com/quiz?list=HSKLevel" + hsk_level + "&days=14&ques=10&char=" + char_set)
+    word_contents = word_contents.replace("{history_link}", "https://haohaotiantian.com/history?list=HSKLevel" + hsk_level + "&dates=30&char=" + char_set)
+    word_contents = word_contents.replace("{unsubscribe_link}", "https://haohaotiantian.com/unsub?level=" + hsk_level + "&email=" + email + "&char=" + char_set)
+
+    return word_contents
 
 # Populate relevant content in for the placeholders in the email template
 def assemble_html_content(hsk_level, email, word, char_set, todays_announcement_html):
@@ -173,7 +238,7 @@ def assemble_html_content(hsk_level, email, word, char_set, todays_announcement_
     # We have an html template file packaged with this function's code which we read here
     # To run unit tests for this function, we need to specify an absolute file path
     abs_dir = os.path.dirname(os.path.abspath(__file__))
-    with open(os.path.join(abs_dir, 'template.html')) as fh:
+    with open(os.path.join(abs_dir, 'email_template.html')) as fh:
         contents = fh.read()
 
     # Replace relevant content in example template
