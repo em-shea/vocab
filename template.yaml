@@ -40,7 +40,7 @@ Resources:
         DefaultAuthorizer: CognitoAuthorizer
         Authorizers:
           CognitoAuthorizer:
-            UserPoolArn: !GetAtt UserPool
+            UserPoolArn: !GetAtt UserPool.Arn
 
 ####################################################################################################
 # Lambda functions
@@ -195,7 +195,7 @@ Resources:
           TABLE_NAME: !Ref SubscriberContactListDynamoDBTable
           DYNAMODB_TABLE_NAME: !Ref DynamoDBTable
       Events:
-        SubscribeApi:
+        UnsubscribeApi:
           Type: Api
           Properties:
             Path: /unsub
