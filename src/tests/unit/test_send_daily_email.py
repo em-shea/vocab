@@ -109,6 +109,7 @@ def mocked_get_random(hsk_level):
 
 class SendDailyEmailTest(unittest.TestCase):
 
+  @unittest.skip('Testing')
   @mock.patch('send_daily_email.app.get_announcement', side_effect=mocked_get_announcement)
   @mock.patch('send_daily_email.app.get_users_and_subscriptions', side_effect=mocked_get_users_and_subscriptions)
   @mock.patch('send_daily_email.app.select_random_word', side_effect=mocked_get_random)

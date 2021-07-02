@@ -196,7 +196,7 @@ def assemble_html_content(user):
         email_template = fh.read()
 
     for list in user['lists']:
-
+        return
 
 
     return email_contents
