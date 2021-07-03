@@ -25,10 +25,12 @@ def lambda_handler(event, context):
         'body': json.dumps(response)
     }
 
-def get_user_data(user):
+def get_user_data(user_id):
+
+    user_key = "USER#" + user_id
 
     response = table.query(
-        KeyConditionExpression=Key('PK').eq(user)
+        KeyConditionExpression=Key('PK').eq(user_key)
     )
     print('dynamo response ', response['Items'])
     return response['Items']
