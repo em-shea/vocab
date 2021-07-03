@@ -19,13 +19,6 @@ Parameters:
   Stage:
     Type: String
 
-Globals:
-  Api:
-    Cors:
-      AllowMethods: "'OPTIONS,POST,GET'"
-      AllowHeaders: "'*'"
-      AllowOrigin: "'*'"
-
 Resources:
 
 ####################################################################################################
@@ -36,6 +29,10 @@ Resources:
     Type: AWS::Serverless::Api
     Properties:
       StageName: Prod
+      Cors:
+        AllowMethods: "'OPTIONS,POST,GET'"
+        AllowHeaders: "'*'"
+        AllowOrigin: "'*'"
       Auth:
         DefaultAuthorizer: CognitoAuthorizer
         Authorizers:
