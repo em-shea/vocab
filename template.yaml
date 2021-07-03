@@ -226,7 +226,7 @@ Resources:
               Path: /user_data
               Method: GET
               Auth:
-                Authorizers: CognitoAuthorizer
+                Authorizer: CognitoAuthorizer
 
   BackupDynamoToS3:
     Type: 'AWS::Serverless::Function'
