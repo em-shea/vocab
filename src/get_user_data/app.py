@@ -13,7 +13,8 @@ def lambda_handler(event, context):
     print(event)
 
     body = json.loads(event["body"])
-    response = get_user_data(body['user'])
+    print(body)
+    # response = get_user_data(body['user'])
 
     return
 

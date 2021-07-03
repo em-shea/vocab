@@ -34,7 +34,6 @@ Resources:
         AllowHeaders: "'*'"
         AllowOrigin: "'*'"
       Auth:
-        # DefaultAuthorizer: CognitoAuthorizer
         Authorizers:
           CognitoAuthorizer:
             UserPoolArn: !GetAtt UserPool.Arn
@@ -215,6 +214,9 @@ Resources:
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref DynamoDBTable
+      Environment:
+        Variables:
+          DYNAMODB_TABLE_NAME: !Ref DynamoDBTable
       Events:
         GetUserDataApi:
           Type: Api
