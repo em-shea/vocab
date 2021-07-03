@@ -10,8 +10,9 @@ table = boto3.resource('dynamodb', region_name=os.environ['AWS_REGION']).Table(o
 
 # For a given user (requires sign-in), return their metadata, subscribed lists, and the past two weeks of quizzes and sentences
 def lambda_handler(event, context):
-
+    print('event', event)
     cognito_user_id = event['requestContext']['authorizer']['claims']['sub']
+    print('user id',cognito_user_id)
     user_data = get_user_data(cognito_user_id)
     response = process_user_data(user_data)
 
@@ -29,7 +30,7 @@ def get_user_data(user):
     response = table.query(
         KeyConditionExpression=Key('PK').eq(user)
     )
-
+    print('dynamo response ', response['Items'])
     return response['Items']
 
 def process_user_data(user_data):
@@ -41,6 +42,7 @@ def process_user_data(user_data):
 
         # If Dynamo item is user metadata, add to the main dict
         if 'Email address' in item:
+            print('user', item['Email address'])
             proccessed_user_data['user data']['Email address'] = item['Email address']
             proccessed_user_data['user data']['User id'] = item['PK'][5:]
             proccessed_user_data['user data']['Character set preference'] = item['Character set preference']
@@ -49,9 +51,11 @@ def process_user_data(user_data):
                 proccessed_user_data['user data']['User alias'] = item['User alias']
             else:
                 proccessed_user_data['user data']['User alias'] = "Not set"
+                proccessed_user_data['user data']['User alias pinyin'] = "Not set"
 
         # If Dynamo item is a list subscription, add the list to the user's lists dict
         if 'List name' in item:
+            print('list', item['List name'])
             list_item = {}
             list_item['List name'] = item['List name']
             list_item['List id'] = item['SK'][5:]
@@ -59,5 +63,5 @@ def process_user_data(user_data):
             list_item['Status'] = item['Status']
             list_item['Date subscribed'] = item['Date subscribed']
             proccessed_user_data['lists'].append(list_item)
-     
+    print('proccessed_user_data ', proccessed_user_data)
     return proccessed_user_data
