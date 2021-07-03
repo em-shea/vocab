@@ -32,7 +32,7 @@ Resources:
 # API Gateway
 ####################################################################################################
 
-  UserDataApi:
+  VocabAppApi:
     Type: AWS::Serverless::Api
     Properties:
       StageName: Prod
@@ -107,6 +107,7 @@ Resources:
           WORDS_BUCKET_KEY: !Ref WordsBucketKey
       Events:
         SampleVocabApi:
+          RestApiId: !Ref VocabAppApi
           Type: Api
           Properties:
             Path: /sample_vocab
@@ -133,6 +134,7 @@ Resources:
           TABLE_NAME: !Ref WordHistoryDynamoDBTable
       Events:
         WordHistoryApi:
+          RestApiId: !Ref VocabAppApi
           Type: Api
           Properties:
             Path: /history
@@ -167,6 +169,7 @@ Resources:
           # USER_POOL_ID: !Ref UserPoolId
       Events:
         SubscribeApi:
+          RestApiId: !Ref VocabAppApi
           Type: Api
           Properties:
             Path: /sub
@@ -196,6 +199,7 @@ Resources:
           DYNAMODB_TABLE_NAME: !Ref DynamoDBTable
       Events:
         UnsubscribeApi:
+          RestApiId: !Ref VocabAppApi
           Type: Api
           Properties:
             Path: /unsub
@@ -218,9 +222,13 @@ Resources:
           GetUserDataApi:
             Type: Api
             Properties:
-              RestApiId: !Ref UserDataApi
+              RestApiId: !Ref VocabAppApi
               Path: /user_data
               Method: GET
+              Auth:
+                Authorizers:
+                  CognitoAuthorizer:
+                    UserPoolArn: !GetAtt UserPool.Arn
 
   BackupDynamoToS3:
     Type: 'AWS::Serverless::Function'
