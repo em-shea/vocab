@@ -30,7 +30,6 @@ def lambda_handler(event, context):
     # If unable to store word in Dynamo, continue sending emails
     try:
         # Write to Dynamo
-        # TODO: Update store words function to new todays_words data format
         store_words(todays_words)
     except Exception as e:
         print(e)
@@ -108,25 +107,22 @@ def get_daily_words():
             todays_words[list] = None
             print(e)
 
-    print('todays words', todays_words)
     return todays_words
 
 def store_words(todays_words):
 
-    for item in todays_words:
-        word = item
-        level = item['HSK Level']
-        list_id = "HSKLevel" + level
+    for list_name, word in todays_words.items():
         date = str(datetime.today().strftime('%Y-%m-%d'))
 
         # Write each word to Dynamo word history table
         response = word_history_table.put_item(
             Item={
-                    'ListId': list_id,
+                    'ListId': list_name.replace(" ", ""),
                     'Date': date,
                     'Word': word,
                 }
             )
+    print(response)
 
 def get_users_and_subscriptions():
 

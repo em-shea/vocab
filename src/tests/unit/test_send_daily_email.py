@@ -112,12 +112,14 @@ class SendDailyEmailTest(unittest.TestCase):
   @mock.patch('send_daily_email.app.get_announcement', side_effect=mocked_get_announcement)
   @mock.patch('send_daily_email.app.get_users_and_subscriptions', side_effect=mocked_get_users_and_subscriptions)
   @mock.patch('send_daily_email.app.select_random_word', side_effect=mocked_get_random)
+  @mock.patch('send_daily_email.app.store_words', side_effect=mocked_store_words)
   @mock.patch('send_daily_email.app.send_email', side_effect=mocked_send_email)
-  def test_build(self, send_email_mock, get_random_mock, get_users_and_subscriptions_mock, get_announcement_mock):
+  def test_build(self, send_email_mock, store_words_mock, get_random_mock, get_users_and_subscriptions_mock, get_announcement_mock):
 
     response = lambda_handler(self.scheduled_event(), "")
 
     self.assertEqual(get_announcement_mock.call_count, 1)
+    self.assertEqual(store_words_mock.call_count, 1)
     self.assertEqual(get_users_and_subscriptions_mock.call_count, 1)
     self.assertEqual(get_random_mock.call_count, 6)
     self.assertEqual(send_email_mock.call_count, 2)
