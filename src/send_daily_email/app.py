@@ -30,6 +30,7 @@ def lambda_handler(event, context):
     # If unable to store word in Dynamo, continue sending emails
     try:
         # Write to Dynamo
+        # TODO: Update store words function to new todays_words data format
         store_words(todays_words)
     except Exception as e:
         print(e)
@@ -42,8 +43,10 @@ def lambda_handler(event, context):
     users_and_subscriptions_grouped = process_users_and_subscriptions(users_and_subscriptions)
 
     for user_id, user in users_and_subscriptions_grouped.items():
+        print('loop through users')
         email_content = assemble_html_content(user, todays_words, todays_announcement)
         try:
+            print('send emails')
             response = send_email(user, email_content)
         except Exception as e:
             print(f"Error: Failed to send email - {user['user_data']['PK']}.")
@@ -105,6 +108,7 @@ def get_daily_words():
             todays_words[list] = None
             print(e)
 
+    print('todays words', todays_words)
     return todays_words
 
 def store_words(todays_words):
@@ -189,6 +193,8 @@ def assemble_html_content(user, todays_words, todays_announcement):
     char_set = user['lists'][0]['Character set']
     email_contents = email_template.replace("{unsubscribe_link}", "https://haohaotiantian.com/unsub?level=" + hsk_level + "&email=" + user['user_data']['Email address'] + "&char=" + char_set)
     
+    email_contents = email_contents.replace("{word_contents}", word_content)
+
     if todays_announcement is not None:
         email_contents = email_contents.replace("{announcement_slot}", todays_announcement)
     else:

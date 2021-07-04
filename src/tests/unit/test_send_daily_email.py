@@ -41,9 +41,9 @@ def mocked_send_email(campaign_contents, email):
 def mocked_get_users_and_subscriptions():
 
   users_and_subscriptions = [
-    {'GSI1PK': 'USER', 'Date created': '2021-06-16T23:06:48.467526', 'Character set preference': 'traditional', 'SK': 'USER#770e2827-7666-4087-9c58-17c2e862dba2', 'Email address': 'c.emilyshea+test34@gmail.com', 'PK': 'USER#770e2827-7666-4087-9c58-17c2e862dba2', 'GSI1SK': 'USER#770e2827-7666-4087-9c58-17c2e862dba2'}, 
+    {'GSI1PK': 'USER', 'Date created': '2021-06-16T23:06:48.467526', 'Character set preference': 'traditional', 'SK': 'USER#770e2827-7666-4087-9c58-17c2e862dba2', 'Email address': 'test1@gmail.com', 'PK': 'USER#770e2827-7666-4087-9c58-17c2e862dba2', 'GSI1SK': 'USER#770e2827-7666-4087-9c58-17c2e862dba2'}, 
     {'GSI1PK': 'USER', 'Date subscribed': '2021-06-16T23:06:48.646688', 'List name': 'HSK Level 6', 'SK': 'LIST#1ebcad41-197a-6700-95a3-acde48001122', 'Status': 'SUBSCRIBED', 'PK': 'USER#770e2827-7666-4087-9c58-17c2e862dba2', 'GSI1SK': 'USER#770e2827-7666-4087-9c58-17c2e862dba2#LIST#1ebcad41-197a-6700-95a3-acde48001122#TRADITIONAL', 'Character set': 'traditional'}, 
-    {'GSI1PK': 'USER', 'Date created': '2021-06-16T23:07:11.623880', 'Character set preference': 'simplified', 'SK': 'USER#ef602513-011c-481e-9825-e1e7ad39c3d3', 'Email address': 'c.emilyshea+test35@gmail.com', 'PK': 'USER#ef602513-011c-481e-9825-e1e7ad39c3d3', 'GSI1SK': 'USER#ef602513-011c-481e-9825-e1e7ad39c3d3'}, 
+    {'GSI1PK': 'USER', 'Date created': '2021-06-16T23:07:11.623880', 'Character set preference': 'simplified', 'SK': 'USER#ef602513-011c-481e-9825-e1e7ad39c3d3', 'Email address': 'test2@gmail.com', 'PK': 'USER#ef602513-011c-481e-9825-e1e7ad39c3d3', 'GSI1SK': 'USER#ef602513-011c-481e-9825-e1e7ad39c3d3'}, 
     {'GSI1PK': 'USER', 'Date subscribed': '2021-06-16T23:07:11.648212', 'List name': 'HSK Level 3', 'SK': 'LIST#1ebcad3f-f815-6b92-b3e8-acde48001122', 'Status': 'SUBSCRIBED', 'PK': 'USER#ef602513-011c-481e-9825-e1e7ad39c3d3', 'GSI1SK': 'USER#ef602513-011c-481e-9825-e1e7ad39c3d3#LIST#1ebcad3f-f815-6b92-b3e8-acde48001122#SIMPLIFIED', 'Character set': 'simplified'}
   ]
 
