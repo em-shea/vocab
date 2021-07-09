@@ -66,8 +66,8 @@ class GetUserDataTest(unittest.TestCase):
             "sec-fetch-mode": "cors",
             "sec-fetch-site": "cross-site",
             "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.114 Safari/537.36",
-            "Via": "2.0 83ec53fe631231239a0dc49.cloudfront.net (CloudFront)",
-            "X-Amz-Cf-Id": "IzAVYoTv123123gWRZWs79mFBjvWaSJQw==",
+            "Via": "2.0 123.cloudfront.net (CloudFront)",
+            "X-Amz-Cf-Id": "Iz123BjvWaSJQw==",
             "X-Amzn-Trace-Id": "Roo12312348867cca34e3",
             "X-Forwarded-For": "81.123",
             "X-Forwarded-Port": "443",
@@ -132,16 +132,16 @@ class GetUserDataTest(unittest.TestCase):
             "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.114 Safari/537.36"
             ],
             "Via": [
-            "2.0 83ec51231230dc49.cloudfront.net (CloudFront)"
+            "2.0 123.cloudfront.net (CloudFront)"
             ],
             "X-Amz-Cf-Id": [
-            "IzAVYoTvttI123123123ZWs79mFBjvWaSJQw=="
+            "IzAVY123WaSJQw=="
             ],
             "X-Amzn-Trace-Id": [
             "Root=1-12367cca34e3"
             ],
             "X-Forwarded-For": [
-            "81.98.52.111, 70.132.38.79"
+            "123"
             ],
             "X-Forwarded-Port": [
             "443"

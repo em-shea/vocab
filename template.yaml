@@ -66,7 +66,7 @@ Resources:
             TableName: !Ref SubscriberContactListDynamoDBTable
       Environment:
         Variables:
-          SUB_TOPIC_ARN: !Ref NotificationTopic
+          # SUB_TOPIC_ARN: !Ref NotificationTopic
           WORDS_BUCKET_NAME: !Ref WordsBucketName
           WORDS_BUCKET_KEY: !Ref WordsBucketKey
           LISTS_BUCKET_NAME: !Ref ListsBucketName
@@ -155,7 +155,7 @@ Resources:
             TableName: !Ref DynamoDBTable
       Environment:
         Variables:
-          SUB_TOPIC_ARN: !Ref NotificationTopic
+          # SUB_TOPIC_ARN: !Ref NotificationTopic
           LISTS_BUCKET_NAME: !Ref ListsBucketName
           LISTS_BUCKET_KEY: !Ref ListsBucketKey
           STAGE: !Ref Stage
