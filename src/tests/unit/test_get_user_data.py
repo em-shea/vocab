@@ -17,7 +17,7 @@ def mocked_get_user_data(cognito_user_id):
             "Status":"SUBSCRIBED",
             "GSI1SK":"USER#770e2827-7666-123123123#LIST#1ebcad41-197a-123123#TRADITIONAL",
             "PK":"USER#770e2827-7666-123123123",
-            "Character set":"traditional"
+            "Character set":"traditional",
         },
         {
             "GSI1PK":"USER",
@@ -26,7 +26,9 @@ def mocked_get_user_data(cognito_user_id):
             "SK":"USER#770e2827-7666-123123123",
             "Email address":"test@email.com",
             "GSI1SK":"USER#770e2827-7666-123123123",
-            "PK":"USER#770e2827-7666-123123123"
+            "PK":"USER#770e2827-7666-123123123",
+            "User alias": "Not set",
+            "User alias pinyin": "Not set"
         }
     ]
 
