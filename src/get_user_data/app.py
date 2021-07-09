@@ -49,11 +49,8 @@ def process_user_data(user_data):
             proccessed_user_data['user data']['User id'] = item['PK'][5:]
             proccessed_user_data['user data']['Character set preference'] = item['Character set preference']
             proccessed_user_data['user data']['Date created'] = item['Date created']
-            if 'User alias' in item:
-                proccessed_user_data['user data']['User alias'] = item['User alias']
-            else:
-                proccessed_user_data['user data']['User alias'] = "Not set"
-                proccessed_user_data['user data']['User alias pinyin'] = "Not set"
+            proccessed_user_data['user data']['User alias'] = item['User alias']
+            proccessed_user_data['user data']['User alias pinyin'] = item['User alias pinyin']
 
         # If Dynamo item is a list subscription, add the list to the user's lists dict
         if 'List name' in item:
