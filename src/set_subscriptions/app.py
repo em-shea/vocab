@@ -6,31 +6,37 @@ import datetime
 import sys
 sys.path.insert(0, '/opt')
 
+from layer.get_user_data import get_user_data
+
 # region_name specified in order to mock in unit tests
 table = boto3.resource('dynamodb', region_name=os.environ['AWS_REGION']).Table(os.environ['DYNAMODB_TABLE_NAME'])
 
 # Set subscriptions and create user if none exists yet
 def lambda_handler(event, context):
-    # new event payload:
+    # new or returning user payload:
     # {
-    #     "user_status":"signed_in", # not_signed_in,
     #     "cognito_id":"123",
-    #     "email":"me@testemail.com", # included only if it's a new user subscribing
-    #     "char_set_preference":"simplified" # included only if it's a new user subscribing
+    #     "email":"me@testemail.com",
+    #     "char_set_preference":"simplified",
     #     "set_lists": [
     #         {
-    #             "request_type":"subscribe", # unsubscribe
     #             "list_id":"123",
     #             "list_name":"HSK Level 1",
     #             "char_set":"simplified"
     #         },
     #         {
-    #             "request_type":"unsubscribe", # subscribe
-    #             "list_id":"123",
-    #             "list_name":"HSK Level 4",
-    #             "char_set":"traditional"
+    #             "list_id":"234",
+    #             "list_name":"HSK Level 2",
+    #             "char_set":"simplified"
     #         }
     #     ]
+    # }
+    # unsubscribe - need to pass cognito id in to email unsub link
+    # {
+    #     "cognito_id":"123",
+    #     "email":"me@testemail.com",
+    #     "char_set_preference":"simplified",
+    #     "set_lists": []
     # }
 
     print(event)
@@ -47,47 +53,56 @@ def lambda_handler(event, context):
         'body': '{"success" : false}'
     }
 
-    if body['user_status'] == "not_signed_in":
-        # Create new user in DynamoDB (Cognito on the frontend will catch if the user already exists)
-        # TODO: double check if create user is idempotent
-        # PutItem creates a new item. If an item with the same key already exists in the table, it is replaced with the new item.
+    try:
+        create_user(date, body['cognito_id'], body['email'], body['char_set_preference'])
+    except Exception as e:
+        print(f"Error: Failed to create user - {body['email'][5:]}, {body['cognito_id']}.")
+        print(e)
+        return error_message
+
+    # Get a list of ids for all lists the user is currently subscribed to
+    user_data = get_user_data(body['cognito_id'])
+    print(user_data['user data'])
+    current_user_lists = user_data['lists']
+    # current_user_list_ids = []
+    # for list in current_user_lists:
+    #     if list['Status'] == "SUBSCRIBED":
+    #         current_user_list_ids.append(list['List id'])
+    set_list_ids = []
+    for list in body['set_lists']:
+        set_list_ids.append(list['list_id'])
+
+    # TODO: Currently making an API call per update. Batch updates?
+    for list in body['set_lists']:
         try:
-            create_user(date, body['cognito_id'], body['email'], body['char_set_preference'])
-            print(f"Success: Contact created in Dynamo - {body['email'][5:]}, {body['list_name']}.")
+            subscribe(date, body['cognito_id'], list)
         except Exception as e:
-            print(f"Error: Failed to create contact in Dynamo - {body['email'][5:]}, {body['list_name']}.")
+            print(f"Error: Failed to subscribe user - {body['email'][5:]}, {list['list_id']}.")
             print(e)
             return error_message
-
-    for list in body['set_lists']:
-        if list['request_type'] == "subscribe":
-            # Create new subscription in DynamoDB
+    for existing_list in current_user_lists:
+        if existing_list['List id'] not in set_list_ids and existing_list['Status'] == "SUBSCRIBED":
             try:
-                # TODO: Check if idempotent
-                subscribe(date, body['cognito_id'], list)
+                unsubscribe(date, body['cognito_id'], existing_list)
             except Exception as e:
-                return error_message
-        if list['request_type'] == "unsubscribe":
-            # Unsubscribe user in DynamoDB
-            try: 
-                unsubscribe(date, body['cognito_id'], list)
-            except Exception as e:
+                print(f"Error: Failed to unsubscribe user - {body['email'][5:]}, {existing_list['List id']}.")
+                print(e)
                 return error_message
 
     return {
-        'statusCode': 200,
-        'headers': {
-            'Access-Control-Allow-Methods': 'POST,OPTIONS',
-            'Access-Control-Allow-Origin': '*',
-        },
-        'body': '{"success" : true}'
-    }
+            'statusCode': 200,
+            'headers': {
+                'Access-Control-Allow-Methods': 'POST,OPTIONS',
+                'Access-Control-Allow-Origin': '*',
+            },
+            'body': '{"success" : true}'
+        }
 
-# Write new contact to Dynamo
+# Write new contact to Dynamo if it doesn't already exist
 def create_user(date, cognito_id, email_address, char_set_preference):
 
     response = table.put_item(
-        Item={
+        Item = {
                 'PK': "USER#" + cognito_id,
                 'SK': "USER#" + cognito_id,
                 'Email address': email_address,
@@ -98,12 +113,14 @@ def create_user(date, cognito_id, email_address, char_set_preference):
                 'User alias pinyin': "Not set",
                 'GSI1PK': "USER",
                 'GSI1SK': "USER#" + cognito_id
-            }
+            },
+            ConditionExpression = "attribute_not_exists(PK)"
         )
     return response
 
 def subscribe(date, cognito_id, list_data):
 
+    # PutItem will overwrite an existing item with the same key
     response = table.put_item(
         Item={
                 'PK': "USER#" + cognito_id,
@@ -114,26 +131,28 @@ def subscribe(date, cognito_id, list_data):
                 'Character set': list_data['char_set'],
                 'GSI1PK': "USER",
                 'GSI1SK': "USER#" + cognito_id + "#LIST#" + list_data['list_id'] + "#" + list_data['char_set'].upper()
-        },
-        ConditionExpression='attribute_not_exists(PK)' # ?
+        }
     )
 
     return response
 
-def unsubscribe(date, cognito_id, list_data): 
+def unsubscribe(date, cognito_id, list_data):
 
     response = table.update_item(
-        Item={
-                'PK': "USER#" + cognito_id,
-                'SK': "LIST#" + list_data['list_id'],
-                'List name': list_data['list_name'],
-                'Date unsubscribed': date,
-                'Status': 'UNSUBSCRIBED',
-                'Character set': list_data['char_set'],
-                'GSI1PK': "USER",
-                'GSI1SK': "USER#" + cognito_id + "#LIST#" + list_data['list_id'] + "#" + list_data['char_set'].upper()
+        Key = {
+            "PK": "USER#" + cognito_id,
+            "SK": "LIST#" + list_data['list_id']
         },
-        ConditionExpression='attribute_not_exists(PK)' # ?
-    )
+        UpdateExpression = "set #s = :status, #d = :date",
+        ExpressionAttributeValues = {
+            ":status": "UNSUBSCRIBED",
+            ":date": date
+        },
+        ExpressionAttributeNames = {
+            "#s": "Status",
+            "#d": "Date unsubscribed"
+        },
+        ReturnValues = "UPDATED_NEW"
+        )
 
     return response

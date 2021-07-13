@@ -8,20 +8,17 @@ from datetime import datetime
 from boto3.dynamodb.conditions import Key
 from botocore.exceptions import ClientError
 
+# TODO: Add cognito id to unsub URL params
+
 import sys
 sys.path.insert(0, '/opt')
-from vocab_random_word import select_random_word
+from layer.vocab_random_word import select_random_word
 
 # region_name specified in order to mock in unit tests
 ses_client = boto3.client('ses', region_name=os.environ['AWS_REGION'])
 table = boto3.resource('dynamodb', region_name=os.environ['AWS_REGION']).Table(os.environ['DYNAMODB_TABLE_NAME'])
-
 word_history_table = boto3.resource('dynamodb', region_name=os.environ['AWS_REGION']).Table(os.environ['TABLE_NAME'])
-# contacts_table = boto3.resource('dynamodb', region_name=os.environ['AWS_REGION']).Table(os.environ['CONTACT_TABLE_NAME'])
 
-# Select a random word for each HSK level and store in word history Dynamo table 
-# Loop through list of contacts, assemble a customized email, and send
-# Log each send and send error notification on failure
 def lambda_handler(event, context):
 
     # Select a random word for each level
@@ -50,16 +47,6 @@ def lambda_handler(event, context):
         except Exception as e:
             print(f"Error: Failed to send email - {user['user_data']['PK']}.")
             print(e)
-
-# dictionary = {
-#     'a': 1,
-#     'b': 2
-# }
-# for key, val in dictionary.items():
-#     print(key, val)
-
-    # contact item example:
-    # {'Date': '2020-01-13', 'CharacterSet': 'simplified', 'Status': 'unsubscribed', 'SubscriberEmail': 'user@example.com', 'ListId': '1'}
 
 def get_announcement():
 
@@ -172,7 +159,7 @@ def process_users_and_subscriptions(users_and_subscriptions):
 def assemble_html_content(user, todays_words, todays_announcement):
 
     # Appends multiple words into the same email
-    # Order the lists in some way?
+    # TODO: Order the lists in some way?
     word_content = ""
     for list in user['lists']:
         word_content = word_content + assemble_word_html_content(list, todays_words)
@@ -233,7 +220,6 @@ def assemble_word_html_content(list, todays_words):
 
     return word_contents
 
-# Send SES email
 def send_email(user, email_content):
 
     response = ses_client.send_email(

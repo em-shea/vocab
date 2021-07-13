@@ -8,46 +8,89 @@ from unittest import mock
 with mock.patch.dict('os.environ', {'AWS_REGION': 'us-east-1', 'DYNAMODB_TABLE_NAME': 'mock-table'}):
     from set_subscriptions.app import lambda_handler
 
-def mocked_create_user(): 
+def mocked_create_user(date, cognito_id, email_address, char_set_preference): 
     return
 
-def mocked_subscribe():
+def mocked_subscribe(date, cognito_id, list_data):
     return
 
-def mocked_unsubscribe():
+def mocked_unsubscribe(date, cognito_id, list_data):
     return
+
+def mocked_pull_user_data(cognito_id):
+    response = [
+        {
+            "Date subscribed":"2021-06-16T23:06:48.646688",
+            "GSI1PK":"USER",
+            "List name":"HSK Level 6",
+            "SK":"LIST#1ebcad41-197a-123123",
+            "Status":"SUBSCRIBED",
+            "GSI1SK":"USER#770e2827-7666-123123123#LIST#1ebcad41-197a-123123#TRADITIONAL",
+            "PK":"USER#770e2827-7666-123123123",
+            "Character set":"traditional",
+        },
+        {
+            "GSI1PK":"USER",
+            "Date created":"2021-06-16T23:06:48.467526",
+            "Character set preference":"traditional",
+            "SK":"USER#770e2827-7666-123123123",
+            "Email address":"test@email.com",
+            "GSI1SK":"USER#770e2827-7666-123123123",
+            "PK":"USER#770e2827-7666-123123123",
+            "User alias": "Not set",
+            "User alias pinyin": "Not set"
+        }
+    ]
+    return response
 
 class SetSubscriptionsTest(unittest.TestCase):
 
     @mock.patch('set_subscriptions.app.create_user', side_effect=mocked_create_user)
     @mock.patch('set_subscriptions.app.subscribe', side_effect=mocked_subscribe)
     @mock.patch('set_subscriptions.app.unsubscribe', side_effect=mocked_unsubscribe)
-    def test_build(self, unsubscribe_mock, subscribe_mock, create_user_mock):
+    @mock.patch('layer.get_user_data.pull_user_data', side_effect=mocked_pull_user_data)
+    def test_subscribe(self, pull_user_data_mock, unsubscribe_mock, subscribe_mock, create_user_mock):
 
-        apig_event_body =  {
-            "user_status":"signed_in",
+        event_body = {
             "cognito_id":"123",
             "email":"me@testemail.com",
             "char_set_preference":"simplified",
             "set_lists": [
                 {
-                    "request_type":"subscribe",
                     "list_id":"123",
                     "list_name":"HSK Level 1",
                     "char_set":"simplified"
                 },
                 {
-                    "request_type":"unsubscribe",
-                    "list_id":"123",
-                    "list_name":"HSK Level 4",
-                    "char_set":"traditional"
+                    "list_id":"234",
+                    "list_name":"HSK Level 2",
+                    "char_set":"simplified"
                 }
             ]
         }
-        response = lambda_handler(self.sub_apig_event(json.dumps(apig_event_body)), "")
+        response = lambda_handler(self.sub_apig_event(json.dumps(event_body)), "")
 
-        self.assertEqual(subscribe_mock.call_count, 1)
-        # self.assertEqual(unsubscribe_mock.call_count, 1)
+        self.assertEqual(create_user_mock.call_count, 1)
+        self.assertEqual(pull_user_data_mock.call_count, 1)
+        self.assertEqual(subscribe_mock.call_count, 2)
+    
+    @mock.patch('set_subscriptions.app.create_user', side_effect=mocked_create_user)
+    @mock.patch('set_subscriptions.app.subscribe', side_effect=mocked_subscribe)
+    @mock.patch('set_subscriptions.app.unsubscribe', side_effect=mocked_unsubscribe)
+    @mock.patch('layer.get_user_data.pull_user_data', side_effect=mocked_pull_user_data)
+    def test_unsubscribe_all(self, pull_user_data_mock, unsubscribe_mock, subscribe_mock, create_user_mock):
+
+        event_body = {
+            "cognito_id":"123",
+            "email":"me@testemail.com",
+            "char_set_preference":"simplified",
+            "set_lists": []
+        }
+        response = lambda_handler(self.sub_apig_event(json.dumps(event_body)), "")
+
+        self.assertEqual(create_user_mock.call_count, 1)
+        self.assertEqual(pull_user_data_mock.call_count, 1)
+        self.assertEqual(unsubscribe_mock.call_count, 1)
     
     def sub_apig_event(self, event_body):
         return {

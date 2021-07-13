@@ -10,10 +10,10 @@ Parameters:
     Type: String
   ListsBucketKey:
     Type: String
-  DomainName:
-    Type: String
-  SubNotifyEmail:
-    Type: String
+  # DomainName:
+  #   Type: String
+  # SubNotifyEmail:
+  #   Type: String
   DynamoBackupsS3BucketName:
     Type: String
   Stage:
