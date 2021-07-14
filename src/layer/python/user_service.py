@@ -4,7 +4,6 @@ from boto3.dynamodb.conditions import Key
 
 import sys
 sys.path.append('../tests/')
-# print(sys.path)
 
 table = boto3.resource('dynamodb', region_name=os.environ['AWS_REGION']).Table(os.environ['DYNAMODB_TABLE_NAME'])
 
@@ -54,7 +53,7 @@ def process_user_data(user_data):
             list_item['date_subscribed'] = item['Date subscribed']
             processed_user_data['lists'].append(list_item)
         # Sort lists by list id to appear in order (Level 1, Level 2, etc.)
-        processed_user_data['lists'] = sorted(processed_user_data['lists'], key=lambda k: k['list_id'], reverse=True)
+        processed_user_data['lists'] = sorted(processed_user_data['lists'], key=lambda k: k['list_id'], reverse=False)
 
     print('processed_user_data ', processed_user_data)
     return processed_user_data

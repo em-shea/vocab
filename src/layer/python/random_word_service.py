@@ -6,7 +6,6 @@ from random import randint
 
 import sys
 sys.path.append('../tests/')
-print(sys.path)
 
 # Memoizing vocab lists variable to only load once if function is warm
 vocab_lists = None

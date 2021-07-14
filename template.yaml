@@ -131,71 +131,6 @@ Resources:
             RestApiId: !Ref VocabAppApi
             Path: /history
             Method: GET
-
-  # Subscribe:
-  #   Type: 'AWS::Serverless::Function'
-  #   Properties:
-  #     FunctionName: !Sub VocabSubscribe-${Stage}
-  #     Handler: app.lambda_handler
-  #     Runtime: python3.7
-  #     CodeUri: src/subscribe
-  #     Description: A function that takes an HSK level and email address inputs and subscribes to a topic.
-  #     MemorySize: 128
-  #     Timeout: 120
-  #     Policies:
-  #       - SESCrudPolicy:
-  #           IdentityName: haohaotiantian.com
-  #       - DynamoDBCrudPolicy:
-  #           TableName: !Ref SubscriberContactListDynamoDBTable
-  #       - DynamoDBCrudPolicy:
-  #           TableName: !Ref DynamoDBTable
-  #     Environment:
-  #       Variables:
-  #         # SUB_TOPIC_ARN: !Ref NotificationTopic
-  #         LISTS_BUCKET_NAME: !Ref ListsBucketName
-  #         LISTS_BUCKET_KEY: !Ref ListsBucketKey
-  #         STAGE: !Ref Stage
-  #         DYNAMODB_TABLE_NAME: !Ref DynamoDBTable
-  #         TABLE_NAME: !Ref SubscriberContactListDynamoDBTable
-  #         # USER_POOL_CLIENT_ID: !Ref UserPoolClientId
-  #         # USER_POOL_ID: !Ref UserPoolId
-  #     Events:
-  #       SubscribeApi:
-  #         Type: Api
-  #         Properties:
-  #           RestApiId: !Ref VocabAppApi
-  #           Path: /sub
-  #           Method: POST
-  #     Layers:
-  #     - !Ref Layer
-
-  # Unsubscribe:
-  #   Type: 'AWS::Serverless::Function'
-  #   Properties:
-  #     FunctionName: !Sub VocabUnsubscribe-${Stage}
-  #     Handler: app.lambda_handler
-  #     Runtime: python3.7
-  #     CodeUri: src/unsubscribe
-  #     Description: A function that unsubscribes the user from the given HSK level or from all levels.
-  #     MemorySize: 128
-  #     Timeout: 120
-  #     Policies:
-  #       - DynamoDBCrudPolicy:
-  #           TableName: !Ref SubscriberContactListDynamoDBTable
-  #       - DynamoDBCrudPolicy:
-  #           TableName: !Ref DynamoDBTable
-  #     Environment:
-  #       Variables:
-  #         STAGE: !Ref Stage
-  #         TABLE_NAME: !Ref SubscriberContactListDynamoDBTable
-  #         DYNAMODB_TABLE_NAME: !Ref DynamoDBTable
-  #     Events:
-  #       UnsubscribeApi:
-  #         Type: Api
-  #         Properties:
-  #           RestApiId: !Ref VocabAppApi
-  #           Path: /unsub
-  #           Method: POST
   
   SetSubscriptions:
     Type: 'AWS::Serverless::Function'
@@ -301,45 +236,11 @@ Resources:
             Schedule: cron(0 16 ? * FRI *)
 
   Layer:
-    # Shared Python module that returns a random vocab word
     Type: 'AWS::Serverless::LayerVersion'
     Properties:
       ContentUri: src/layer
       CompatibleRuntimes:
         - python3.7
-
-####################################################################################################
-# API Gateway permissions
-# Using a workaround described here: https://github.com/awslabs/serverless-application-model/issues/59
-####################################################################################################
-
-  # SampleVocabLambdaPermission:
-  #   Type: "AWS::Lambda::Permission"
-  #   Properties:
-  #     Action: lambda:InvokeFunction
-  #     FunctionName: !Ref SampleVocab
-  #     Principal: apigateway.amazonaws.com
-
-  # WordHistoryPermission:
-  #   Type: "AWS::Lambda::Permission"
-  #   Properties:
-  #     Action: lambda:InvokeFunction
-  #     FunctionName: !Ref WordHistory
-  #     Principal: apigateway.amazonaws.com
-
-  # SubscribeLambdaPermission:
-  #   Type: "AWS::Lambda::Permission"
-  #   Properties:
-  #     Action: lambda:InvokeFunction
-  #     FunctionName: !Ref Subscribe
-  #     Principal: apigateway.amazonaws.com
-
-  # UnsubscribeLambdaPermission:
-  #   Type: "AWS::Lambda::Permission"
-  #   Properties:
-  #     Action: lambda:InvokeFunction
-  #     FunctionName: !Ref Unsubscribe
-  #     Principal: apigateway.amazonaws.com
 
 ####################################################################################################
 # DynamoDB table
@@ -573,114 +474,6 @@ Resources:
       UserPoolId: !Ref UserPool
       ExplicitAuthFlows:
         - CUSTOM_AUTH_FLOW_ONLY
-
-####################################################################################################
-# Receiving function error notifications
-####################################################################################################
-
-  # CWLogsNotifications:
-  #   Type: 'AWS::Serverless::Function'
-  #   DependsOn:
-  #     - SubscribeLogGroup
-  #     - SendDailyEmailLogGroup
-  #     - SampleVocabLogGroup
-  #   Properties:
-  #     FunctionName: !Sub CWLogsNotifications-${Stage}
-  #     Handler: app.lambda_handler
-  #     Runtime: python3.7
-  #     CodeUri: src/cw_logs_notifications
-  #     Description: A function that filters function logs for error messages and publishes to SNS
-  #     MemorySize: 128
-  #     Timeout: 120
-  #     Policies:
-  #       - SNSPublishMessagePolicy:
-  #           TopicName: !GetAtt NotificationTopic.TopicName
-  #     Environment:
-  #       Variables:
-  #         SUB_TOPIC_ARN: !Ref NotificationTopic
-  #     Events:
-  #       SubFunctionLogs:
-  #         Type: CloudWatchLogs
-  #         Properties:
-  #           LogGroupName:
-  #             !Join [
-  #         '',
-  #         ['/aws/lambda/', !Sub 'SubscribeFunction-${Stage}']
-  #       ]
-  #           FilterPattern: "?Error ?Success"
-  #       SendDailyLogs:
-  #         Type: CloudWatchLogs
-  #         Properties:
-  #           LogGroupName:
-  #             !Join [
-  #         '',
-  #         ['/aws/lambda/', !Sub 'SendDailyEmail-${Stage}']
-  #       ]
-  #           FilterPattern: Error
-  #       SampleVocabLogs:
-  #         Type: CloudWatchLogs
-  #         Properties:
-  #           LogGroupName:
-  #             !Join [
-  #         '',
-  #         ['/aws/lambda/', !Sub 'SampleVocab-${Stage}']
-  #       ]
-  #           FilterPattern: Error
-
-  # NotificationTopic:
-  #   # A topic that error notifications are published to
-  #   Type: AWS::SNS::Topic
-  #   Properties:
-  #     Subscription:
-  #     - Protocol: email
-  #       Endpoint: !Ref SubNotifyEmail
-
-  # # Creating CloudWatch Logs groups for each function.
-  # # By default, a log group is only created for a function once the function is invoked.
-  # # We are creating log groups here to be able to subscribe the CWLogsNotification function to those log groups.
-  # SubscribeLogGroup:
-  #   Type: AWS::Logs::LogGroup
-  #   DependsOn:
-  #     - Subscribe
-  #   Properties:
-  #     LogGroupName:
-  #       !Join [
-  #         '',
-  #         ['/aws/lambda/', !Sub 'VocabSubscribe-${Stage}']
-  #       ]
-
-  # SendDailyEmailLogGroup:
-  #   Type: AWS::Logs::LogGroup
-  #   DependsOn:
-  #     - SendDailyEmail
-  #   Properties:
-  #     LogGroupName:
-  #       !Join [
-  #         '',
-  #         ['/aws/lambda/', !Sub 'SendDailyEmail-${Stage}']
-  #       ]
-
-  # SampleVocabLogGroup:
-  #   Type: AWS::Logs::LogGroup
-  #   DependsOn:
-  #     - SampleVocab
-  #   Properties:
-  #     LogGroupName:
-  #       !Join [
-  #         '',
-  #         ['/aws/lambda/', !Sub 'SampleVocab-${Stage}']
-  #       ]
-
-  # UnsubscribeLogGroup:
-  #   Type: AWS::Logs::LogGroup
-  #   DependsOn:
-  #     - Unsubscribe
-  #   Properties:
-  #     LogGroupName:
-  #       !Join [
-  #         '',
-  #         ['/aws/lambda/', !Sub 'VocabUnsubscribe-${Stage}']
-        # ]
 
 ####################################################################################################
 # Outputs

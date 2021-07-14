@@ -2,15 +2,10 @@ import sys
 sys.path.append('../../')
 sys.path.append('../../layer/python')
 
-import os
-import json
 import unittest
 from unittest import mock
-from io import BytesIO
 
 import random_word_service
-
-print('starting test')
 
 def mocked_get_s3_file():
 
@@ -20,7 +15,7 @@ def mocked_get_s3_file():
 
   return contents
 
-class VocabRandomWordTest(unittest.TestCase):
+class RandomWordTest(unittest.TestCase):
 
   @mock.patch('random_word_service.get_s3_file', side_effect=mocked_get_s3_file)
   def test_build(self, s3_get_file_mock):
