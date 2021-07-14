@@ -1,6 +1,7 @@
 import json
 import sys
 sys.path.append('../../')
+sys.path.append('../../layer/python')
 
 import unittest
 from unittest import mock
@@ -48,7 +49,7 @@ class SetSubscriptionsTest(unittest.TestCase):
     @mock.patch('set_subscriptions.app.create_user', side_effect=mocked_create_user)
     @mock.patch('set_subscriptions.app.subscribe', side_effect=mocked_subscribe)
     @mock.patch('set_subscriptions.app.unsubscribe', side_effect=mocked_unsubscribe)
-    @mock.patch('layer.user_service.pull_user_data', side_effect=mocked_pull_user_data)
+    @mock.patch('user_service.pull_user_data', side_effect=mocked_pull_user_data)
     def test_subscribe(self, pull_user_data_mock, unsubscribe_mock, subscribe_mock, create_user_mock):
 
         event_body = {
@@ -77,7 +78,7 @@ class SetSubscriptionsTest(unittest.TestCase):
     @mock.patch('set_subscriptions.app.create_user', side_effect=mocked_create_user)
     @mock.patch('set_subscriptions.app.subscribe', side_effect=mocked_subscribe)
     @mock.patch('set_subscriptions.app.unsubscribe', side_effect=mocked_unsubscribe)
-    @mock.patch('layer.user_service.pull_user_data', side_effect=mocked_pull_user_data)
+    @mock.patch('user_service.pull_user_data', side_effect=mocked_pull_user_data)
     def test_unsubscribe_all(self, pull_user_data_mock, unsubscribe_mock, subscribe_mock, create_user_mock):
 
         event_body = {

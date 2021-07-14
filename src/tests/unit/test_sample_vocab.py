@@ -1,6 +1,6 @@
 import sys
 sys.path.append('../../')
-sys.path.append('../../layer')
+sys.path.append('../../layer/python')
 
 import json
 import unittest
@@ -74,7 +74,7 @@ def mocked_get_random(hsk_level):
 
 class SampleVocabTest(unittest.TestCase):
 
-  @mock.patch('layer.random_word_service.select_random_word', side_effect=mocked_get_random)
+  @mock.patch('random_word_service.select_random_word', side_effect=mocked_get_random)
   def test_build(self, get_random_mock):
     
     response = lambda_handler(self.apig_event(), "")

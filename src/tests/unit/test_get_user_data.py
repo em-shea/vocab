@@ -1,5 +1,6 @@
 import sys
 sys.path.append('../../')
+sys.path.append('../../layer/python')
 
 import unittest
 from unittest import mock
@@ -34,7 +35,7 @@ def mocked_get_user_data(cognito_user_id):
 
 class GetUserDataTest(unittest.TestCase):
 
-  @mock.patch('get_user_data.app.get_user_data', side_effect=mocked_get_user_data)
+  @mock.patch('user_service.get_user_data', side_effect=mocked_get_user_data)
   def test_build(self, get_user_data_mock):
     
     response = lambda_handler(self.apig_event(), "")

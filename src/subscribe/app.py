@@ -3,9 +3,6 @@ import json
 import boto3
 import datetime
 
-import sys
-sys.path.insert(0, '/opt')
-
 # region_name specified in order to mock in unit tests
 # dynamo_client = boto3.resource('dynamodb', region_name=os.environ['AWS_REGION'])
 # table = dynamo_client.Table(os.environ['DYNAMODB_TABLE_NAME'])

@@ -3,8 +3,6 @@ import io
 import csv
 import os
 
-import sys
-sys.path.insert(0, '/opt')
 import random_word_service
 
 # Selects 5 random entries from each level

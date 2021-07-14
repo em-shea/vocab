@@ -3,11 +3,7 @@ import json
 import boto3
 from boto3.dynamodb.conditions import Key
 
-import sys
-sys.path.insert(0, '/opt')
-sys.path.insert(0, './src/layer')
-
-from layer import user_service
+import user_service
 
 table = boto3.resource('dynamodb', region_name=os.environ['AWS_REGION']).Table(os.environ['DYNAMODB_TABLE_NAME'])
 

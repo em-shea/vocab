@@ -10,8 +10,6 @@ from botocore.exceptions import ClientError
 
 # TODO: Add cognito id to unsub URL params
 
-import sys
-sys.path.insert(0, '/opt')
 import random_word_service
 
 # region_name specified in order to mock in unit tests

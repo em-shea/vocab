@@ -1,6 +1,6 @@
 import sys
 sys.path.append('../../')
-sys.path.append('../../layer')
+sys.path.append('../../layer/python')
 
 import unittest
 from unittest import mock
@@ -109,7 +109,7 @@ class SendDailyEmailTest(unittest.TestCase):
 
   @mock.patch('send_daily_email.app.get_announcement', side_effect=mocked_get_announcement)
   @mock.patch('send_daily_email.app.get_users_and_subscriptions', side_effect=mocked_get_users_and_subscriptions)
-  @mock.patch('layer.random_word_service.select_random_word', side_effect=mocked_get_random)
+  @mock.patch('random_word_service.select_random_word', side_effect=mocked_get_random)
   @mock.patch('send_daily_email.app.store_words', side_effect=mocked_store_words)
   @mock.patch('send_daily_email.app.send_email', side_effect=mocked_send_email)
   def test_build(self, send_email_mock, store_words_mock, get_random_mock, get_users_and_subscriptions_mock, get_announcement_mock):

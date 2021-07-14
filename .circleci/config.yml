@@ -14,15 +14,15 @@ jobs:
             sudo pip install aws-sam-cli
             sudo pip install coverage
 
-      # - run:
-      #     name: Run tests
-      #     working_directory: src/tests/unit
-      #     command: coverage run -m unittest discover
+      - run:
+          name: Run tests
+          working_directory: src/tests/unit
+          command: coverage run -m unittest discover
         
-      # - run:
-      #     name: Run coverage report
-      #     working_directory: src/tests/unit
-      #     command: coverage report -m
+      - run:
+          name: Run coverage report
+          working_directory: src/tests/unit
+          command: coverage report -m
 
       - run: 
           name: Deploy with SAM

@@ -3,9 +3,6 @@ import json
 import boto3
 import datetime
 
-import sys
-sys.path.insert(0, '/opt')
-
 import user_service
 
 # region_name specified in order to mock in unit tests
@@ -13,32 +10,6 @@ table = boto3.resource('dynamodb', region_name=os.environ['AWS_REGION']).Table(o
 
 # Set subscriptions and create user if none exists yet
 def lambda_handler(event, context):
-    # new or returning user payload:
-    {
-        "cognito_id":"123",
-        "email":"me@testemail.com",
-        "char_set_preference":"simplified",
-        "set_lists": [
-            {
-                "list_id":"123",
-                "list_name":"HSK Level 1",
-                "char_set":"simplified"
-            },
-            {
-                "list_id":"234",
-                "list_name":"HSK Level 2",
-                "char_set":"simplified"
-            }
-        ]
-    }
-    # unsubscribe - need to pass cognito id in to email unsub link
-    # {
-    #     "cognito_id":"123",
-    #     "email":"me@testemail.com",
-    #     "char_set_preference":"simplified",
-    #     "set_lists": []
-    # }
-
     print(event)
 
     body = json.loads(event["body"])
@@ -62,7 +33,7 @@ def lambda_handler(event, context):
 
     # Get a list of ids for all lists the user is currently subscribed to
     user_data = user_service.get_user_data(body['cognito_id'])
-    print(user_data['user data'])
+    print(user_data['user_data'])
     current_user_lists = user_data['lists']
     # current_user_list_ids = []
     # for list in current_user_lists:
@@ -81,11 +52,11 @@ def lambda_handler(event, context):
             print(e)
             return error_message
     for existing_list in current_user_lists:
-        if existing_list['List id'] not in set_list_ids and existing_list['Status'] == "SUBSCRIBED":
+        if existing_list['list_id'] not in set_list_ids and existing_list['status'] == "SUBSCRIBED":
             try:
                 unsubscribe(date, body['cognito_id'], existing_list)
             except Exception as e:
-                print(f"Error: Failed to unsubscribe user - {body['email'][5:]}, {existing_list['List id']}.")
+                print(f"Error: Failed to unsubscribe user - {body['email'][5:]}, {existing_list['list_id']}.")
                 print(e)
                 return error_message
 
