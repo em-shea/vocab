@@ -3,8 +3,8 @@ import boto3
 from boto3.dynamodb.conditions import Key
 
 import sys
-sys.path.append('../tests/')
-print(sys.path)
+# sys.path.append('../tests/')
+# print(sys.path)
 
 table = boto3.resource('dynamodb', region_name=os.environ['AWS_REGION']).Table(os.environ['DYNAMODB_TABLE_NAME'])
 

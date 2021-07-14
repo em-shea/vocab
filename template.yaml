@@ -10,10 +10,6 @@ Parameters:
     Type: String
   ListsBucketKey:
     Type: String
-  # DomainName:
-  #   Type: String
-  # SubNotifyEmail:
-  #   Type: String
   DynamoBackupsS3BucketName:
     Type: String
   Stage:
@@ -136,70 +132,70 @@ Resources:
             Path: /history
             Method: GET
 
-  Subscribe:
-    Type: 'AWS::Serverless::Function'
-    Properties:
-      FunctionName: !Sub VocabSubscribe-${Stage}
-      Handler: app.lambda_handler
-      Runtime: python3.7
-      CodeUri: src/subscribe
-      Description: A function that takes an HSK level and email address inputs and subscribes to a topic.
-      MemorySize: 128
-      Timeout: 120
-      Policies:
-        - SESCrudPolicy:
-            IdentityName: haohaotiantian.com
-        - DynamoDBCrudPolicy:
-            TableName: !Ref SubscriberContactListDynamoDBTable
-        - DynamoDBCrudPolicy:
-            TableName: !Ref DynamoDBTable
-      Environment:
-        Variables:
-          # SUB_TOPIC_ARN: !Ref NotificationTopic
-          LISTS_BUCKET_NAME: !Ref ListsBucketName
-          LISTS_BUCKET_KEY: !Ref ListsBucketKey
-          STAGE: !Ref Stage
-          DYNAMODB_TABLE_NAME: !Ref DynamoDBTable
-          TABLE_NAME: !Ref SubscriberContactListDynamoDBTable
-          # USER_POOL_CLIENT_ID: !Ref UserPoolClientId
-          # USER_POOL_ID: !Ref UserPoolId
-      Events:
-        SubscribeApi:
-          Type: Api
-          Properties:
-            RestApiId: !Ref VocabAppApi
-            Path: /sub
-            Method: POST
-      Layers:
-      - !Ref Layer
+  # Subscribe:
+  #   Type: 'AWS::Serverless::Function'
+  #   Properties:
+  #     FunctionName: !Sub VocabSubscribe-${Stage}
+  #     Handler: app.lambda_handler
+  #     Runtime: python3.7
+  #     CodeUri: src/subscribe
+  #     Description: A function that takes an HSK level and email address inputs and subscribes to a topic.
+  #     MemorySize: 128
+  #     Timeout: 120
+  #     Policies:
+  #       - SESCrudPolicy:
+  #           IdentityName: haohaotiantian.com
+  #       - DynamoDBCrudPolicy:
+  #           TableName: !Ref SubscriberContactListDynamoDBTable
+  #       - DynamoDBCrudPolicy:
+  #           TableName: !Ref DynamoDBTable
+  #     Environment:
+  #       Variables:
+  #         # SUB_TOPIC_ARN: !Ref NotificationTopic
+  #         LISTS_BUCKET_NAME: !Ref ListsBucketName
+  #         LISTS_BUCKET_KEY: !Ref ListsBucketKey
+  #         STAGE: !Ref Stage
+  #         DYNAMODB_TABLE_NAME: !Ref DynamoDBTable
+  #         TABLE_NAME: !Ref SubscriberContactListDynamoDBTable
+  #         # USER_POOL_CLIENT_ID: !Ref UserPoolClientId
+  #         # USER_POOL_ID: !Ref UserPoolId
+  #     Events:
+  #       SubscribeApi:
+  #         Type: Api
+  #         Properties:
+  #           RestApiId: !Ref VocabAppApi
+  #           Path: /sub
+  #           Method: POST
+  #     Layers:
+  #     - !Ref Layer
 
-  Unsubscribe:
-    Type: 'AWS::Serverless::Function'
-    Properties:
-      FunctionName: !Sub VocabUnsubscribe-${Stage}
-      Handler: app.lambda_handler
-      Runtime: python3.7
-      CodeUri: src/unsubscribe
-      Description: A function that unsubscribes the user from the given HSK level or from all levels.
-      MemorySize: 128
-      Timeout: 120
-      Policies:
-        - DynamoDBCrudPolicy:
-            TableName: !Ref SubscriberContactListDynamoDBTable
-        - DynamoDBCrudPolicy:
-            TableName: !Ref DynamoDBTable
-      Environment:
-        Variables:
-          STAGE: !Ref Stage
-          TABLE_NAME: !Ref SubscriberContactListDynamoDBTable
-          DYNAMODB_TABLE_NAME: !Ref DynamoDBTable
-      Events:
-        UnsubscribeApi:
-          Type: Api
-          Properties:
-            RestApiId: !Ref VocabAppApi
-            Path: /unsub
-            Method: POST
+  # Unsubscribe:
+  #   Type: 'AWS::Serverless::Function'
+  #   Properties:
+  #     FunctionName: !Sub VocabUnsubscribe-${Stage}
+  #     Handler: app.lambda_handler
+  #     Runtime: python3.7
+  #     CodeUri: src/unsubscribe
+  #     Description: A function that unsubscribes the user from the given HSK level or from all levels.
+  #     MemorySize: 128
+  #     Timeout: 120
+  #     Policies:
+  #       - DynamoDBCrudPolicy:
+  #           TableName: !Ref SubscriberContactListDynamoDBTable
+  #       - DynamoDBCrudPolicy:
+  #           TableName: !Ref DynamoDBTable
+  #     Environment:
+  #       Variables:
+  #         STAGE: !Ref Stage
+  #         TABLE_NAME: !Ref SubscriberContactListDynamoDBTable
+  #         DYNAMODB_TABLE_NAME: !Ref DynamoDBTable
+  #     Events:
+  #       UnsubscribeApi:
+  #         Type: Api
+  #         Properties:
+  #           RestApiId: !Ref VocabAppApi
+  #           Path: /unsub
+  #           Method: POST
   
   SetSubscriptions:
     Type: 'AWS::Serverless::Function'
@@ -458,7 +454,6 @@ Resources:
       MfaConfiguration: "OFF"
       LambdaConfig:
         PreSignUp: !GetAtt PreSignUp.Arn
-        # PostConfirmation: !GetAtt PostConfirmation.Arn
         DefineAuthChallenge: !GetAtt DefineAuthChallenge.Arn
         CreateAuthChallenge: !GetAtt CreateAuthChallenge.Arn
         VerifyAuthChallengeResponse: !GetAtt VerifyAuthChallengeResponse.Arn
@@ -469,13 +464,6 @@ Resources:
       CodeUri: src/user_pool_triggers/pre_sign_up/
       Handler: app.lambda_handler
       Runtime: python3.7
-
-  # PostConfirmation:
-  #   Type: AWS::Serverless::Function
-  #   Properties:
-  #     CodeUri: src/user_pool_triggers/post_confirmation/
-  #     Handler: app.lambda_handler
-  #     Runtime: python3.7
 
   DefineAuthChallenge:
     Type: AWS::Serverless::Function
@@ -570,13 +558,6 @@ Resources:
       FunctionName: !GetAtt PreSignUp.Arn
       Principal: cognito-idp.amazonaws.com
       SourceArn: !GetAtt UserPool.Arn
-  # PostConfirmationPermission:
-  #   Type: AWS::Lambda::Permission
-  #   Properties:
-  #     Action: lambda:InvokeFunction
-  #     FunctionName: !GetAtt PostConfirmation.Arn
-  #     Principal: cognito-idp.amazonaws.com
-  #     SourceArn: !GetAtt UserPool.Arn
   
   # User pool client only allows custom auth
   # A password is generated for each user, but they are not able to use it to login (since they will be using email)

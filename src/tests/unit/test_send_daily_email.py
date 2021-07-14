@@ -2,15 +2,13 @@ import sys
 sys.path.append('../../')
 sys.path.append('../../layer')
 
-import os
-import json
 import unittest
 from unittest import mock
 
 # wip
 # No such file or directory: 'template.html'
 
-with mock.patch.dict('os.environ', {'AWS_REGION': 'us-east-1', 'DYNAMODB_TABLE_NAME': 'mock-table', 'TABLE_NAME': 'mock-second-table', 'ANNOUNCEMENTS_BUCKET': 'mock-bucket'}):
+with mock.patch.dict('os.environ', {'AWS_REGION': 'us-east-1', 'DYNAMODB_TABLE_NAME': 'mock-table', 'TABLE_NAME': 'mock-second-table', 'ANNOUNCEMENTS_BUCKET': 'mock-bucket', 'WORDS_BUCKET_NAME': 'mock-words-bucket', 'WORDS_BUCKET_KEY': 'mock-words-key'}):
   from send_daily_email.app import lambda_handler
 
 def mocked_get_announcement():
@@ -111,7 +109,7 @@ class SendDailyEmailTest(unittest.TestCase):
 
   @mock.patch('send_daily_email.app.get_announcement', side_effect=mocked_get_announcement)
   @mock.patch('send_daily_email.app.get_users_and_subscriptions', side_effect=mocked_get_users_and_subscriptions)
-  @mock.patch('send_daily_email.app.select_random_word', side_effect=mocked_get_random)
+  @mock.patch('layer.random_word_service.select_random_word', side_effect=mocked_get_random)
   @mock.patch('send_daily_email.app.store_words', side_effect=mocked_store_words)
   @mock.patch('send_daily_email.app.send_email', side_effect=mocked_send_email)
   def test_build(self, send_email_mock, store_words_mock, get_random_mock, get_users_and_subscriptions_mock, get_announcement_mock):

@@ -12,7 +12,7 @@ from botocore.exceptions import ClientError
 
 import sys
 sys.path.insert(0, '/opt')
-from layer.vocab_random_word import select_random_word
+import random_word_service
 
 # region_name specified in order to mock in unit tests
 ses_client = boto3.client('ses', region_name=os.environ['AWS_REGION'])
@@ -87,7 +87,7 @@ def get_daily_words():
     for list in list_names:
         level = str(list_names.index(list)+1)
         try:
-            word = select_random_word(level)
+            word = random_word_service.select_random_word(level)
             todays_words[list] = word
         except Exception as e:
             # Appending None to the list as a placeholder for the level's word. Emails will not send for this level.

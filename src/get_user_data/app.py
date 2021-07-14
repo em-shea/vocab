@@ -5,8 +5,9 @@ from boto3.dynamodb.conditions import Key
 
 import sys
 sys.path.insert(0, '/opt')
+sys.path.insert(0, './src/layer')
 
-from layer.get_user_data import get_user_data
+from layer import user_service
 
 table = boto3.resource('dynamodb', region_name=os.environ['AWS_REGION']).Table(os.environ['DYNAMODB_TABLE_NAME'])
 
@@ -16,7 +17,7 @@ def lambda_handler(event, context):
     cognito_id = event['requestContext']['authorizer']['claims']['sub']
     print('user id',cognito_id)
     
-    processed_user_data = get_user_data(cognito_id)
+    processed_user_data = user_service.get_user_data(cognito_id)
 
     return {
         'statusCode': 200,

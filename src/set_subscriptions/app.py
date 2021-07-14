@@ -6,7 +6,7 @@ import datetime
 import sys
 sys.path.insert(0, '/opt')
 
-from layer.get_user_data import get_user_data
+import user_service
 
 # region_name specified in order to mock in unit tests
 table = boto3.resource('dynamodb', region_name=os.environ['AWS_REGION']).Table(os.environ['DYNAMODB_TABLE_NAME'])
@@ -14,23 +14,23 @@ table = boto3.resource('dynamodb', region_name=os.environ['AWS_REGION']).Table(o
 # Set subscriptions and create user if none exists yet
 def lambda_handler(event, context):
     # new or returning user payload:
-    # {
-    #     "cognito_id":"123",
-    #     "email":"me@testemail.com",
-    #     "char_set_preference":"simplified",
-    #     "set_lists": [
-    #         {
-    #             "list_id":"123",
-    #             "list_name":"HSK Level 1",
-    #             "char_set":"simplified"
-    #         },
-    #         {
-    #             "list_id":"234",
-    #             "list_name":"HSK Level 2",
-    #             "char_set":"simplified"
-    #         }
-    #     ]
-    # }
+    {
+        "cognito_id":"123",
+        "email":"me@testemail.com",
+        "char_set_preference":"simplified",
+        "set_lists": [
+            {
+                "list_id":"123",
+                "list_name":"HSK Level 1",
+                "char_set":"simplified"
+            },
+            {
+                "list_id":"234",
+                "list_name":"HSK Level 2",
+                "char_set":"simplified"
+            }
+        ]
+    }
     # unsubscribe - need to pass cognito id in to email unsub link
     # {
     #     "cognito_id":"123",
@@ -61,7 +61,7 @@ def lambda_handler(event, context):
         return error_message
 
     # Get a list of ids for all lists the user is currently subscribed to
-    user_data = get_user_data(body['cognito_id'])
+    user_data = user_service.get_user_data(body['cognito_id'])
     print(user_data['user data'])
     current_user_lists = user_data['lists']
     # current_user_list_ids = []
