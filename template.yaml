@@ -219,6 +219,8 @@ Resources:
             RestApiId: !Ref VocabAppApi
             Path: /set_subs
             Method: POST
+      Layers:
+      - !Ref Layer
 
   GetUserData:
     Type: 'AWS::Serverless::Function'
@@ -245,6 +247,8 @@ Resources:
             Method: GET
             Auth:
               Authorizer: CognitoAuthorizer
+      Layers:
+      - !Ref Layer
   
   SetUserData:
     Type: 'AWS::Serverless::Function'
