@@ -14,7 +14,11 @@ def lambda_handler(event, context):
 
     body = json.loads(event["body"])
 
-    # update_user_data(cognito_user_id, body)
+    try:
+        update_user_data(cognito_user_id, body)
+    except Exception as e:
+        print(f"Error: Failed to update user data - {cognito_user_id}.")
+        print(e)
 
     return {
             'statusCode': 200,
