@@ -14,11 +14,21 @@ def lambda_handler(event, context):
 
     body = json.loads(event["body"])
 
+    error_message = {
+        'statusCode': 502,
+        'headers': {
+            'Access-Control-Allow-Methods': 'POST,OPTIONS',
+            'Access-Control-Allow-Origin': '*',
+        },
+        'body': '{"success" : false}'
+    }
+
     try:
         update_user_data(cognito_user_id, body)
     except Exception as e:
         print(f"Error: Failed to update user data - {cognito_user_id}.")
         print(e)
+        return error_message
 
     return {
             'statusCode': 200,
@@ -36,7 +46,13 @@ def update_user_data(cognito_user_id, body):
             'PK': "USER#" + cognito_user_id,
             'SK': "USER#" + cognito_user_id
         },
-        UpdateExpression="set 'User alias' = :u, 'User alias pinyin' = :p, 'User alias emoji' = :e, 'Character set preference' = :c",
+        UpdateExpression="set #alias = :u, #pinyin = :p, #emoji = :e, #char = :c",
+        ExpressionAttributeNames={
+            '#alias': 'User alias',
+            '#pinyin': 'User alias pinyin',
+            '#emoji': 'User alias emoji',
+            '#char': 'Character set preference'
+        },
         ExpressionAttributeValues={
             ':u': body['user_alias'],
             ':p': body['user_alias_pinyin'],
