@@ -39,7 +39,8 @@ def mocked_pull_user_data(cognito_id):
             "GSI1SK":"USER#770e2827-7666-123123123",
             "PK":"USER#770e2827-7666-123123123",
             "User alias": "Not set",
-            "User alias pinyin": "Not set"
+            "User alias pinyin": "Not set",
+            "User alias emoji": "Not set"
         }
     ]
     return response

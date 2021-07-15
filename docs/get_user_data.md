@@ -11,8 +11,9 @@ Example output:
       "user_id":"12345",
       "character_set_preference":"traditional",
       "date_created":"2021-06-16T23:06:48.467526",
-      "user_alias":"小王 📙",
-      "user_alias_pinyin":"xiao wang"
+      "user_alias":"小王",
+      "user_alias_pinyin":"xiao wang",
+      "user_alias_emoji":"📙"
    },
    "lists":[
       {

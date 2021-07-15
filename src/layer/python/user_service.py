@@ -41,6 +41,7 @@ def process_user_data(user_data):
             processed_user_data['user_data']['date_created'] = item['Date created']
             processed_user_data['user_data']['user_alias'] = item['User alias']
             processed_user_data['user_data']['user_alias_pinyin'] = item['User alias pinyin']
+            processed_user_data['user_data']['user_alias_emoji'] = item['User alias emoji']
 
         # If Dynamo item is a list subscription, add the list to the user's lists dict
         if 'List name' in item:

@@ -6,8 +6,9 @@ This endpoint updates user metadata (user alias, character set preference) for a
 Example payload:
 ````
 {
-    'user_alias': '小王 📙',
+    'user_alias': '小王',
     'user_alias_pinyin': 'xiǎo wáng',
+    'user_alias_emoji': '📙',
     'character_set_preference': 'traditional'
 }
 ````

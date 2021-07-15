@@ -39,6 +39,7 @@ def mocked_pull_user_data(user_id):
         "Email address":"test@mail.com",
         "User alias":"Not set",
         "User alias pinyin":"Not set",
+        "User alias emoji": "Not set",
         "GSI1SK":"USER#123",
         "PK":"USER#123"
     }

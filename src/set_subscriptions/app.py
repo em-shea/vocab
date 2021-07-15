@@ -82,6 +82,7 @@ def create_user(date, cognito_id, email_address, char_set_preference):
                 'Character set preference': char_set_preference,
                 'User alias': "Not set",
                 'User alias pinyin': "Not set",
+                'User alias emoji': "Not set",
                 'GSI1PK': "USER",
                 'GSI1SK': "USER#" + cognito_id
             },
