@@ -16,7 +16,14 @@ def lambda_handler(event, context):
 
     # update_user_data(cognito_user_id, body)
 
-    return
+    return {
+            'statusCode': 200,
+            'headers': {
+                'Access-Control-Allow-Methods': 'POST,OPTIONS',
+                'Access-Control-Allow-Origin': '*',
+            },
+            'body': '{"success" : true}'
+        }
 
 def update_user_data(cognito_user_id, body):
 
