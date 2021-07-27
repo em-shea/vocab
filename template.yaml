@@ -62,7 +62,6 @@ Resources:
             TableName: !Ref SubscriberContactListDynamoDBTable
       Environment:
         Variables:
-          # SUB_TOPIC_ARN: !Ref NotificationTopic
           WORDS_BUCKET_NAME: !Ref WordsBucketName
           WORDS_BUCKET_KEY: !Ref WordsBucketKey
           LISTS_BUCKET_NAME: !Ref ListsBucketName
@@ -224,11 +223,11 @@ Resources:
         - S3WritePolicy:
             BucketName: !Ref DynamoBackupsS3BucketName
         - DynamoDBCrudPolicy:
-            TableName: !Ref SubscriberContactListDynamoDBTable
+            TableName: !Ref DynamoDBTable
       Environment:
         Variables:
           BACKUPS_BUCKET_NAME: !Ref DynamoBackupsS3BucketName
-          TABLE_NAME: !Ref SubscriberContactListDynamoDBTable
+          TABLE_NAME: !Ref DynamoDBTable
       Events:
         WeeklyCloudWatchEvent:
           Type: Schedule
@@ -250,7 +249,7 @@ Resources:
     Type: AWS::DynamoDB::Table
     DeletionPolicy: Retain
     Properties:
-      TableName: !Sub DynamoDBTable-${Stage}
+      TableName: !Sub VocabAppTable-${Stage}
       AttributeDefinitions:
         - AttributeName: PK
           AttributeType: S
