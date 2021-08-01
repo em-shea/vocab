@@ -108,9 +108,9 @@ def subscribe(date, cognito_id, list_data):
                 'List name': list_data['list_name'],
                 'Date subscribed': date,
                 'Status': 'SUBSCRIBED',
-                'Character set': list_data['char_set'],
+                'Character set': list_data['character_set'],
                 'GSI1PK': "USER",
-                'GSI1SK': "USER#" + cognito_id + "#LIST#" + list_data['list_id'] + "#" + list_data['char_set'].upper()
+                'GSI1SK': "USER#" + cognito_id + "#LIST#" + list_data['list_id'] + "#" + list_data['character_set'].upper()
         }
     )
 
