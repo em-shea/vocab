@@ -9,7 +9,7 @@ Example payload:
 {
     "cognito_id":"123",
     "email":"me@testemail.com",
-    "char_set_preference":"simplified",
+    "character_set_preference":"simplified",
     "lists": [
         {
             "list_id":"123",
@@ -27,7 +27,7 @@ Example payload:
 {
     "cognito_id":"123",
     "email":"me@testemail.com",
-    "char_set_preference":"simplified",
+    "character_set_preference":"simplified",
     "lists": []
 }
 ````

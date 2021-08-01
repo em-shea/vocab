@@ -25,7 +25,7 @@ def lambda_handler(event, context):
     }
 
     try:
-        create_user(date, body['cognito_id'], body['email'], body['char_set_preference'])
+        create_user(date, body['cognito_id'], body['email'], body['character_set_preference'])
     except Exception as e:
         print(f"Error: Failed to create user - {body['email'][5:]}, {body['cognito_id']}.")
         print(e)
@@ -78,7 +78,7 @@ def lambda_handler(event, context):
         }
 
 # Write new contact to Dynamo if it doesn't already exist
-def create_user(date, cognito_id, email_address, char_set_preference):
+def create_user(date, cognito_id, email_address, character_set_preference):
 
     response = table.put_item(
         Item = {
@@ -87,7 +87,7 @@ def create_user(date, cognito_id, email_address, char_set_preference):
                 'Email address': email_address,
                 'Date created': date,
                 'Last login': date,
-                'Character set preference': char_set_preference,
+                'Character set preference': character_set_preference,
                 'User alias': "Not set",
                 'User alias pinyin': "Not set",
                 'User alias emoji': "Not set",

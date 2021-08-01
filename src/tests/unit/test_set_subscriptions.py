@@ -56,7 +56,7 @@ class SetSubscriptionsTest(unittest.TestCase):
         event_body = {
             "cognito_id":"123",
             "email":"me@testemail.com",
-            "char_set_preference":"simplified",
+            "character_set_preference":"simplified",
             "lists": [
                 {
                     "list_id":"123",
@@ -85,7 +85,7 @@ class SetSubscriptionsTest(unittest.TestCase):
         event_body = {
             "cognito_id":"123",
             "email":"me@testemail.com",
-            "char_set_preference":"simplified",
+            "character_set_preference":"simplified",
             "lists": []
         }
         response = lambda_handler(self.sub_apig_event(json.dumps(event_body)), "")
