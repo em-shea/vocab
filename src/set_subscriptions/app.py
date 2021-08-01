@@ -35,26 +35,34 @@ def lambda_handler(event, context):
     user_data = user_service.get_user_data(body['cognito_id'])
     print(user_data['user_data'])
     current_user_lists = user_data['lists']
-    # current_user_list_ids = []
-    # for list in current_user_lists:
-    #     if list['Status'] == "SUBSCRIBED":
-    #         current_user_list_ids.append(list['List id'])
-    set_list_ids = []
-    for list in body['set_lists']:
-        set_list_ids.append(list['list_id'])
+    if user_data['lists']:
+        for list in current_user_lists:
+            list['unique_id'] = list['list_id'] + list['character_set']
+
+    # API call will pass all of the users current lists
+    # It will call subscribe for all lists and do nothing (ConditionExpression = "attribute_not_exists(PK)")
+    # if the subscription is already stored
+    # It will check if there are any existing lists not in the new list and it will unsubscribe
+    new_list_ids = []
+    for list in body['lists']:
+        new_list_ids.append(list['list_id'] + list['character_set'])
+
 
     # TODO: Currently making an API call per update. Batch updates?
-    for list in body['set_lists']:
+    for list in body['lists']:
         try:
             subscribe(date, body['cognito_id'], list)
+            print(f"sub {list['list_id']}, {list['character_set']}")
         except Exception as e:
             print(f"Error: Failed to subscribe user - {body['email'][5:]}, {list['list_id']}.")
             print(e)
             return error_message
+    # does existing list check for simplified/traditional?
     for existing_list in current_user_lists:
-        if existing_list['list_id'] not in set_list_ids and existing_list['status'] == "SUBSCRIBED":
+        if existing_list['unique_id'] not in new_list_ids and existing_list['status'] == "SUBSCRIBED":
             try:
                 unsubscribe(date, body['cognito_id'], existing_list)
+                print(f"unsub, {existing_list['unique_id']}")
             except Exception as e:
                 print(f"Error: Failed to unsubscribe user - {body['email'][5:]}, {existing_list['list_id']}.")
                 print(e)

@@ -57,16 +57,16 @@ class SetSubscriptionsTest(unittest.TestCase):
             "cognito_id":"123",
             "email":"me@testemail.com",
             "char_set_preference":"simplified",
-            "set_lists": [
+            "lists": [
                 {
                     "list_id":"123",
                     "list_name":"HSK Level 1",
-                    "char_set":"simplified"
+                    "character_set":"simplified"
                 },
                 {
                     "list_id":"234",
                     "list_name":"HSK Level 2",
-                    "char_set":"simplified"
+                    "character_set":"simplified"
                 }
             ]
         }
@@ -86,7 +86,7 @@ class SetSubscriptionsTest(unittest.TestCase):
             "cognito_id":"123",
             "email":"me@testemail.com",
             "char_set_preference":"simplified",
-            "set_lists": []
+            "lists": []
         }
         response = lambda_handler(self.sub_apig_event(json.dumps(event_body)), "")
 
