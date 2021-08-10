@@ -27,9 +27,14 @@ def lambda_handler(event, context):
     try:
         create_user(date, body['cognito_id'], body['email'], body['character_set_preference'])
     except Exception as e:
-        print(f"Error: Failed to create user - {body['email'][5:]}, {body['cognito_id']}.")
-        print(e)
-        return error_message
+        if e.response['Error']['Code'] == "ConditionalCheckFailedException":
+            # User already exists, skip
+            print(f"User already exists- {body['email'][5:]}.")
+            pass
+        else: 
+            print(f"Error: Failed to create user - {body['email'][5:]}, {body['cognito_id']}.")
+            print(e)
+            return error_message
 
     # Get a list of ids for all lists the user is currently subscribed to
     user_data = user_service.get_user_data(body['cognito_id'])
@@ -54,9 +59,14 @@ def lambda_handler(event, context):
             subscribe(date, body['cognito_id'], list)
             print(f"sub {list['list_id']}, {list['character_set']}")
         except Exception as e:
-            print(f"Error: Failed to subscribe user - {body['email'][5:]}, {list['list_id']}.")
-            print(e)
-            return error_message
+            if e.response['Error']['Code'] == "ConditionalCheckFailedException":
+                # Subscription already exists, skip
+                print(f"Subcription already exists- {body['email'][5:]}, {list['list_id']}.")
+                pass
+            else: 
+                print(f"Error: Failed to subscribe user - {body['email'][5:]}, {list['list_id']}.")
+                print(e)
+                return error_message
     # does existing list check for simplified/traditional?
     for existing_list in current_user_lists:
         if existing_list['unique_id'] not in new_list_ids and existing_list['status'] == "SUBSCRIBED":
