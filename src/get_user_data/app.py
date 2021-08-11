@@ -9,11 +9,18 @@ table = boto3.resource('dynamodb', region_name=os.environ['AWS_REGION']).Table(o
 
 # For a given user (requires sign-in), return their metadata, subscribed lists, and the past two weeks of quizzes and sentences
 def lambda_handler(event, context):
-    print('event', event)
+    # print('event', event)
     cognito_id = event['requestContext']['authorizer']['claims']['sub']
     print('user id',cognito_id)
     
     processed_user_data = user_service.get_user_data(cognito_id)
+
+    print('processed user data', processed_user_data)
+
+    # Only return SUBSCRIBED lists
+    for item in processed_user_data['lists']:
+        if item['status'] == "UNSUBSCRIBED":
+            processed_user_data['lists'].remove(item)
 
     return {
         'statusCode': 200,
