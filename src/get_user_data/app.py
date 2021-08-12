@@ -13,21 +13,25 @@ def lambda_handler(event, context):
     cognito_id = event['requestContext']['authorizer']['claims']['sub']
     print('user id',cognito_id)
     
-    processed_user_data = user_service.get_user_data(cognito_id)
+    user_data = user_service.get_user_data(cognito_id)
 
-    print('processed user data', processed_user_data)
+    print('user data', user_data)
+
+    subscribed_lists = []
 
     # Only return SUBSCRIBED lists
-    for item in processed_user_data['lists']:
-        if item['status'] == "UNSUBSCRIBED":
-            processed_user_data['lists'].remove(item)
+    for item in user_data['lists']:
+        if item['status'] == "SUBSCRIBED":
+            subscribed_lists.append(item)
 
-    print('removed ', processed_user_data)
+    user_data['lists'] = subscribed_lists
+
+    print('subscribed ', user_data)
     return {
         'statusCode': 200,
         'headers': {
             'Access-Control-Allow-Methods': 'GET,OPTIONS',
             'Access-Control-Allow-Origin': '*',
         },
-        'body': json.dumps(processed_user_data)
+        'body': json.dumps(user_data)
     }
