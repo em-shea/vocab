@@ -21,6 +21,16 @@ def mocked_pull_user_data(cognito_user_id):
             "Character set":"traditional",
         },
         {
+            "Date subscribed":"2021-06-16T23:06:48.646688",
+            "GSI1PK":"USER",
+            "List name":"HSK Level 2",
+            "SK":"LIST#1ebcad41-197a-123123",
+            "Status":"UNSUBSCRIBED",
+            "GSI1SK":"USER#770e2827-7666-123123123#LIST#1ebcad41-197a-123123#TRADITIONAL",
+            "PK":"USER#770e2827-7666-123123123",
+            "Character set":"simplified",
+        },
+        {
             "GSI1PK":"USER",
             "Date created":"2021-06-16T23:06:48.467526",
             "Character set preference":"traditional",

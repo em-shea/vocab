@@ -22,6 +22,7 @@ def lambda_handler(event, context):
         if item['status'] == "UNSUBSCRIBED":
             processed_user_data['lists'].remove(item)
 
+    print('removed ', processed_user_data)
     return {
         'statusCode': 200,
         'headers': {
