@@ -48,12 +48,12 @@ def lambda_handler(event, context):
 
 def generate_login_code(event):
 
-    user_pool_id = event.get('userPoolId')
+    # user_pool_id = event.get('userPoolId')
     username = event.get('userName')
-    key = '123456789'
+    key = '123456'
 
     encoded = jwt.encode({ 
-        'user_pool_id': user_pool_id,
+        # 'user_pool_id': user_pool_id,
         'username' : username 
         }, key, algorithm="HS256")
     
