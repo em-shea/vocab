@@ -50,11 +50,11 @@ def generate_login_code(event):
 
     # user_pool_id = event.get('userPoolId')
     username = event.get('userName')
-    key = '123456'
+    key = os.environ['OTP_SECRET_KEY']
 
     encoded = jwt.encode({ 
         # 'user_pool_id': user_pool_id,
-        'username' : username 
+        'u' : username 
         }, key, algorithm="HS256")
     
     print(encoded)

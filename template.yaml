@@ -10,6 +10,8 @@ Parameters:
     Type: String
   ListsBucketKey:
     Type: String
+  OTPSecretKey:
+    Type: String
   DynamoBackupsS3BucketName:
     Type: String
   Stage:
@@ -385,6 +387,7 @@ Resources:
       Environment:
         Variables:
           STAGE: !Ref Stage
+          OTP_SECRET_KEY: !Ref OTPSecretKey
       Policies:
         - Version: "2012-10-17"
           Statement:
