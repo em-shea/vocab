@@ -33,17 +33,20 @@ def lambda_handler(event, context):
 
     users_and_subscriptions_grouped = process_users_and_subscriptions(users_and_subscriptions)
 
+    email_counter = 0
     for user_id, user in users_and_subscriptions_grouped.items():
-        print('loop through users')
+        # print('loop through users')
         if len(user['lists'])>0:
-            print()
             email_content = assemble_html_content(user, todays_words, todays_announcement)
             try:
-                print('send emails')
+                # print('send emails')
                 response = send_email(user, email_content)
+                email_counter += 1
             except Exception as e:
                 print(f"Error: Failed to send email - {user['user_data']['PK']}.")
                 print(e)
+    
+    print(f"{email_counter} emails sent.")
 
 def get_announcement():
 
@@ -114,7 +117,7 @@ def get_users_and_subscriptions():
         IndexName='GSI1',
         KeyConditionExpression=Key('GSI1PK').eq('USER')
     )
-    print(response['Items'])
+    # print(response['Items'])
     return response['Items']
 
 def process_users_and_subscriptions(users_and_subscriptions):
