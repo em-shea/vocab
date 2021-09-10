@@ -80,7 +80,7 @@ def assemble_email_contents(secret_login_code):
 
 def send_notification_email(user_email, email_content):
 
-    subject_line = "Follow this link or enter this code to sign in to Haohaotiantian."
+    subject_line = "Follow this link to sign in to Haohaotiantian."
     
     payload = ses_client.send_email(
         Source = "Haohaotiantian <signin@haohaotiantian.com>",
