@@ -35,13 +35,15 @@ def lambda_handler(event, context):
 
     for user_id, user in users_and_subscriptions_grouped.items():
         print('loop through users')
-        email_content = assemble_html_content(user, todays_words, todays_announcement)
-        try:
-            print('send emails')
-            response = send_email(user, email_content)
-        except Exception as e:
-            print(f"Error: Failed to send email - {user['user_data']['PK']}.")
-            print(e)
+        if len(user['lists'])>0:
+            print()
+            email_content = assemble_html_content(user, todays_words, todays_announcement)
+            try:
+                print('send emails')
+                response = send_email(user, email_content)
+            except Exception as e:
+                print(f"Error: Failed to send email - {user['user_data']['PK']}.")
+                print(e)
 
 def get_announcement():
 

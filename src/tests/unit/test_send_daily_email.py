@@ -8,6 +8,9 @@ from unittest import mock
 # wip
 # No such file or directory: 'template.html'
 
+# test cases:
+# a user with no lists (unsubscribed from all)
+
 with mock.patch.dict('os.environ', {'AWS_REGION': 'us-east-1', 'DYNAMODB_TABLE_NAME': 'mock-table', 'TABLE_NAME': 'mock-second-table', 'ANNOUNCEMENTS_BUCKET': 'mock-bucket', 'WORDS_BUCKET_NAME': 'mock-words-bucket', 'WORDS_BUCKET_KEY': 'mock-words-key'}):
   from send_daily_email.app import lambda_handler
 
@@ -42,7 +45,7 @@ def mocked_get_users_and_subscriptions():
     {'GSI1PK': 'USER', 'Date created': '2021-06-16T23:06:48.467526', 'Character set preference': 'traditional', 'SK': 'USER#770e2827-7666-4087-9c58-17c2e862dba2', 'Email address': 'test1@gmail.com', 'PK': 'USER#770e2827-7666-4087-9c58-17c2e862dba2', 'GSI1SK': 'USER#770e2827-7666-4087-9c58-17c2e862dba2'}, 
     {'GSI1PK': 'USER', 'Date subscribed': '2021-06-16T23:06:48.646688', 'List name': 'HSK Level 6', 'SK': 'LIST#1ebcad41-197a-6700-95a3-acde48001122', 'Status': 'SUBSCRIBED', 'PK': 'USER#770e2827-7666-4087-9c58-17c2e862dba2', 'GSI1SK': 'USER#770e2827-7666-4087-9c58-17c2e862dba2#LIST#1ebcad41-197a-6700-95a3-acde48001122#TRADITIONAL', 'Character set': 'traditional'}, 
     {'GSI1PK': 'USER', 'Date created': '2021-06-16T23:07:11.623880', 'Character set preference': 'simplified', 'SK': 'USER#ef602513-011c-481e-9825-e1e7ad39c3d3', 'Email address': 'test2@gmail.com', 'PK': 'USER#ef602513-011c-481e-9825-e1e7ad39c3d3', 'GSI1SK': 'USER#ef602513-011c-481e-9825-e1e7ad39c3d3'}, 
-    {'GSI1PK': 'USER', 'Date subscribed': '2021-06-16T23:07:11.648212', 'List name': 'HSK Level 3', 'SK': 'LIST#1ebcad3f-f815-6b92-b3e8-acde48001122', 'Status': 'SUBSCRIBED', 'PK': 'USER#ef602513-011c-481e-9825-e1e7ad39c3d3', 'GSI1SK': 'USER#ef602513-011c-481e-9825-e1e7ad39c3d3#LIST#1ebcad3f-f815-6b92-b3e8-acde48001122#SIMPLIFIED', 'Character set': 'simplified'}
+    {'GSI1PK': 'USER', 'Date subscribed': '2021-06-16T23:07:11.648212', 'List name': 'HSK Level 3', 'SK': 'LIST#1ebcad3f-f815-6b92-b3e8-acde48001122', 'Status': 'UNSUBSCRIBED', 'PK': 'USER#ef602513-011c-481e-9825-e1e7ad39c3d3', 'GSI1SK': 'USER#ef602513-011c-481e-9825-e1e7ad39c3d3#LIST#1ebcad3f-f815-6b92-b3e8-acde48001122#SIMPLIFIED', 'Character set': 'simplified'}
   ]
 
   # all_contacts = [
@@ -120,7 +123,7 @@ class SendDailyEmailTest(unittest.TestCase):
     self.assertEqual(store_words_mock.call_count, 1)
     self.assertEqual(get_users_and_subscriptions_mock.call_count, 1)
     self.assertEqual(get_random_mock.call_count, 6)
-    self.assertEqual(send_email_mock.call_count, 2)
+    self.assertEqual(send_email_mock.call_count, 1)
 
   def scheduled_event(self):
     return {
