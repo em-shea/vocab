@@ -63,8 +63,8 @@ def generate_login_code(event):
 def assemble_email_contents(secret_login_code):
 
     email_template = 'signin_code_template.html'
-    login_link_staging = 'https://staging.haohaotiantian/verification?code=' + secret_login_code
-    login_link_prod = 'https://haohaotiantian/verification?code=' + secret_login_code
+    login_link_staging = 'https://staging.haohaotiantian.com/verification?code=' + secret_login_code
+    login_link_prod = 'https://haohaotiantian.com/verification?code=' + secret_login_code
     
     abs_dir = os.path.dirname(os.path.abspath(__file__))
     with open(os.path.join(abs_dir, email_template)) as fh:
