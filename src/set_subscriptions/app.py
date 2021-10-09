@@ -114,7 +114,7 @@ def subscribe(date, cognito_id, list_data):
     response = table.put_item(
         Item={
                 'PK': "USER#" + cognito_id,
-                'SK': "LIST#" + list_data['list_id'],
+                'SK': "LIST#" + list_data['list_id'] + "#" + list_data['character_set'].upper(),
                 'List name': list_data['list_name'],
                 'Date subscribed': date,
                 'Status': 'SUBSCRIBED',
@@ -131,7 +131,7 @@ def unsubscribe(date, cognito_id, list_data):
     response = table.update_item(
         Key = {
             "PK": "USER#" + cognito_id,
-            "SK": "LIST#" + list_data['list_id']
+            "SK": "LIST#" + list_data['list_id'] + "#" + list_data['character_set'].upper()
         },
         UpdateExpression = "set #s = :status, #d = :date",
         ExpressionAttributeValues = {

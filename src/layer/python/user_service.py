@@ -48,7 +48,11 @@ def process_user_data(user_data):
             print('list', item['List name'])
             list_item = {}
             list_item['list_name'] = item['List name']
-            list_item['list_id'] = item['SK'][5:]
+            # Converting list id from unique id in database (ex, LIST#1ebcad40-bb9e-6ece-a366-acde48001122#SIMPLIFIED)
+            if 'SIMPLIFIED' in item['SK']:
+                list_item['list_id'] = item['SK'][5:-11]
+            if 'TRADITIONAL' in item['SK']:
+                list_item['list_id'] = item['SK'][5:-12]
             list_item['character_set'] = item['Character set']
             list_item['status'] = item['Status']
             list_item['date_subscribed'] = item['Date subscribed']
