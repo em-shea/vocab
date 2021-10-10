@@ -19,6 +19,7 @@ Example output:
       {
          "list_name":"HSK Level 6",
          "list_id":"12345",
+         "unique_list_id":"12345#TRADITIONAL"
          "character_set":"traditional",
          "status":"subscribed",
          "date_subscribed":"2021-06-16T23:06:48.646688"
@@ -26,6 +27,7 @@ Example output:
       {
          "list_name":"HSK Level 3",
          "list_id":"23456",
+         "unique_list_id":"12345#SIMPLIFIED"
          "character_set":"simplified",
          "status":"subscribed",
          "date_subscribed":"2021-06-16T23:06:48.646688"

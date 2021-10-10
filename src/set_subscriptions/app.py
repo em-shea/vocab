@@ -42,7 +42,7 @@ def lambda_handler(event, context):
     current_user_lists = user_data['lists']
     if user_data['lists']:
         for list in current_user_lists:
-            list['unique_id'] = list['list_id'] + list['character_set']
+            list['unique_id'] = list['list_id'] + "#" + list['character_set'].upper()
 
     # API call will pass all of the users current lists
     # It will call subscribe for all lists and do nothing (ConditionExpression = "attribute_not_exists(PK)")
@@ -50,7 +50,7 @@ def lambda_handler(event, context):
     # It will check if there are any existing lists not in the new list and it will unsubscribe
     new_list_ids = []
     for list in body['lists']:
-        new_list_ids.append(list['list_id'] + list['character_set'])
+        new_list_ids.append(list['list_id'] + "#" + list['character_set'].upper())
 
 
     # TODO: Currently making an API call per update. Batch updates?
