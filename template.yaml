@@ -210,6 +210,31 @@ Resources:
             Method: POST
             Auth:
               Authorizer: CognitoAuthorizer
+  
+  SetLastLogin:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      FunctionName: !Sub SetLastLogin-${Stage}
+      Handler: app.lambda_handler
+      Runtime: python3.7
+      CodeUri: src/set_last_login
+      Description: A function that updates metadata on when the user last logged in
+      Timeout: 120
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref DynamoDBTable
+      Environment:
+        Variables:
+          DYNAMODB_TABLE_NAME: !Ref DynamoDBTable
+      Events:
+        SetSubsApi:
+          Type: Api
+          Properties:
+            RestApiId: !Ref VocabAppApi
+            Path: /update_login
+            Method: POST
+            Auth:
+              Authorizer: CognitoAuthorizer
 
   BackupDynamoToS3:
     Type: 'AWS::Serverless::Function'
