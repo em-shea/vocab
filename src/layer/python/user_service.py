@@ -48,6 +48,7 @@ def process_user_data(user_data):
             print('list', item['List name'])
             list_item = {}
             list_item['list_name'] = item['List name']
+            list_item['unique_list_id'] = item['SK'][5:]
             # Converting list id from unique id in database (ex, LIST#1ebcad40-bb9e-6ece-a366-acde48001122#SIMPLIFIED)
             if 'SIMPLIFIED' in item['SK']:
                 list_item['list_id'] = item['SK'][5:-11]
