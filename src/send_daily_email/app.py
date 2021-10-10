@@ -146,7 +146,7 @@ def process_users_and_subscriptions(users_and_subscriptions):
         # If Dynamo item is a list subscription and the status is subscribed, add the list to the user's dict
         if 'List name' in item:
             print('user list', item['List name'])
-            if item['Status'] == 'SUBSCRIBED':
+            if item['Status'] == 'subscribed':
                 users_and_subscriptions_grouped[item['PK']]['lists'].append(item)
                 print('subscribed')
             else:
