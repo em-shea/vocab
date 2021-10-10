@@ -69,7 +69,7 @@ def lambda_handler(event, context):
                 return error_message
     # does existing list check for simplified/traditional?
     for existing_list in current_user_lists:
-        if existing_list['unique_id'] not in new_list_ids and existing_list['status'] == "SUBSCRIBED":
+        if existing_list['unique_id'] not in new_list_ids and existing_list['status'] == "subscribed":
             try:
                 unsubscribe(date, body['cognito_id'], existing_list)
                 print(f"unsub, {existing_list['unique_id']}")
