@@ -3,9 +3,7 @@ import io
 import csv
 import os
 
-import sys
-sys.path.insert(0, '/opt')
-from vocab_random_word import select_random_word
+import random_word_service
 
 # Selects 5 random entries from each level
 def lambda_handler(event, context):
@@ -21,7 +19,7 @@ def lambda_handler(event, context):
         
         # Loop through 5 times generating 5 sample words and appending for the given level list
         for sample_words in range(5):
-            sample_word = select_random_word(hsk_level)
+            sample_word = random_word_service.select_random_word(hsk_level)
             complete_response[hsk_level].append(sample_word)
 
     return {

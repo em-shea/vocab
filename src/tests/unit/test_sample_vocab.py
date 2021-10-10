@@ -1,13 +1,13 @@
 import sys
 sys.path.append('../../')
-sys.path.append('../../layer')
+sys.path.append('../../layer/python')
 
-import os
 import json
 import unittest
 from unittest import mock
 
-from sample_vocab.app import lambda_handler
+with mock.patch.dict('os.environ', {'WORDS_BUCKET_NAME': 'mock-words-bucket', 'WORDS_BUCKET_KEY': 'mock-words-key'}):
+  from sample_vocab.app import lambda_handler
 
 def mocked_get_random(hsk_level):
   
@@ -74,7 +74,7 @@ def mocked_get_random(hsk_level):
 
 class SampleVocabTest(unittest.TestCase):
 
-  @mock.patch('sample_vocab.app.select_random_word', side_effect=mocked_get_random)
+  @mock.patch('random_word_service.select_random_word', side_effect=mocked_get_random)
   def test_build(self, get_random_mock):
     
     response = lambda_handler(self.apig_event(), "")

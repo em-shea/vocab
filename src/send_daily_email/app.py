@@ -1,72 +1,52 @@
 import os
-import io
-import csv
 import json
-import time
 import boto3
 from datetime import datetime
+from boto3.dynamodb.conditions import Key
 from botocore.exceptions import ClientError
 
-import sys
-sys.path.insert(0, '/opt')
-from vocab_random_word import select_random_word
+# TODO: Add cognito id to unsub URL params
+
+import random_word_service
 
 # region_name specified in order to mock in unit tests
 ses_client = boto3.client('ses', region_name=os.environ['AWS_REGION'])
-sns_client = boto3.client('sns', region_name=os.environ['AWS_REGION'])
+table = boto3.resource('dynamodb', region_name=os.environ['AWS_REGION']).Table(os.environ['DYNAMODB_TABLE_NAME'])
 word_history_table = boto3.resource('dynamodb', region_name=os.environ['AWS_REGION']).Table(os.environ['TABLE_NAME'])
-contacts_table = boto3.resource('dynamodb', region_name=os.environ['AWS_REGION']).Table(os.environ['CONTACT_TABLE_NAME'])
 
-# Select a random word for each HSK level and store in word history Dynamo table 
-# Loop through list of contacts, assemble a customized email, and send
-# Log each send and send error notification on failure
 def lambda_handler(event, context):
 
     # Select a random word for each level
-    word_list = get_daily_words()
+    todays_words = get_daily_words()
 
-    # If unable to store word in Dynamo, continue sending campaign
+    # If unable to store word in Dynamo, continue sending emails
     try:
         # Write to Dynamo
-        store_words(word_list)
+        store_words(todays_words)
     except Exception as e:
         print(e)
 
-    todays_announcement_html = get_announcement()
+    todays_announcement = get_announcement()
 
     # Scan the contacts table for a list of all contacts
-    all_contacts = scan_contacts_table()
+    users_and_subscriptions = get_users_and_subscriptions()
 
-    # contact item example:
-    # {'Date': '2020-01-13', 'CharacterSet': 'simplified', 'Status': 'unsubscribed', 'SubscriberEmail': 'user@example.com', 'ListId': '1'}
+    users_and_subscriptions_grouped = process_users_and_subscriptions(users_and_subscriptions)
 
-    for contact in all_contacts:
-
-        # Send emails to all subscribed contacts
-        if not contact['Status'] == 'unsubscribed':
-            partial_email = contact['SubscriberEmail'][0:5]
-            list_id = contact['ListId']
-            email = contact['SubscriberEmail']
-            print("Subscribed contact: ", partial_email, list_id)
-
-            word_index = int(contact['ListId'][0]) - 1
-
-            hsk_level = list_id[0]
-            char_set = contact['CharacterSet']
-
-            word = word_list[word_index]
-
-            # If the get_daily_words() hit an error and did not select a word for a given HSK level,
-            # word will be None. If so, do not send an email.
-            if word is not None:
-
-                campaign_contents = assemble_html_content(hsk_level, email, word, char_set, todays_announcement_html)
-
-                try:
-                    response = send_email(campaign_contents, email)
-                except Exception as e:
-                    print(f"Error: Failed to send email - {partial_email}, {list_id}.")
-                    print(e)
+    email_counter = 0
+    for user_id, user in users_and_subscriptions_grouped.items():
+        # print('loop through users')
+        if len(user['lists'])>0:
+            email_content = assemble_html_content(user, todays_words, todays_announcement)
+            try:
+                # print('send emails')
+                response = send_email(user, email_content)
+                email_counter += 1
+            except Exception as e:
+                print(f"Error: Failed to send email - {user['user_data']['PK']}.")
+                print(e)
+    
+    print(f"{email_counter} emails sent.")
 
 def get_announcement():
 
@@ -90,7 +70,7 @@ def get_announcement():
         # We have an html template file packaged with this function's code which we read here
         # To run unit tests for this function, we need to specify an absolute file path
         abs_dir = os.path.dirname(os.path.abspath(__file__))
-        with open(os.path.join(abs_dir, 'announcements.html')) as fh:
+        with open(os.path.join(abs_dir, 'announcements_template.html')) as fh:
             announcement_html = fh.read()
 
         announcement_html = announcement_html.replace("{announcement_message}", announcement_file_message)
@@ -98,97 +78,155 @@ def get_announcement():
 
 def get_daily_words():
 
-    word_list = []
+    todays_words = {}
 
-    # Loop through HSK levels and select word
-    for hsk_level in range(0,6):
-        level = str(hsk_level + 1)
+    # Hard coding list names for now before refactoring list database
+    list_names = ['HSK Level 1', 'HSK Level 2', 'HSK Level 3', 'HSK Level 4', 'HSK Level 5', 'HSK Level 6']
+
+    # Loop through all lists and select word
+    for list in list_names:
+        level = str(list_names.index(list)+1)
         try:
-            word = select_random_word(level)
-            word_list.append(word)
+            word = random_word_service.select_random_word(level)
+            todays_words[list] = word
         except Exception as e:
             # Appending None to the list as a placeholder for the level's word. Emails will not send for this level.
-            word_list.append(None)
+            todays_words[list] = None
             print(e)
 
-    return word_list
+    return todays_words
 
-def store_words(word_list):
+def store_words(todays_words):
 
-    for item in word_list:
-        word = item
-        level = item['HSK Level']
-        list_id = "HSKLevel" + level
+    for list_name, word in todays_words.items():
         date = str(datetime.today().strftime('%Y-%m-%d'))
 
         # Write each word to Dynamo word history table
         response = word_history_table.put_item(
             Item={
-                    'ListId': list_id,
+                    'ListId': list_name.replace(" ", ""),
                     'Date': date,
                     'Word': word,
                 }
             )
+    print(response)
 
-def scan_contacts_table():
+def get_users_and_subscriptions():
 
-    # Loop through contacts in Dynamo
-    results = contacts_table.scan(
-        Select = "ALL_ATTRIBUTES"
+    response = table.query(
+        IndexName='GSI1',
+        KeyConditionExpression=Key('GSI1PK').eq('USER')
     )
+    # print(response['Items'])
+    return response['Items']
 
-    all_contacts = results['Items']
+def process_users_and_subscriptions(users_and_subscriptions):
 
-    return all_contacts
+    users_and_subscriptions_grouped = {}
+    # users_and_subscriptions_grouped = {
+    #     user_id: {
+    #         'user_data': {user metadata},
+    #         'lists': [
+    #             {sub metadata}
+    #         ]
+    #     }
+    # }
 
-# Populate relevant content in for the placeholders in the email template
-def assemble_html_content(hsk_level, email, word, char_set, todays_announcement_html):
+    # Loop through all users and subs
+    for item in users_and_subscriptions:
+        # If user is not yet in the grouped dict, add a new dict for the user
+        if item['PK'] not in users_and_subscriptions_grouped:
+            users_and_subscriptions_grouped[item['PK']] = {'user_data': None, 'lists': []}
+        
+        # If Dynamo item is a user, add user metadata to the user's dict
+        if 'Email address' in item:
+            print('user metadata', item['Email address'])
+            users_and_subscriptions_grouped[item['PK']]['user_data'] = item
 
-    # Select simplified or traditional character 
-    if char_set == "simplified":
-        selected_word = word["Word"]
-    else:
-        selected_word = word["Word-Traditional"]
+        # If Dynamo item is a list subscription and the status is subscribed, add the list to the user's dict
+        if 'List name' in item:
+            print('user list', item['List name'])
+            if item['Status'] == 'SUBSCRIBED':
+                users_and_subscriptions_grouped[item['PK']]['lists'].append(item)
+                print('subscribed')
+            else:
+                print('unsubscribed')
 
-    num_level = int(hsk_level)
+    print(users_and_subscriptions_grouped)
 
-    # Create example sentence URL
-    if num_level in range(1,4):
-        example_link = "https://www.yellowbridge.com/chinese/sentsearch.php?word=" + selected_word
+    return users_and_subscriptions_grouped
 
-    else:
-        example_link = "https://fanyi.baidu.com/#zh/en/" + selected_word
+def assemble_html_content(user, todays_words, todays_announcement):
 
-    # We have an html template file packaged with this function's code which we read here
-    # To run unit tests for this function, we need to specify an absolute file path
+    # Appends multiple words into the same email
+    # TODO: Order the lists in some way?
+    word_content = ""
+    for list in user['lists']:
+        word_content = word_content + assemble_word_html_content(list, todays_words)
+
+    # Open HTML template file
+    # To run unit tests, we need to specify an absolute file path
     abs_dir = os.path.dirname(os.path.abspath(__file__))
-    with open(os.path.join(abs_dir, 'template.html')) as fh:
-        contents = fh.read()
+    with open(os.path.join(abs_dir, 'email_template.html')) as fh:
+        email_template = fh.read()
 
-    # Replace relevant content in example template
-    campaign_contents = contents.replace("{word}", selected_word)
-    campaign_contents = campaign_contents.replace("{pronunciation}", word["Pronunciation"])
-    campaign_contents = campaign_contents.replace("{definition}", word["Definition"])
-    campaign_contents = campaign_contents.replace("{link}", example_link)
-    campaign_contents = campaign_contents.replace("{level}", "HSK Level " + hsk_level)
-    campaign_contents = campaign_contents.replace("{quiz_link}", "https://haohaotiantian.com/quiz?list=HSKLevel" + hsk_level + "&days=14&ques=10&char=" + char_set)
-    campaign_contents = campaign_contents.replace("{history_link}", "https://haohaotiantian.com/history?list=HSKLevel" + hsk_level + "&dates=30&char=" + char_set)
-    campaign_contents = campaign_contents.replace("{unsubscribe_link}", "https://haohaotiantian.com/unsub?level=" + hsk_level + "&email=" + email + "&char=" + char_set)
-    if todays_announcement_html is not None:
-        campaign_contents = campaign_contents.replace("{announcement_slot}", todays_announcement_html)
+    # Hard coding HSK level before list database refactor
+    # Get first list user is subscribed to and use in unsub link
+    hsk_level = user['lists'][0]['List name'][-1]
+    char_set = user['lists'][0]['Character set']
+    email_contents = email_template.replace("{unsubscribe_link}", "https://haohaotiantian.com/unsub?level=" + hsk_level + "&email=" + user['user_data']['Email address'] + "&char=" + char_set)
+    
+    email_contents = email_contents.replace("{word_contents}", word_content)
+
+    if todays_announcement is not None:
+        email_contents = email_contents.replace("{announcement_slot}", todays_announcement)
     else:
-        campaign_contents = campaign_contents.replace("{announcement_slot}", "")
+        email_contents = email_contents.replace("{announcement_slot}", "")
 
-    return campaign_contents
+    return email_contents
 
-# Send SES email
-def send_email(campaign_contents, email):
+def assemble_word_html_content(list, todays_words):
+
+    word = todays_words[list['List name']]
+    if word is None:
+        return ""
+    else:
+        # Select simplified or traditional character 
+        if list['Character set'] == "simplified":
+            selected_word = word["Word"]
+        else:
+            selected_word = word["Word-Traditional"]
+        
+        # Hard coding list names and sentence URLs before list database refactor
+        if list['List name'] in ['HSK Level 1', 'HSK Level 2', 'HSK Level 3']:
+            example_link = "https://www.yellowbridge.com/chinese/sentsearch.php?word=" + selected_word
+        else:
+            example_link = "https://fanyi.baidu.com/#zh/en/" + selected_word
+        
+        abs_dir = os.path.dirname(os.path.abspath(__file__))
+        with open(os.path.join(abs_dir, 'word_template.html')) as fh:
+            word_template = fh.read()
+
+        # Hard coding HSK level before list database refactor
+        hsk_level = list['List name'][-1]
+
+        word_contents = word_template.replace("{word}", selected_word)
+        word_contents = word_contents.replace("{pronunciation}", word["Pronunciation"])
+        word_contents = word_contents.replace("{definition}", word["Definition"])
+        word_contents = word_contents.replace("{link}", example_link)
+        word_contents = word_contents.replace("{list}", list['List name'])
+        word_contents = word_contents.replace("{quiz_link}", "https://haohaotiantian.com/quiz?list=HSKLevel" + hsk_level + "&days=14&ques=10&char=" + list['Character set'])
+        word_contents = word_contents.replace("{history_link}", "https://haohaotiantian.com/history?list=HSKLevel" + hsk_level + "&dates=30&char=" + list['Character set'])
+
+    return word_contents
+
+def send_email(user, email_content):
 
     response = ses_client.send_email(
         Source = "Haohaotiantian <vocab@haohaotiantian.com>",
         Destination = {
             "ToAddresses" : [
-            email
+            user['user_data']['Email address']
             ]
         },
         Message = {
@@ -199,7 +237,7 @@ def send_email(campaign_contents, email):
             "Body": {
                 "Html": {
                     "Charset": "UTF-8",
-                    "Data": campaign_contents
+                    "Data": email_content
                 }
             }
         }

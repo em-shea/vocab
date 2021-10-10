@@ -1,16 +1,17 @@
 import sys
 sys.path.append('../../')
-sys.path.append('../../layer')
+sys.path.append('../../layer/python')
 
-import os
-import json
 import unittest
 from unittest import mock
 
 # wip
 # No such file or directory: 'template.html'
 
-with mock.patch.dict('os.environ', {'AWS_REGION': 'us-east-1', 'TABLE_NAME': 'mock-table', 'ANNOUNCEMENTS_BUCKET': 'mock-bucket', 'CONTACT_TABLE_NAME': 'mock-contact-table'}):
+# test cases:
+# a user with no lists (unsubscribed from all)
+
+with mock.patch.dict('os.environ', {'AWS_REGION': 'us-east-1', 'DYNAMODB_TABLE_NAME': 'mock-table', 'TABLE_NAME': 'mock-second-table', 'ANNOUNCEMENTS_BUCKET': 'mock-bucket', 'WORDS_BUCKET_NAME': 'mock-words-bucket', 'WORDS_BUCKET_KEY': 'mock-words-key'}):
   from send_daily_email.app import lambda_handler
 
 def mocked_get_announcement():
@@ -38,16 +39,27 @@ def mocked_send_email(campaign_contents, email):
 
   return ses_success_response
 
-def mocked_scan_contacts():
+def mocked_get_users_and_subscriptions():
 
-  all_contacts = [
-    {'Date': '2020-01-13', 'CharacterSet': 'simplified', 'Status': 'subscribed', 'SubscriberEmail': 'user@example.com', 'ListId': '1'},
-    {'Date': '2020-01-13', 'CharacterSet': 'simplified', 'Status': 'unsubscribed', 'SubscriberEmail': 'user@example.com', 'ListId': '6'},
-    {'Date': '2020-01-13', 'CharacterSet': 'traditional', 'Status': 'subscribed', 'SubscriberEmail': 'user@example.com', 'ListId': '4'},
-    {'Date': '2020-01-13', 'CharacterSet': 'traditional', 'Status': 'unsubscribed', 'SubscriberEmail': 'user@example.com', 'ListId': '3'}
+  users_and_subscriptions = [
+    {'GSI1PK': 'USER', 'Date created': '2021-06-16T23:06:48.467526', 'Character set preference': 'traditional', 'SK': 'USER#770e2827-7666-4087-9c58-17c2e862dba2', 'Email address': 'test1@gmail.com', 'PK': 'USER#770e2827-7666-4087-9c58-17c2e862dba2', 'GSI1SK': 'USER#770e2827-7666-4087-9c58-17c2e862dba2'}, 
+    {'GSI1PK': 'USER', 'Date subscribed': '2021-06-16T23:06:48.646688', 'List name': 'HSK Level 6', 'SK': 'LIST#1ebcad41-197a-6700-95a3-acde48001122', 'Status': 'SUBSCRIBED', 'PK': 'USER#770e2827-7666-4087-9c58-17c2e862dba2', 'GSI1SK': 'USER#770e2827-7666-4087-9c58-17c2e862dba2#LIST#1ebcad41-197a-6700-95a3-acde48001122#TRADITIONAL', 'Character set': 'traditional'}, 
+    {'GSI1PK': 'USER', 'Date created': '2021-06-16T23:07:11.623880', 'Character set preference': 'simplified', 'SK': 'USER#ef602513-011c-481e-9825-e1e7ad39c3d3', 'Email address': 'test2@gmail.com', 'PK': 'USER#ef602513-011c-481e-9825-e1e7ad39c3d3', 'GSI1SK': 'USER#ef602513-011c-481e-9825-e1e7ad39c3d3'}, 
+    {'GSI1PK': 'USER', 'Date subscribed': '2021-06-16T23:07:11.648212', 'List name': 'HSK Level 3', 'SK': 'LIST#1ebcad3f-f815-6b92-b3e8-acde48001122', 'Status': 'UNSUBSCRIBED', 'PK': 'USER#ef602513-011c-481e-9825-e1e7ad39c3d3', 'GSI1SK': 'USER#ef602513-011c-481e-9825-e1e7ad39c3d3#LIST#1ebcad3f-f815-6b92-b3e8-acde48001122#SIMPLIFIED', 'Character set': 'simplified'},
+    {'GSI1PK': 'USER', 'Date created': '2021-06-16T23:06:48.467526', 'Character set preference': 'traditional', 'SK': 'USER#770e2827-7666-4087-9c58-17c2e123dba2', 'Email address': 'test3@gmail.com', 'PK': 'USER#770e2827-7666-4087-9c58-17c2e123dba2', 'GSI1SK': 'USER#770e2827-7666-4087-9c58-17c2e123dba2'}, 
+    {'GSI1PK': 'USER', 'Date subscribed': '2021-06-16T23:06:48.646688', 'List name': 'HSK Level 6', 'SK': 'LIST#1ebcad41-123a-6700-95a3-acde48001122', 'Status': 'SUBSCRIBED', 'PK': 'USER#770e2827-7666-4087-9c58-17c2e123dba2', 'GSI1SK': 'USER#770e2827-7666-4087-9c58-17c2e123dba2#LIST#1ebcad41-197a-6700-95a3-acde48001122#TRADITIONAL', 'Character set': 'traditional'}, 
+    {'GSI1PK': 'USER', 'Date subscribed': '2021-06-16T23:06:48.646688', 'List name': 'HSK Level 2', 'SK': 'LIST#1ebcad41-123a-6700-95a3-acde48001122', 'Status': 'UNSUBSCRIBED', 'PK': 'USER#770e2827-7666-4087-9c58-17c2e123dba2', 'GSI1SK': 'USER#770e2827-7666-4087-9c58-17c2e123dba2#LIST#1ebcad41-197a-6700-95a3-acde48001122#TRADITIONAL', 'Character set': 'traditional'},
+    {'GSI1PK': 'USER', 'Date subscribed': '2021-06-16T23:06:48.646688', 'List name': 'HSK Level 1', 'SK': 'LIST#1ebcad41-123a-6700-95a3-acde48001122', 'Status': 'SUBSCRIBED', 'PK': 'USER#770e2827-7666-4087-9c58-17c2e123dba2', 'GSI1SK': 'USER#770e2827-7666-4087-9c58-17c2e123dba2#LIST#1ebcad41-197a-6700-95a3-acde48001122#TRADITIONAL', 'Character set': 'traditional'}
   ]
 
-  return all_contacts
+  # all_contacts = [
+  #   {'Date': '2020-01-13', 'CharacterSet': 'simplified', 'Status': 'subscribed', 'SubscriberEmail': 'user@example.com', 'ListId': '1'},
+  #   {'Date': '2020-01-13', 'CharacterSet': 'simplified', 'Status': 'unsubscribed', 'SubscriberEmail': 'user@example.com', 'ListId': '6'},
+  #   {'Date': '2020-01-13', 'CharacterSet': 'traditional', 'Status': 'subscribed', 'SubscriberEmail': 'user@example.com', 'ListId': '4'},
+  #   {'Date': '2020-01-13', 'CharacterSet': 'traditional', 'Status': 'unsubscribed', 'SubscriberEmail': 'user@example.com', 'ListId': '3'}
+  # ]
+
+  return users_and_subscriptions
 
 def mocked_get_random(hsk_level):
   
@@ -103,15 +115,17 @@ def mocked_get_random(hsk_level):
 class SendDailyEmailTest(unittest.TestCase):
 
   @mock.patch('send_daily_email.app.get_announcement', side_effect=mocked_get_announcement)
-  @mock.patch('send_daily_email.app.scan_contacts_table', side_effect=mocked_scan_contacts)
-  @mock.patch('send_daily_email.app.select_random_word', side_effect=mocked_get_random)
+  @mock.patch('send_daily_email.app.get_users_and_subscriptions', side_effect=mocked_get_users_and_subscriptions)
+  @mock.patch('random_word_service.select_random_word', side_effect=mocked_get_random)
+  @mock.patch('send_daily_email.app.store_words', side_effect=mocked_store_words)
   @mock.patch('send_daily_email.app.send_email', side_effect=mocked_send_email)
-  def test_build(self, send_email_mock, get_random_mock, scan_contacts_mock, get_announcement_mock):
+  def test_build(self, send_email_mock, store_words_mock, get_random_mock, get_users_and_subscriptions_mock, get_announcement_mock):
 
     response = lambda_handler(self.scheduled_event(), "")
 
     self.assertEqual(get_announcement_mock.call_count, 1)
-    self.assertEqual(scan_contacts_mock.call_count, 1)
+    self.assertEqual(store_words_mock.call_count, 1)
+    self.assertEqual(get_users_and_subscriptions_mock.call_count, 1)
     self.assertEqual(get_random_mock.call_count, 6)
     self.assertEqual(send_email_mock.call_count, 2)
 

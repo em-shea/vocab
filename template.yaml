@@ -1,6 +1,6 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: 'AWS::Serverless-2016-10-31'
-Description: An app that sends a daily email message for each HSK level with a vocab word
+Description: A daily Chinese vocabulary app
 Parameters:
   WordsBucketName:
     Type: String
@@ -10,27 +10,35 @@ Parameters:
     Type: String
   ListsBucketKey:
     Type: String
-  DomainName:
-    Type: String
-  SubNotifyEmail:
+  OTPSecretKey:
     Type: String
   DynamoBackupsS3BucketName:
     Type: String
   Stage:
     Type: String
 
-Globals:
-  Api:
-    # Add AllowMethods with a list of methods for this domain name to call the API in this template
-    # Cors: !Sub "'${DomainName}'"
-    Cors:
-      AllowMethods: "'OPTIONS,POST,GET'"
-      AllowHeaders: "'*'"
-      AllowOrigin: "'*'"
-
 Resources:
 
-### Lambda functions
+####################################################################################################
+# API Gateway
+####################################################################################################
+
+  VocabAppApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: Prod
+      Cors:
+        AllowMethods: "'OPTIONS,POST,GET'"
+        AllowHeaders: "'*'"
+        AllowOrigin: "'*'"
+      Auth:
+        Authorizers:
+          CognitoAuthorizer:
+            UserPoolArn: !GetAtt UserPool.Arn
+
+####################################################################################################
+# Lambda functions
+####################################################################################################
 
   SendDailyEmail:
     Type: 'AWS::Serverless::Function'
@@ -49,17 +57,19 @@ Resources:
         - S3ReadPolicy:
             BucketName: !Ref VocabAnnouncementsBucket
         - DynamoDBCrudPolicy:
+            TableName: !Ref DynamoDBTable
+        - DynamoDBCrudPolicy:
             TableName: !Ref WordHistoryDynamoDBTable
         - DynamoDBCrudPolicy:
             TableName: !Ref SubscriberContactListDynamoDBTable
       Environment:
         Variables:
-          SUB_TOPIC_ARN: !Ref NotificationTopic
           WORDS_BUCKET_NAME: !Ref WordsBucketName
           WORDS_BUCKET_KEY: !Ref WordsBucketKey
           LISTS_BUCKET_NAME: !Ref ListsBucketName
           LISTS_BUCKET_KEY: !Ref ListsBucketKey
           ANNOUNCEMENTS_BUCKET: !Ref VocabAnnouncementsBucket
+          DYNAMODB_TABLE_NAME: !Ref DynamoDBTable
           TABLE_NAME: !Ref WordHistoryDynamoDBTable
           CONTACT_TABLE_NAME: !Ref SubscriberContactListDynamoDBTable
           STAGE: !Ref Stage
@@ -92,6 +102,7 @@ Resources:
         SampleVocabApi:
           Type: Api
           Properties:
+            RestApiId: !Ref VocabAppApi
             Path: /sample_vocab
             Method: GET
       Layers:
@@ -112,69 +123,94 @@ Resources:
             TableName: !Ref WordHistoryDynamoDBTable
       Environment:
         Variables:
+          DYNAMODB_TABLE_NAME: !Ref DynamoDBTable
           TABLE_NAME: !Ref WordHistoryDynamoDBTable
       Events:
         WordHistoryApi:
           Type: Api
           Properties:
+            RestApiId: !Ref VocabAppApi
             Path: /history
             Method: GET
-
-  Subscribe:
+  
+  SetSubscriptions:
     Type: 'AWS::Serverless::Function'
     Properties:
-      FunctionName: !Sub VocabSubscribe-${Stage}
+      FunctionName: !Sub SetSubscriptions-${Stage}
       Handler: app.lambda_handler
       Runtime: python3.7
-      CodeUri: src/subscribe
-      Description: A function that takes an HSK level and email address inputs and subscribes to a topic.
-      MemorySize: 128
+      CodeUri: src/set_subscriptions
+      Description: A function that creates, updates, or deletes users' list subscription
       Timeout: 120
       Policies:
-        - SESCrudPolicy:
-            IdentityName: haohaotiantian.com
         - DynamoDBCrudPolicy:
-            TableName: !Ref SubscriberContactListDynamoDBTable
+            TableName: !Ref DynamoDBTable
       Environment:
         Variables:
-          SUB_TOPIC_ARN: !Ref NotificationTopic
-          LISTS_BUCKET_NAME: !Ref ListsBucketName
-          LISTS_BUCKET_KEY: !Ref ListsBucketKey
-          STAGE: !Ref Stage
-          TABLE_NAME: !Ref SubscriberContactListDynamoDBTable
+          DYNAMODB_TABLE_NAME: !Ref DynamoDBTable
       Events:
-        SubscribeApi:
+        SetSubsApi:
           Type: Api
           Properties:
-            Path: /sub
+            RestApiId: !Ref VocabAppApi
+            Path: /set_subs
             Method: POST
       Layers:
       - !Ref Layer
 
-  Unsubscribe:
+  GetUserData:
     Type: 'AWS::Serverless::Function'
     Properties:
-      FunctionName: !Sub VocabUnsubscribe-${Stage}
+      FunctionName: !Sub GetUserData-${Stage}
       Handler: app.lambda_handler
       Runtime: python3.7
-      CodeUri: src/unsubscribe
-      Description: A function that unsubscribes the user from the given HSK level or from all levels.
+      CodeUri: src/get_user_data
+      Description: A function that returns details for a specific user.
       MemorySize: 128
       Timeout: 120
       Policies:
         - DynamoDBCrudPolicy:
-            TableName: !Ref SubscriberContactListDynamoDBTable
+            TableName: !Ref DynamoDBTable
       Environment:
         Variables:
-          STAGE: !Ref Stage
-          TABLE_NAME: !Ref SubscriberContactListDynamoDBTable
+          DYNAMODB_TABLE_NAME: !Ref DynamoDBTable
       Events:
-        SubscribeApi:
+        GetUserDataApi:
           Type: Api
           Properties:
-            Path: /unsub
-            Method: POST
+            RestApiId: !Ref VocabAppApi
+            Path: /user_data
+            Method: GET
+            Auth:
+              Authorizer: CognitoAuthorizer
+      Layers:
+      - !Ref Layer
   
+  SetUserData:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      FunctionName: !Sub SetUserData-${Stage}
+      Handler: app.lambda_handler
+      Runtime: python3.7
+      CodeUri: src/set_user_data
+      Description: A function that updates a signed in user's metadata
+      Timeout: 120
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref DynamoDBTable
+      Environment:
+        Variables:
+          DYNAMODB_TABLE_NAME: !Ref DynamoDBTable
+      Events:
+        SetSubsApi:
+          Type: Api
+          Properties:
+            RestApiId: !Ref VocabAppApi
+            Path: /update_user
+            Method: POST
+            Auth:
+              Authorizer: CognitoAuthorizer
+
   BackupDynamoToS3:
     Type: 'AWS::Serverless::Function'
     Properties:
@@ -189,11 +225,11 @@ Resources:
         - S3WritePolicy:
             BucketName: !Ref DynamoBackupsS3BucketName
         - DynamoDBCrudPolicy:
-            TableName: !Ref SubscriberContactListDynamoDBTable
+            TableName: !Ref DynamoDBTable
       Environment:
         Variables:
           BACKUPS_BUCKET_NAME: !Ref DynamoBackupsS3BucketName
-          TABLE_NAME: !Ref SubscriberContactListDynamoDBTable
+          TABLE_NAME: !Ref DynamoDBTable
       Events:
         WeeklyCloudWatchEvent:
           Type: Schedule
@@ -201,45 +237,48 @@ Resources:
             Schedule: cron(0 16 ? * FRI *)
 
   Layer:
-    # Shared Python modules, namely returning a random vocab word
     Type: 'AWS::Serverless::LayerVersion'
     Properties:
       ContentUri: src/layer
       CompatibleRuntimes:
         - python3.7
 
-### API Gateway permissions
-### Using a workaround described here: https://github.com/awslabs/serverless-application-model/issues/59
+####################################################################################################
+# DynamoDB table
+####################################################################################################
 
-  SampleVocabLambdaPermission:
-    Type: "AWS::Lambda::Permission"
+  DynamoDBTable:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
     Properties:
-      Action: lambda:InvokeFunction
-      FunctionName: !Ref SampleVocab
-      Principal: apigateway.amazonaws.com
-
-  WordHistoryPermission:
-    Type: "AWS::Lambda::Permission"
-    Properties:
-      Action: lambda:InvokeFunction
-      FunctionName: !Ref WordHistory
-      Principal: apigateway.amazonaws.com
-
-  SubscribeLambdaPermission:
-    Type: "AWS::Lambda::Permission"
-    Properties:
-      Action: lambda:InvokeFunction
-      FunctionName: !Ref Subscribe
-      Principal: apigateway.amazonaws.com
-
-  UnsubscribeLambdaPermission:
-    Type: "AWS::Lambda::Permission"
-    Properties:
-      Action: lambda:InvokeFunction
-      FunctionName: !Ref Unsubscribe
-      Principal: apigateway.amazonaws.com
-
-### DynamoDB tables
+      TableName: !Sub VocabAppTable-${Stage}
+      AttributeDefinitions:
+        - AttributeName: PK
+          AttributeType: S
+        - AttributeName: SK
+          AttributeType: S
+        - AttributeName: GSI1PK
+          AttributeType: S
+        - AttributeName: GSI1SK
+          AttributeType: S
+      KeySchema:
+        - AttributeName: PK
+          KeyType: HASH
+        - AttributeName: SK
+          KeyType: RANGE
+      GlobalSecondaryIndexes:
+        - IndexName: GSI1
+          KeySchema:
+            - AttributeName: GSI1PK
+              KeyType: HASH
+            - AttributeName: GSI1SK
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+      BillingMode: PAY_PER_REQUEST
+      ProvisionedThroughput:
+        ReadCapacityUnits: 0
+        WriteCapacityUnits: 0
 
   WordHistoryDynamoDBTable:
     Type: AWS::DynamoDB::Table
@@ -281,7 +320,9 @@ Resources:
         ReadCapacityUnits: 0
         WriteCapacityUnits: 0
 
-### S3 bucket for email announcements
+####################################################################################################
+# S3 bucket for email announcements
+####################################################################################################
 
   VocabAnnouncementsBucket:
     Type: AWS::S3::Bucket
@@ -294,108 +335,156 @@ Resources:
         IgnorePublicAcls: true
         RestrictPublicBuckets: true
 
-### Receiving function error notifications
+####################################################################################################
+# Cognito & authentication workflow Lambda functions
+####################################################################################################
 
-  CWLogsNotifications:
-    Type: 'AWS::Serverless::Function'
-    DependsOn:
-      - SubscribeLogGroup
-      - SendDailyEmailLogGroup
-      - SampleVocabLogGroup
+  UserPool:
+    Type: "AWS::Cognito::UserPool"
     Properties:
-      FunctionName: !Sub CWLogsNotifications-${Stage}
+      UserPoolName: !Sub VocabAppUserPool-${Stage}
+      Schema:
+        - Name: email
+          AttributeDataType: String
+          Mutable: true
+          Required: true
+      Policies:
+        PasswordPolicy:
+          MinimumLength: 8
+          RequireLowercase: false
+          RequireNumbers: false
+          RequireSymbols: false
+          RequireUppercase: false
+      UsernameAttributes:
+        - email
+      MfaConfiguration: "OFF"
+      LambdaConfig:
+        PreSignUp: !GetAtt PreSignUp.Arn
+        DefineAuthChallenge: !GetAtt DefineAuthChallenge.Arn
+        CreateAuthChallenge: !GetAtt CreateAuthChallenge.Arn
+        VerifyAuthChallengeResponse: !GetAtt VerifyAuthChallengeResponse.Arn
+
+  PreSignUp:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/user_pool_triggers/pre_sign_up/
       Handler: app.lambda_handler
       Runtime: python3.7
-      CodeUri: src/cw_logs_notifications
-      Description: A function that filters function logs for error messages and publishes to SNS
-      MemorySize: 128
-      Timeout: 120
-      Policies:
-        - SNSPublishMessagePolicy:
-            TopicName: !GetAtt NotificationTopic.TopicName
+
+  DefineAuthChallenge:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/user_pool_triggers/define_auth_challenge/
+      Handler: app.lambda_handler
+      Runtime: python3.7
+  
+  CreateAuthChallenge:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/user_pool_triggers/create_auth_challenge/
+      Handler: app.lambda_handler
+      Runtime: python3.7
       Environment:
         Variables:
-          SUB_TOPIC_ARN: !Ref NotificationTopic
-      Events:
-        SubFunctionLogs:
-          Type: CloudWatchLogs
-          Properties:
-            LogGroupName:
-              !Join [
-          '',
-          ['/aws/lambda/', !Sub 'SubscribeFunction-${Stage}']
-        ]
-            FilterPattern: "?Error ?Success"
-        SendDailyLogs:
-          Type: CloudWatchLogs
-          Properties:
-            LogGroupName:
-              !Join [
-          '',
-          ['/aws/lambda/', !Sub 'SendDailyEmail-${Stage}']
-        ]
-            FilterPattern: Error
-        SampleVocabLogs:
-          Type: CloudWatchLogs
-          Properties:
-            LogGroupName:
-              !Join [
-          '',
-          ['/aws/lambda/', !Sub 'SampleVocab-${Stage}']
-        ]
-            FilterPattern: Error
-
-  NotificationTopic:
-    # A topic that error notifications are published to
-    Type: AWS::SNS::Topic
+          STAGE: !Ref Stage
+          OTP_SECRET_KEY: !Ref OTPSecretKey
+      Policies:
+        - Version: "2012-10-17"
+          Statement:
+            - Effect: Allow
+              Action:
+                - ses:SendEmail
+              Resource: "*"
+  
+  VerifyAuthChallengeResponse:
+    Type: AWS::Serverless::Function
     Properties:
-      Subscription:
-      - Protocol: email
-        Endpoint: !Ref SubNotifyEmail
-
-  # Creating CloudWatch Logs groups for each function.
-  # By default, a log group is only created for a function once the function is invoked.
-  # We are creating log groups here to be able to subscribe the CWLogsNotification function to those log groups.
-  SubscribeLogGroup:
-    Type: AWS::Logs::LogGroup
-    DependsOn:
-      - Subscribe
+      CodeUri: src/user_pool_triggers/verify_auth_challenge_response/
+      Handler: app.lambda_handler
+      Runtime: python3.7
+      Role: !GetAtt VerifyAuthChallengeRole.Arn
+  
+  # Creatinging a role to attach SetUserAttributesPolicy to
+  VerifyAuthChallengeRole:
+    Type: AWS::IAM::Role
     Properties:
-      LogGroupName:
-        !Join [
-          '',
-          ['/aws/lambda/', !Sub 'VocabSubscribe-${Stage}']
-        ]
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
 
-  SendDailyEmailLogGroup:
-    Type: AWS::Logs::LogGroup
-    DependsOn:
-      - SendDailyEmail
+  # Giving the VerifyAuthChallenge role the permissions to update the user's email to verified
+  SetUserAttributesPolicy:
+    Type: AWS::IAM::Policy
     Properties:
-      LogGroupName:
-        !Join [
-          '',
-          ['/aws/lambda/', !Sub 'SendDailyEmail-${Stage}']
-        ]
+      PolicyName: allow-set-user-attributes
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Action:
+              - cognito-idp:AdminUpdateUserAttributes
+            Resource:
+              - !GetAtt UserPool.Arn
+      Roles:
+        - !Ref VerifyAuthChallengeRole
+  
+ # Giving the user pool permissions to invoke the Lambda functions
+  DefineAuthChallengeInvocationPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !GetAtt DefineAuthChallenge.Arn
+      Principal: cognito-idp.amazonaws.com
+      SourceArn: !GetAtt UserPool.Arn
+  CreateAuthChallengeInvocationPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !GetAtt CreateAuthChallenge.Arn
+      Principal: cognito-idp.amazonaws.com
+      SourceArn: !GetAtt UserPool.Arn
+  VerifyAuthChallengeResponseInvocationPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !GetAtt VerifyAuthChallengeResponse.Arn
+      Principal: cognito-idp.amazonaws.com
+      SourceArn: !GetAtt UserPool.Arn
+  PreSignUpInvocationPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !GetAtt PreSignUp.Arn
+      Principal: cognito-idp.amazonaws.com
+      SourceArn: !GetAtt UserPool.Arn
+  
+  # User pool client only allows custom auth
+  # A password is generated for each user, but they are not able to use it to login (since they will be using email)
+  UserPoolClient:
+    Type: "AWS::Cognito::UserPoolClient"
+    Properties:
+      ClientName: email-auth-client
+      GenerateSecret: false
+      UserPoolId: !Ref UserPool
+      ExplicitAuthFlows:
+        - CUSTOM_AUTH_FLOW_ONLY
 
-  SampleVocabLogGroup:
-    Type: AWS::Logs::LogGroup
-    DependsOn:
-      - SampleVocab
-    Properties:
-      LogGroupName:
-        !Join [
-          '',
-          ['/aws/lambda/', !Sub 'SampleVocab-${Stage}']
-        ]
+####################################################################################################
+# Outputs
+####################################################################################################
 
-  UnsubscribeLogGroup:
-    Type: AWS::Logs::LogGroup
-    DependsOn:
-      - Unsubscribe
-    Properties:
-      LogGroupName:
-        !Join [
-          '',
-          ['/aws/lambda/', !Sub 'VocabUnsubscribe-${Stage}']
-        ]
+Outputs:
+  UserPoolId:
+    Description: ID of the User Pool
+    Value: !Ref UserPool
+  UserPoolClientId:
+    Description: ID of the User Pool Client
+    Value: !Ref UserPoolClient
