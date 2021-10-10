@@ -1,6 +1,6 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: 'AWS::Serverless-2016-10-31'
-Description: An app that sends a daily email message for each HSK level with a vocab word
+Description: A daily Chinese vocabulary app
 Parameters:
   WordsBucketName:
     Type: String

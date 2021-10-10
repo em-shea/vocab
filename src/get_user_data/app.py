@@ -19,9 +19,9 @@ def lambda_handler(event, context):
 
     subscribed_lists = []
 
-    # Only return SUBSCRIBED lists
+    # Only return subscribed lists
     for item in user_data['lists']:
-        if item['status'] == "SUBSCRIBED":
+        if item['status'] == "subscribed":
             subscribed_lists.append(item)
 
     user_data['lists'] = subscribed_lists

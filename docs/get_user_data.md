@@ -20,14 +20,14 @@ Example output:
          "list_name":"HSK Level 6",
          "list_id":"12345",
          "character_set":"traditional",
-         "status":"SUBSCRIBED",
+         "status":"subscribed",
          "date_subscribed":"2021-06-16T23:06:48.646688"
       },
       {
          "list_name":"HSK Level 3",
          "list_id":"23456",
          "character_set":"simplified",
-         "status":"SUBSCRIBED",
+         "status":"subscribed",
          "date_subscribed":"2021-06-16T23:06:48.646688"
       }
    ]

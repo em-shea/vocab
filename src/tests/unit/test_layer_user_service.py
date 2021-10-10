@@ -16,7 +16,7 @@ def mocked_pull_user_data(user_id):
         "GSI1PK":"USER",
         "List name":"HSK Level 3",
         "SK":"LIST#123#SIMPLIFIED",
-        "Status":"SUBSCRIBED",
+        "Status":"subscribed",
         "GSI1SK":"USER#123#LIST#123#SIMPLIFIED",
         "PK":"USER#123",
         "Character set":"simplified"
@@ -26,7 +26,7 @@ def mocked_pull_user_data(user_id):
         "GSI1PK":"USER",
         "List name":"HSK Level 6",
         "SK":"LIST#234#SIMPLIFIED",
-        "Status":"SUBSCRIBED",
+        "Status":"subscribed",
         "GSI1SK":"USER#123#LIST#234#SIMPLIFIED",
         "PK":"USER#123",
         "Character set":"simplified"

@@ -117,7 +117,7 @@ def subscribe(date, cognito_id, list_data):
                 'SK': "LIST#" + list_data['list_id'] + "#" + list_data['character_set'].upper(),
                 'List name': list_data['list_name'],
                 'Date subscribed': date,
-                'Status': 'SUBSCRIBED',
+                'Status': 'subscribed',
                 'Character set': list_data['character_set'],
                 'GSI1PK': "USER",
                 'GSI1SK': "USER#" + cognito_id + "#LIST#" + list_data['list_id'] + "#" + list_data['character_set'].upper()
@@ -135,7 +135,7 @@ def unsubscribe(date, cognito_id, list_data):
         },
         UpdateExpression = "set #s = :status, #d = :date",
         ExpressionAttributeValues = {
-            ":status": "UNSUBSCRIBED",
+            ":status": "unsubscribed",
             ":date": date
         },
         ExpressionAttributeNames = {
