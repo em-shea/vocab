@@ -22,7 +22,7 @@ And in this blog post series:
 
 [Front end repo](https://github.com/em-shea/vocab-frontend-vue)
 
-![Architectural diagram](https://hsk-vocab.s3.amazonaws.com/vocab-app-v7-profiles.png)
+![Architectural diagram](https://hsk-vocab.s3.amazonaws.com/vocab-app-v7-profiles1.png)
 
 ## Roadmap
 
