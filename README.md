@@ -22,15 +22,18 @@ And in this blog post series:
 
 [Front end repo](https://github.com/em-shea/vocab-frontend-vue)
 
-![Architectural diagram](https://hsk-vocab.s3.amazonaws.com/vocab-app-v6-quicksight5.png)
+![Architectural diagram](https://hsk-vocab.s3.amazonaws.com/vocab-app-v7-profiles.png)
 
 ## Roadmap
 
 | Roadmap item | Status |
 | ------------- | :-------------: |
-| Add user profiles | :soon: |
+| Store user quiz results | |
+| User practice sentences | |
+| User created vocab lists | |
 | 成语 vocab list | |
-| Add word audio support for email and website | |
+| Add pronunciation audio | |
+| Add user profiles | :heavy_check_mark: |
 | Auto-generated quizzes | :heavy_check_mark: |
 | Build subscriber analytics QuickSight dashboard | :heavy_check_mark: |
 | Add support for traditional characters | :heavy_check_mark: |
