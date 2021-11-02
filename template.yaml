@@ -236,13 +236,13 @@ Resources:
             Auth:
               Authorizer: CognitoAuthorizer
 
-  BackupDynamoToS3:
+  BackupDynamoDBToS3:
     Type: 'AWS::Serverless::Function'
     Properties:
-      FunctionName: !Sub BackupDynamoToS3-${Stage}
+      FunctionName: !Sub BackupDynamoDBToS3-${Stage}
       Handler: app.lambda_handler
       Runtime: python3.7
-      CodeUri: src/backup_dynamo_s3
+      CodeUri: src/backup_dynamodb_s3
       Description: A function that scans the contact list database in DynamoDB and saves a back-up to S3
       MemorySize: 128
       Timeout: 120
