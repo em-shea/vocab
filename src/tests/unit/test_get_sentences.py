@@ -6,7 +6,7 @@
 # import unittest
 # from unittest import mock
 
-# with mock.patch.dict('os.environ', {'AWS_REGION': 'us-east-1', 'DYNAMODB_TABLE_NAME': 'mock-table'}):
+# with mock.patch.dict('os.environ', {'AWS_REGION': 'us-east-1', 'TABLE_NAME': 'mock-table'}):
 #     from get_sentences.app import lambda_handler
 
 # def mocked_pull_user_sentences(cognito_id):

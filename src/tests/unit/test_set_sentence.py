@@ -6,7 +6,7 @@ sys.path.append('../../layer/python')
 import unittest
 from unittest import mock
 
-with mock.patch.dict('os.environ', {'AWS_REGION': 'us-east-1', 'DYNAMODB_TABLE_NAME': 'mock-table'}):
+with mock.patch.dict('os.environ', {'AWS_REGION': 'us-east-1', 'TABLE_NAME': 'mock-table'}):
     from set_sentence.app import lambda_handler
 
 def mocked_update_sentence(cognito_id, body, date):

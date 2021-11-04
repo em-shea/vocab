@@ -3,7 +3,7 @@ import json
 import boto3
 from boto3.dynamodb.conditions import Key
 
-table = boto3.resource('dynamodb', region_name=os.environ['AWS_REGION']).Table(os.environ['DYNAMODB_TABLE_NAME'])
+table = boto3.resource('dynamodb', region_name=os.environ['AWS_REGION']).Table(os.environ['TABLE_NAME'])
 
 # Create or update daily practice sentences
 def lambda_handler(event, context):
