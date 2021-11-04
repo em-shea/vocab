@@ -7,46 +7,26 @@ import unittest
 from unittest import mock
 
 with mock.patch.dict('os.environ', {'AWS_REGION': 'us-east-1', 'DYNAMODB_TABLE_NAME': 'mock-table'}):
-    from set_sentence.app import lambda_handler
+    from get_sentences.app import lambda_handler
 
-def mocked_update_sentence(body, date):
+def mocked_pull_user_sentences(cognito_id):
     return
 
-class SetSentenceTest(unittest.TestCase):
+class GetSentencesTest(unittest.TestCase):
 
-    @mock.patch('set_sentence.app.update_sentence', side_effect=mocked_update_sentence)
-    def test_create_new_sentence(self, update_sentence_mock):
+    @mock.patch('get_sentences.app.pull_user_sentences', side_effect=mocked_pull_user_sentences)
+    def test_build(self, pull_user_sentences_mock):
 
-        event_body = {
-            "cognito_id":"123",
-            "list_id": "123",
-            "character_set": "simplified",
-            "sentence": "我喜欢学习汉语。"
-        }
-        response = lambda_handler(self.sub_apig_event(json.dumps(event_body)), "")
+        response = lambda_handler(self.sub_apig_event(), "")
 
-        self.assertEqual(update_sentence_mock.call_count, 1)
+        # self.assertEqual(pull_user_sentences_mock.call_count, 1)
     
-    @mock.patch('set_sentence.app.update_sentence', side_effect=mocked_update_sentence)
-    def test_update_existing_sentence(self, update_sentence_mock):
-
-        event_body = {
-            "cognito_id":"123",
-            "list_id": "123",
-            "character_set": "simplified",
-            "sentence_id":"123",
-            "sentence": "我喜欢学习汉语。"
-        }
-        response = lambda_handler(self.sub_apig_event(json.dumps(event_body)), "")
-
-        self.assertEqual(update_sentence_mock.call_count, 1)
-    
-    def sub_apig_event(self, event_body):
+    def sub_apig_event(self):
         return {
             "resource":"/sentence",
             "path":"/sentence",
-            "body":event_body,
-            "httpMethod":"POST",
+            "body":"",
+            "httpMethod":"GET",
             "headers":{
                 "Accept":"application/json, text/plain, */*",
                 "accept-encoding":"gzip, deflate, br",

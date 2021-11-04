@@ -202,7 +202,7 @@ Resources:
         Variables:
           DYNAMODB_TABLE_NAME: !Ref DynamoDBTable
       Events:
-        SetSubsApi:
+        SetUserDataApi:
           Type: Api
           Properties:
             RestApiId: !Ref VocabAppApi
@@ -227,12 +227,65 @@ Resources:
         Variables:
           DYNAMODB_TABLE_NAME: !Ref DynamoDBTable
       Events:
-        SetSubsApi:
+        SetLastLoginApi:
           Type: Api
           Properties:
             RestApiId: !Ref VocabAppApi
             Path: /update_login
             Method: POST
+            Auth:
+              Authorizer: CognitoAuthorizer
+
+  SetSentence:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      FunctionName: !Sub SetSentence-${Stage}
+      Handler: app.lambda_handler
+      Runtime: python3.7
+      CodeUri: src/set_sentence
+      Description: A function that creates or updates a user's daily sentence
+      MemorySize: 128
+      Timeout: 120
+      Policies:
+        - DynamoDBCrudPolicy:
+           TableName: !Ref DynamoDBTable
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref DynamoDBTable
+      Events:
+        SetSentenceApi:
+          Type: Api
+          Properties:
+            RestApiId: !Ref VocabAppApi
+            Path: /sentence
+            Method: POST
+            Auth:
+              Authorizer: CognitoAuthorizer
+  
+  GetSentences:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      FunctionName: !Sub GetSentences-${Stage}
+      Handler: app.lambda_handler
+      Runtime: python3.7
+      CodeUri: src/get_sentences
+      Description: A function that retrieves a user's daily sentences
+      MemorySize: 128
+      Timeout: 120
+      Policies:
+        - DynamoDBCrudPolicy:
+           TableName: !Ref DynamoDBTable
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref DynamoDBTable
+      Events:
+        GetSentencesApi:
+          Type: Api
+          Properties:
+            RestApiId: !Ref VocabAppApi
+            # Will this work to have different functions on different methods of the same API path?
+            Path: /sentence
+            Method: GET
             Auth:
               Authorizer: CognitoAuthorizer
 

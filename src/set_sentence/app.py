@@ -54,6 +54,7 @@ def update_sentence(body, date):
         Item = {
                 'PK': "USER#" + body['cognito_id'],
                 'SK': "SENTENCE#" + body['sentence_id'],
+                'Sentence': body['sentence'],
                 'Date created': date,
                 'List id': body['list_id'],
                 'Character set': body['character_set'],

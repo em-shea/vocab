@@ -1,19 +1,11 @@
 # Set sentence API
 
-The set sentence function is a POST method at api.haohaotiantian.com/sentence.
+The set sentence function is a GET method at api.haohaotiantian.com/sentence.
 This endpoint requires Cognito authentication. It creates, udpates, or erases a user's practice sentence for a given daily word.
 
-Example payload:
+Example output:
 ````
 {
-    "cognito_id":"123"
-}
-````
-
-Example response:
-````
-{
-    "cognito_id":"123",
     "sentences":[
         {
             "sentence_id":"123",
