@@ -24,7 +24,7 @@ def lambda_handler(event, context):
         'body': '{"success" : false}'
     }
 
-    if "sentence_id" not in body:
+    if "sentence_id" == "":
         body["sentence_id"] = generate_sentence_id()
 
     try:

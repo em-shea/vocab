@@ -20,7 +20,8 @@ class SetSentenceTest(unittest.TestCase):
         event_body = {
             "list_id": "123",
             "character_set": "simplified",
-            "sentence": "我喜欢学习汉语。"
+            "sentence": "我喜欢学习汉语。",
+            "sentence_id":""
         }
         response = lambda_handler(self.sub_apig_event(json.dumps(event_body)), "")
 

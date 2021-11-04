@@ -43,7 +43,7 @@ def pull_user_sentences(congito_id):
     user_key = "USER#" + congito_id
 
     response = table.query(
-        KeyConditionExpression=Key('PK').eq(user_key)
+        KeyConditionExpression=Key('PK').eq(user_key) & Key('SK').begins_with('SENTENCE') 
         # filter by sort key SENTENCES#?
     )
     print('dynamo response ', response['Items'])
