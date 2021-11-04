@@ -9,7 +9,7 @@ from unittest import mock
 with mock.patch.dict('os.environ', {'AWS_REGION': 'us-east-1', 'DYNAMODB_TABLE_NAME': 'mock-table'}):
     from set_sentence.app import lambda_handler
 
-def mocked_update_sentence(body, date):
+def mocked_update_sentence(cognito_id, body, date):
     return
 
 class SetSentenceTest(unittest.TestCase):
@@ -18,7 +18,6 @@ class SetSentenceTest(unittest.TestCase):
     def test_create_new_sentence(self, update_sentence_mock):
 
         event_body = {
-            "cognito_id":"123",
             "list_id": "123",
             "character_set": "simplified",
             "sentence": "我喜欢学习汉语。"
@@ -31,7 +30,6 @@ class SetSentenceTest(unittest.TestCase):
     def test_update_existing_sentence(self, update_sentence_mock):
 
         event_body = {
-            "cognito_id":"123",
             "list_id": "123",
             "character_set": "simplified",
             "sentence_id":"123",

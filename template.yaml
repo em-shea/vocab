@@ -261,7 +261,9 @@ Resources:
             Method: POST
             Auth:
               Authorizer: CognitoAuthorizer
-  
+      Layers:
+      - !Ref Layer
+              
   GetSentences:
     Type: 'AWS::Serverless::Function'
     Properties:

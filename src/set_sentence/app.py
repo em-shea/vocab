@@ -10,6 +10,7 @@ table = boto3.resource('dynamodb', region_name=os.environ['AWS_REGION']).Table(o
 # Create or update daily practice sentences
 def lambda_handler(event, context):
     print(event)
+    cognito_id = event['requestContext']['authorizer']['claims']['sub']
 
     body = json.loads(event["body"])
     date = str(datetime.datetime.now().isoformat())
@@ -27,7 +28,7 @@ def lambda_handler(event, context):
         body["sentence_id"] = generate_sentence_id()
 
     try:
-        response = update_sentence(body, date)
+        response = update_sentence(cognito_id, body, date)
     except Exception as e:
         print(f"Error: Failed to update sentence - {body}")
         print(e)
@@ -48,11 +49,11 @@ def generate_sentence_id():
 
     return sentence_id
 
-def update_sentence(body, date):
+def update_sentence(cognito_id, body, date):
 
     response = table.put_item(
         Item = {
-                'PK': "USER#" + body['cognito_id'],
+                'PK': "USER#" + cognito_id,
                 'SK': "SENTENCE#" + body['sentence_id'],
                 'Sentence': body['sentence'],
                 'Date created': date,

@@ -6,7 +6,6 @@ This endpoint requires Cognito authentication. It creates, udpates, or erases a 
 Example payload:
 ````
 {
-    "cognito_id":"123",
     "list_id": "123",
     "character_set": "simplified",
     "sentence_id":"123", # sentence ID will be generated if none is provided

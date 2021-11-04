@@ -10,14 +10,14 @@ Example output:
         {
             "sentence_id":"123",
             "sentence": "我喜欢学习汉语。",
-            "date_created": "2021-06-16T23:06:48.467526"
+            "date_created": "2021-06-16T23:06:48.467526",
             "list_id": "123",
             "character_set": "simplified"
         },
         {
             "sentence_id":"234",
             "sentence": "我喜欢写句子。",
-            "date_created": "2021-06-16T23:06:48.467526"
+            "date_created": "2021-06-16T23:06:48.467526",
             "list_id": "234",
             "character_set": "simplified"
         }
