@@ -45,7 +45,7 @@ def lambda_handler(event, context):
 
 def generate_sentence_id():
 
-    sentence_id = ksuid_service.generate_ksuid()
+    sentence_id = str(ksuid_service.generate_ksuid())
 
     return sentence_id
 
