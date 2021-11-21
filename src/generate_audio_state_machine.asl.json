@@ -46,7 +46,7 @@
               "Type": "Task",
               "Resource": "arn:aws:states:::dynamodb:updateItem",
               "Parameters": {
-                "TableName": "VocabAppTable-staging",
+                "TableName": "TableName",
                 "Key": {
                   "PK": {
                     "S.$": "$.list_id"
@@ -75,4 +75,4 @@
         "ItemsPath": "$.word_list"
       }
     }
-  }
+}

@@ -450,18 +450,26 @@ Resources:
 GenerateAudioStateMachine:
   Type: AWS::Serverless::StateMachine
   Properties:
-    Name: !Sub GenerateAudioStateMachine-${Stage}
-    DefinitionUri: src/generate_audio_state_machine.asl.json
-    DefinitionSubstitutions:
-      GetWordListFunction: !Ref GetWordList
-      PronunciationAudioBucket: !Ref PronunciationAudioBucket
-    Policies:
-      - S3WritePolicy:
-         BucketName: !Ref PronunciationAudioBucket
-      - DynamoDBCrudPolicy:
-         TableName: !Ref DynamoDBTable
-      - LambdaInvokePolicy:
-         FunctionName: !Ref GetWordList
+    # Name: !Sub GenerateAudioStateMachine-${Stage}
+    StartAt: MyLambdaState
+      States:
+        MyLambdaState:
+          Type: Task
+          Resource: !GetAtt GetWordList.Arn
+          End: true
+    # DefinitionUri: src/generate_audio_state_machine.asl.json
+    # DefinitionSubstitutions:
+    #   TableName: !Ref DynamoDBTable
+    #   GetWordListFunction: !Ref GetWordList
+    #   PronunciationAudioBucket: !Ref PronunciationAudioBucket
+    Role: arn:aws:iam::789896561553:role/service-role/StepFunctions-testGenerateAudio-role-6f667370
+      # Policies:
+    #   - S3WritePolicy:
+    #      BucketName: !Ref PronunciationAudioBucket
+    #   - DynamoDBCrudPolicy:
+    #      TableName: !Ref DynamoDBTable
+    #   - LambdaInvokePolicy:
+    #      FunctionName: !Ref GetWordList
 
 ####################################################################################################
 # Cognito & authentication workflow Lambda functions
