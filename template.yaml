@@ -6,10 +6,10 @@ Parameters:
     Type: String
   WordsBucketKey:
     Type: String
-  ListsBucketName:
-    Type: String
-  ListsBucketKey:
-    Type: String
+  # ListsBucketName:
+  #   Type: String
+  # ListsBucketKey:
+  #   Type: String
   OTPSecretKey:
     Type: String
   DynamoBackupsS3BucketName:
@@ -66,8 +66,8 @@ Resources:
         Variables:
           WORDS_BUCKET_NAME: !Ref WordsBucketName
           WORDS_BUCKET_KEY: !Ref WordsBucketKey
-          LISTS_BUCKET_NAME: !Ref ListsBucketName
-          LISTS_BUCKET_KEY: !Ref ListsBucketKey
+          # LISTS_BUCKET_NAME: !Ref ListsBucketName
+          # LISTS_BUCKET_KEY: !Ref ListsBucketKey
           ANNOUNCEMENTS_BUCKET: !Ref VocabAnnouncementsBucket
           DYNAMODB_TABLE_NAME: !Ref DynamoDBTable
           TABLE_NAME: !Ref WordHistoryDynamoDBTable
@@ -290,6 +290,23 @@ Resources:
             Method: GET
             Auth:
               Authorizer: CognitoAuthorizer
+  
+  GetWordList:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      FunctionName: !Sub GetWordList-${Stage}
+      Handler: app.lambda_handler
+      Runtime: python3.7
+      CodeUri: src/get_word_list
+      Description: Retrieves list of words for a given list id
+      MemorySize: 128
+      Timeout: 120
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref DynamoDBTable
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref DynamoDBTable
 
   BackupDynamoDBToS3:
     Type: 'AWS::Serverless::Function'
