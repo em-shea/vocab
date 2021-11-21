@@ -418,7 +418,7 @@ Resources:
         WriteCapacityUnits: 0
 
 ####################################################################################################
-# S3 bucket for email announcements
+# S3 buckets
 ####################################################################################################
 
   VocabAnnouncementsBucket:
@@ -431,6 +431,34 @@ Resources:
         BlockPublicPolicy: true
         IgnorePublicAcls: true
         RestrictPublicBuckets: true
+  
+  PronunciationAudioBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      AccessControl: Private
+      BucketName: !Sub hhtt-pronunciation-audio-${Stage}
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+
+####################################################################################################
+# State machine
+####################################################################################################
+
+GenerateAudioStateMachine:
+  Type: "AWS::Serverless::StateMachine"
+  Properties:
+    Name: !Sub GenerateAudioStateMachine-${Stage}
+    DefinitionUri: src/generate_audio_state_machine.asl.json
+    Policies:
+      - S3WritePolicy:
+          BucketName: !Ref PronunciationAudioBucket
+      - DynamoDBCrudPolicy:
+          TableName: !Ref DynamoDBTable
+      - LambdaInvokePolicy:
+          FunctionName: !Ref GetWordList
 
 ####################################################################################################
 # Cognito & authentication workflow Lambda functions
