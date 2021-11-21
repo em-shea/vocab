@@ -453,11 +453,11 @@ GenerateAudioStateMachine:
     # Name: !Sub GenerateAudioStateMachine-${Stage}
     Definition:
       StartAt: MyLambdaState
-        States:
-          MyLambdaState:
-            Type: Task
-            Resource: !GetAtt GetWordList.Arn
-            End: true
+      States:
+        MyLambdaState:
+          Type: Task
+          Resource: !GetAtt GetWordList.Arn
+          End: true
     # DefinitionUri: src/generate_audio_state_machine.asl.json
     # DefinitionSubstitutions:
     #   TableName: !Ref DynamoDBTable
