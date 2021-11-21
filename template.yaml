@@ -457,11 +457,11 @@ GenerateAudioStateMachine:
       PronunciationAudioBucket: !Ref PronunciationAudioBucket
     Policies:
       - S3WritePolicy:
-          BucketName: !Ref PronunciationAudioBucket
+         BucketName: !Ref PronunciationAudioBucket
       - DynamoDBCrudPolicy:
-          TableName: !Ref DynamoDBTable
+         TableName: !Ref DynamoDBTable
       - LambdaInvokePolicy:
-          FunctionName: !Ref GetWordList
+         FunctionName: !Ref GetWordList
 
 ####################################################################################################
 # Cognito & authentication workflow Lambda functions
