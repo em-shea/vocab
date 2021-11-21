@@ -463,8 +463,12 @@ Resources:
            TableName: !Ref DynamoDBTable
         - LambdaInvokePolicy:
            FunctionName: !Ref GetWordList
-        - PollyFullAccessPolicy:
-           LexiconName: {}
+        - Statement:
+          - Sid: PollySynthesizeText
+            Effect: Allow
+            Action:
+            - polly:StartSpeechSynthesisTask
+            Resource: '*'
 
 ####################################################################################################
 # Cognito & authentication workflow Lambda functions
