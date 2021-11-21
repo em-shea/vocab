@@ -46,8 +46,8 @@ def parse_response(query_response):
     for item in query_response['Items']:
         word_list.append(
             {
-                "list_id": item['PK'][5:],
-                "word_id": item['SK'][5:],
+                "list_id": item['PK'],
+                "word_id": item['SK'],
                 "text": item['Word']['Simplified']
             }
         )
