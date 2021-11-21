@@ -448,7 +448,7 @@ Resources:
 ####################################################################################################
 
 GenerateAudioStateMachine:
-  Type: "AWS::Serverless::StateMachine"
+  Type: AWS::Serverless::StateMachine
   Properties:
     Name: !Sub GenerateAudioStateMachine-${Stage}
     DefinitionUri: src/generate_audio_state_machine.asl.json
