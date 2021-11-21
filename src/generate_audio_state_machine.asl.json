@@ -8,7 +8,7 @@
         "OutputPath": "$.Payload",
         "Parameters": {
           "Payload.$": "$",
-          "FunctionName": "GetWordListFunction"
+          "FunctionName": "${GetWordListFunction}"
         },
         "Retry": [
           {
@@ -33,7 +33,7 @@
               "Type": "Task",
               "Parameters": {
                 "OutputFormat": "mp3",
-                "OutputS3BucketName": "PronunciationAudioBucket",
+                "OutputS3BucketName": "${PronunciationAudioBucket}",
                 "OutputS3KeyPrefix": "audio",
                 "Text.$": "$.text",
                 "VoiceId": "Zhiyu"
@@ -46,7 +46,7 @@
               "Type": "Task",
               "Resource": "arn:aws:states:::dynamodb:updateItem",
               "Parameters": {
-                "TableName": "TableName",
+                "TableName": "${TableName}",
                 "Key": {
                   "PK": {
                     "S.$": "$.list_id"
