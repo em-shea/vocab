@@ -9,7 +9,7 @@ table = boto3.resource('dynamodb', region_name=os.environ['AWS_REGION']).Table(o
 # Triggered by state machine to generate pronunciation audio files for a given list
 
 def lambda_handler(event, context):
-    print('event', event)
+    # print('event', event)
     list_id = event['listId']
 
     try:
@@ -27,22 +27,25 @@ def lambda_handler(event, context):
         }
 
     word_list = parse_response(query_response)
+    print(word_list)
+    # issue with words in UTF8?
 
-    return {
-        'statusCode': 200,
-        'headers': {
-            'Access-Control-Allow-Methods': 'GET,OPTIONS',
-            'Access-Control-Allow-Origin': '*',
-        },
-        'body': json.dumps(word_list)
-    }
+    # return {
+    #     'statusCode': 200,
+    #     'headers': {
+    #         'Access-Control-Allow-Methods': 'GET,OPTIONS',
+    #         'Access-Control-Allow-Origin': '*',
+    #     },
+    #     'body': json.dumps(word_list)
+    # }
+    return word_list
 
 def query_dynamodb(list_id):
 
     query_response = table.query(
         KeyConditionExpression=Key('PK').eq("LIST#" + list_id) & Key('SK').begins_with('WORD#') 
     )
-    print('dynamo response ', query_response['Items'])
+    # print('dynamo response ', query_response['Items'])
 
     return query_response
 
