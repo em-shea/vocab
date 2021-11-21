@@ -8,7 +8,7 @@
         "OutputPath": "$.Payload",
         "Parameters": {
           "Payload.$": "$",
-          "FunctionName": "!Sub GetWordList-${Stage}"
+          "FunctionName": "GetWordListFunction"
         },
         "Retry": [
           {
@@ -33,7 +33,7 @@
               "Type": "Task",
               "Parameters": {
                 "OutputFormat": "mp3",
-                "OutputS3BucketName": "!Ref PronunciationAudioBucket",
+                "OutputS3BucketName": "PronunciationAudioBucket",
                 "OutputS3KeyPrefix": "audio",
                 "Text.$": "$.text",
                 "VoiceId": "Zhiyu"

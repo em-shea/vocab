@@ -452,6 +452,9 @@ GenerateAudioStateMachine:
   Properties:
     Name: !Sub GenerateAudioStateMachine-${Stage}
     DefinitionUri: src/generate_audio_state_machine.asl.json
+    DefinitionSubstitution:
+      GetWordListFunction: !Ref GetWordList
+      PronunciationAudioBucket: !Ref PronunciationAudioBucket
     Policies:
       - S3WritePolicy:
           BucketName: !Ref PronunciationAudioBucket
