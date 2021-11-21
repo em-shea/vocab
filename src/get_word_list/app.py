@@ -18,12 +18,7 @@ def lambda_handler(event, context):
         print(f"Error: DyanmoDB query for word list failed.")
         print(e)
         return {
-            'statusCode': 502,
-            'headers': {
-                'Access-Control-Allow-Methods': 'POST,OPTIONS',
-                'Access-Control-Allow-Origin': '*',
-            },
-            'body': '{"success" : false}'
+            f"error_message": "Failed to query DynamoDB. Error: {e}"
         }
 
     word_list = parse_response(query_response)
@@ -33,8 +28,8 @@ def lambda_handler(event, context):
     }
 
     print(response_body)
-    
-    return word_list
+
+    return response_body
 
 def query_dynamodb(list_id):
 
