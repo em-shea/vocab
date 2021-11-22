@@ -44,12 +44,13 @@ def parse_response(query_response):
     word_list = []
 
     for item in query_response['Items']:
-        word_list.append(
-            {
-                "list_id": item['PK'],
-                "word_id": item['SK'],
-                "text": item['Word']['Simplified']
-            }
-        )
+        if item['Audio file key'] != "":
+            word_list.append(
+                {
+                    "list_id": item['PK'],
+                    "word_id": item['SK'],
+                    "text": item['Word']['Simplified']
+                }
+            )
 
     return word_list
