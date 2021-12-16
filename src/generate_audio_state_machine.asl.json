@@ -8,7 +8,7 @@
         "OutputPath": "$.Payload",
         "Parameters": {
           "Payload.$": "$",
-          "FunctionName": "${GetWordListFunction}"
+          "FunctionName": "${GetCharsForListIdFunction}"
         },
         "Retry": [
           {
