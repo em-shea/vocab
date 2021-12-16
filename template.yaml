@@ -291,14 +291,14 @@ Resources:
             Auth:
               Authorizer: CognitoAuthorizer
   
-  GetWordList:
+  GetCharsForListId:
     Type: 'AWS::Serverless::Function'
     Properties:
-      FunctionName: !Sub GetWordList-${Stage}
+      FunctionName: !Sub GetCharsForListId-${Stage}
       Handler: app.lambda_handler
       Runtime: python3.7
-      CodeUri: src/get_word_list
-      Description: Retrieves list of words for a given list id
+      CodeUri: src/get_chars_for_list_id
+      Description: Retrieves list of characters for a given list id
       MemorySize: 128
       Timeout: 120
       Policies:
@@ -307,6 +307,8 @@ Resources:
       Environment:
         Variables:
           TABLE_NAME: !Ref DynamoDBTable
+      Layers:
+      - !Ref Layer
 
   BackupDynamoDBToS3:
     Type: 'AWS::Serverless::Function'
@@ -454,7 +456,7 @@ Resources:
       DefinitionUri: src/generate_audio_state_machine.asl.json
       DefinitionSubstitutions:
         TableName: !Ref DynamoDBTable
-        GetWordListFunction: !Ref GetWordList
+        GetCharsForListIdFunction: !Ref GetCharsForListId
         PronunciationAudioBucket: !Ref PronunciationAudioBucket
       Policies:
         - S3WritePolicy:
@@ -462,7 +464,7 @@ Resources:
         - DynamoDBCrudPolicy:
            TableName: !Ref DynamoDBTable
         - LambdaInvokePolicy:
-           FunctionName: !Ref GetWordList
+           FunctionName: !Ref GetCharsForListId
         - Statement:
           - Sid: PollySynthesizeText
             Effect: Allow
