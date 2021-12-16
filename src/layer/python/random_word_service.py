@@ -8,7 +8,7 @@ import sys
 sys.path.append('../tests/')
 
 # Memoizing vocab lists variable to only load once if function is warm
-vocab_lists = None
+# vocab_lists = None
 
 # Receives HSK level as input, returns random word
 def select_random_word(hsk_level):

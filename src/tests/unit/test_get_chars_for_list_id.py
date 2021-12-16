@@ -6,7 +6,7 @@ import unittest
 from unittest import mock
 
 with mock.patch.dict('os.environ', {'AWS_REGION': 'us-east-1', 'TABLE_NAME': 'mock-table'}):
-    from get_word_list.app import lambda_handler
+    from get_chars_for_list_id.app import lambda_handler
 
 def mocked_query_dynamodb(list_id):
   return  { 
@@ -16,15 +16,18 @@ def mocked_query_dynamodb(list_id):
                 "SK":"WORD#1ebcad41-876543",
                 "PK":"LIST#1ebcad41-197a-123123",
                 "Word":{
-                    "Simplified": "你好"
+                    "Simplified": "你好",
+                    "Definition": "word definition",
+                    "Pinyin": "word pinyin",
+                    "Audio file key": ""
                 }
             },
         ]
   }
 
-class GetWordListTest(unittest.TestCase):
+class GetCharsForListIdTest(unittest.TestCase):
 
-  @mock.patch('get_word_list.app.query_dynamodb', side_effect=mocked_query_dynamodb)
+  @mock.patch('list_word_service.query_dynamodb', side_effect=mocked_query_dynamodb)
   def test_build(self, query_dynamodb_mock):
     
     response = lambda_handler(self.apig_event(), "")

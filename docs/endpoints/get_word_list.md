@@ -10,7 +10,6 @@ Example input:
 }
 ````
 
-
 Example output:
 ````
 {
