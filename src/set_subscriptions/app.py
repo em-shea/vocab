@@ -6,11 +6,18 @@ import datetime
 import user_service
 
 # region_name specified in order to mock in unit tests
+sns_client = boto3.client('sns', region_name=os.environ['AWS_REGION'])
 table = boto3.resource('dynamodb', region_name=os.environ['AWS_REGION']).Table(os.environ['DYNAMODB_TABLE_NAME'])
 
 # Set subscriptions and create user if none exists yet
 def lambda_handler(event, context):
     print(event)
+    # Temporary fix for unsub API endpoint
+    if 'cognito_id' not in event['body']:
+        try:
+            send_notification(event['body'])
+        except Exception as e:
+            print(f'Failed to send unsubscribe notification - {event["body"]}, {e} ')
 
     body = json.loads(event["body"])
     date = str(datetime.datetime.now().isoformat())
@@ -144,5 +151,16 @@ def unsubscribe(date, cognito_id, list_data):
         },
         ReturnValues = "UPDATED_NEW"
         )
+
+    return response
+
+def send_notification(body):
+    print('send notification...', body)
+
+    response = sns_client.publish(
+        TargetArn = os.environ['SNS_TOPIC_ARN'], 
+        Message=json.dumps({'default': body}),
+        MessageStructure='json'
+    )
 
     return response

@@ -9,7 +9,7 @@ sys.path.append('../tests/')
 table = boto3.resource('dynamodb', region_name=os.environ['AWS_REGION']).Table(os.environ['TABLE_NAME'])
 
 # Returns all of the words (and details) associated with a given list
-def get_words_in_list(list_id):
+def get_words_in_list(list_id, limit=None, last_word_token=None):
 
     try:
         query_response = query_dynamodb(list_id)
@@ -23,11 +23,22 @@ def get_words_in_list(list_id):
 
     return word_list
 
-def query_dynamodb(list_id):
+def query_dynamodb(list_id, limit=None, last_word_token=None):
+
+    # query_response = table.query(
+    #     KeyConditionExpression=Key('PK').eq('LIST#' + list_id) & Key('SK').begins_with('WORD#')
+    # )
+    
+    key_condition = Key('PK').eq('LIST#' + list_id) & Key('SK').begins_with('WORD#')
+    
+    if last_word_token is not None:
+        key_condition = key_condition & Key('SK').gt(last_word_token)
 
     query_response = table.query(
-        KeyConditionExpression=Key('PK').eq("LIST#" + list_id) & Key('SK').begins_with('WORD#') 
+        KeyConditionExpression=key_condition,
+        Limit=limit
     )
+    # Limit may or may not work with None
     print('dynamo response ', query_response['Items'])
 
     return query_response

@@ -11,7 +11,8 @@ def lambda_handler(event, context):
 
     word_list = format_word_list(detailed_word_list)
     response_body = {
-        "word_list": word_list
+        "word_list": word_list,
+        "last_word_id_processed": word_list[-1]['word_id']
     }
 
     print(response_body)
@@ -22,15 +23,16 @@ def format_word_list(detailed_word_list):
 
     word_list = []
 
-    for item in detailed_word_list:
-        # Add this condition once initial upload complete
-        # if item['Word']['Audio file key'] != "":
-        word_list.append(
-            {
-                'list_id': item['list_id'],
-                'word_id': item['word_id'],
-                'text': item['word']['Simplified']
-            }
-        )
+    while len(word_list) < 1250:
+        for item in detailed_word_list:
+            # Add this condition once initial upload complete
+            # if item['Word']['Audio file key'] != "":
+            word_list.append(
+                {
+                    'list_id': item['list_id'],
+                    'word_id': item['word_id'],
+                    'text': item['word']['Simplified']
+                }
+            )
 
     return word_list

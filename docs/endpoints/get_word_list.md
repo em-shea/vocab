@@ -6,7 +6,8 @@ It takes in a list ID and queries DynamoDB to return a list of all word IDs and 
 Example input:
 ````
 {
-    "listID":"12345678"
+    "list_id": "12345678",
+    "last_word_id_processed": None
 }
 ````
 
