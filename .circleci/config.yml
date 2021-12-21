@@ -30,8 +30,8 @@ jobs:
             sam build && sam package --s3-bucket hsk-vocab --output-template-file packaged-template.yaml --region us-east-1
 
             if [ "${CIRCLE_BRANCH}" == "master" ]; then              
-              sam deploy --template-file ./packaged-template.yaml --stack-name vocab --region us-east-1 --capabilities CAPABILITY_IAM --parameter-overrides WordsBucketName=hsk-vocab WordsBucketKey=HSK_Level_6.csv ListsBucketName=hsk-vocab ListsBucketKey=Contact_Lists.csv DomainName=https://haohaotiantian.com OTPSecretKey=$OTPSecretKey DynamoBackupsS3BucketName=hhtt-backups TempNotification=$TempNotification Stage=prod
+              sam deploy --template-file ./packaged-template.yaml --stack-name vocab --region us-east-1 --capabilities CAPABILITY_IAM --parameter-overrides WordsBucketName=hsk-vocab WordsBucketKey=HSK_Level_6.csv ListsBucketName=hsk-vocab ListsBucketKey=Contact_Lists.csv DomainName=https://haohaotiantian.com OTPSecretKey=$OTPSecretKey DynamoBackupsS3BucketName=hhtt-backups Stage=prod
             fi
             if [ "${CIRCLE_BRANCH}" == "staging" ]; then
-              sam deploy --template-file ./packaged-template.yaml --stack-name vocab-staging --region us-east-1 --capabilities CAPABILITY_IAM --parameter-overrides WordsBucketName=hsk-vocab-staging WordsBucketKey=HSK_Level_6.csv ListsBucketName=hsk-vocab-staging ListsBucketKey=Contact_Lists.csv DomainName=https://staging.haohaotiantian.com OTPSecretKey=$OTPSecretKey DynamoBackupsS3BucketName=hhtt-backups-staging TempNotification=$TempNotification Stage=staging
+              sam deploy --template-file ./packaged-template.yaml --stack-name vocab-staging --region us-east-1 --capabilities CAPABILITY_IAM --parameter-overrides WordsBucketName=hsk-vocab-staging WordsBucketKey=HSK_Level_6.csv ListsBucketName=hsk-vocab-staging ListsBucketKey=Contact_Lists.csv DomainName=https://staging.haohaotiantian.com OTPSecretKey=$OTPSecretKey DynamoBackupsS3BucketName=hhtt-backups-staging Stage=staging
             fi

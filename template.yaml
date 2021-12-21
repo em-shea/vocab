@@ -145,8 +145,11 @@ Resources:
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref DynamoDBTable
-        - SNSPublishMessagePolicy:
-            TopicName: !GetAtt TempSNSTopic.TopicArn
+        - Statement:
+          - Effect: Allow
+            Action:
+            - cognito-idp:AdminGetUser
+            Resource: !GetAtt UserPool.Arn
       Environment:
         Variables:
           DYNAMODB_TABLE_NAME: !Ref DynamoDBTable
