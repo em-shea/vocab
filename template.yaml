@@ -6,10 +6,10 @@ Parameters:
     Type: String
   WordsBucketKey:
     Type: String
-  ListsBucketName:
-    Type: String
-  ListsBucketKey:
-    Type: String
+  # ListsBucketName:
+  #   Type: String
+  # ListsBucketKey:
+  #   Type: String
   OTPSecretKey:
     Type: String
   DynamoBackupsS3BucketName:
@@ -49,6 +49,8 @@ Resources:
       CodeUri: src/send_daily_email
       Description: A function that sends a daily email to subscribers with a vocab word for each HSK level
       Timeout: 120
+      EventInvokeConfig:
+        MaximumRetryAttempts: 0
       Policies:
         - SESCrudPolicy:
             IdentityName: haohaotiantian.com
@@ -66,8 +68,8 @@ Resources:
         Variables:
           WORDS_BUCKET_NAME: !Ref WordsBucketName
           WORDS_BUCKET_KEY: !Ref WordsBucketKey
-          LISTS_BUCKET_NAME: !Ref ListsBucketName
-          LISTS_BUCKET_KEY: !Ref ListsBucketKey
+          # LISTS_BUCKET_NAME: !Ref ListsBucketName
+          # LISTS_BUCKET_KEY: !Ref ListsBucketKey
           ANNOUNCEMENTS_BUCKET: !Ref VocabAnnouncementsBucket
           DYNAMODB_TABLE_NAME: !Ref DynamoDBTable
           TABLE_NAME: !Ref WordHistoryDynamoDBTable
@@ -158,6 +160,39 @@ Resources:
       Layers:
       - !Ref Layer
 
+  Unsubscribe:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      FunctionName: !Sub Unsubscribe-${Stage}
+      Handler: app.lambda_handler
+      Runtime: python3.7
+      CodeUri: src/unsubscribe
+      Description: A function that unsubscribes users that are not signed in.
+      MemorySize: 128
+      Timeout: 120
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref DynamoDBTable
+            Events:
+        - Statement:
+          - Effect: Allow
+            Action:
+            - cognito-idp:AdminGetUser
+            Resource: !GetAtt UserPool.Arn
+      Environment:
+        Variables:
+          DYNAMODB_TABLE_NAME: !Ref DynamoDBTable
+          USER_POOL_ID: !Ref UserPool
+      Events:
+        UnsubApi:
+          Type: Api
+          Properties:
+            RestApiId: !Ref VocabAppApi
+            Path: /unsub
+            Method: POST
+      Layers:
+      - !Ref Layer
+
   GetUserData:
     Type: 'AWS::Serverless::Function'
     Properties:
@@ -185,7 +220,7 @@ Resources:
               Authorizer: CognitoAuthorizer
       Layers:
       - !Ref Layer
-  
+
   SetUserData:
     Type: 'AWS::Serverless::Function'
     Properties:
@@ -202,7 +237,7 @@ Resources:
         Variables:
           DYNAMODB_TABLE_NAME: !Ref DynamoDBTable
       Events:
-        SetSubsApi:
+        SetUserDataApi:
           Type: Api
           Properties:
             RestApiId: !Ref VocabAppApi
@@ -227,7 +262,7 @@ Resources:
         Variables:
           DYNAMODB_TABLE_NAME: !Ref DynamoDBTable
       Events:
-        SetSubsApi:
+        SetLastLoginApi:
           Type: Api
           Properties:
             RestApiId: !Ref VocabAppApi
@@ -236,13 +271,87 @@ Resources:
             Auth:
               Authorizer: CognitoAuthorizer
 
-  BackupDynamoToS3:
+  SetSentence:
     Type: 'AWS::Serverless::Function'
     Properties:
-      FunctionName: !Sub BackupDynamoToS3-${Stage}
+      FunctionName: !Sub SetSentence-${Stage}
       Handler: app.lambda_handler
       Runtime: python3.7
-      CodeUri: src/backup_dynamo_s3
+      CodeUri: src/set_sentence
+      Description: A function that creates or updates a user's daily sentence
+      MemorySize: 128
+      Timeout: 120
+      Policies:
+        - DynamoDBCrudPolicy:
+           TableName: !Ref DynamoDBTable
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref DynamoDBTable
+      Events:
+        SetSentenceApi:
+          Type: Api
+          Properties:
+            RestApiId: !Ref VocabAppApi
+            Path: /sentence
+            Method: POST
+            Auth:
+              Authorizer: CognitoAuthorizer
+      Layers:
+      - !Ref Layer
+              
+  GetSentences:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      FunctionName: !Sub GetSentences-${Stage}
+      Handler: app.lambda_handler
+      Runtime: python3.7
+      CodeUri: src/get_sentences
+      Description: A function that retrieves a user's daily sentences
+      MemorySize: 128
+      Timeout: 120
+      Policies:
+        - DynamoDBCrudPolicy:
+           TableName: !Ref DynamoDBTable
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref DynamoDBTable
+      Events:
+        GetSentencesApi:
+          Type: Api
+          Properties:
+            RestApiId: !Ref VocabAppApi
+            # Will this work to have different functions on different methods of the same API path?
+            Path: /sentence
+            Method: GET
+            Auth:
+              Authorizer: CognitoAuthorizer
+  
+  GetCharsForListId:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      FunctionName: !Sub GetCharsForListId-${Stage}
+      Handler: app.lambda_handler
+      Runtime: python3.7
+      CodeUri: src/get_chars_for_list_id
+      Description: Retrieves list of characters for a given list id
+      MemorySize: 128
+      Timeout: 120
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref DynamoDBTable
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref DynamoDBTable
+      Layers:
+      - !Ref Layer
+
+  BackupDynamoDBToS3:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      FunctionName: !Sub BackupDynamoDBToS3-${Stage}
+      Handler: app.lambda_handler
+      Runtime: python3.7
+      CodeUri: src/backup_dynamodb_s3
       Description: A function that scans the contact list database in DynamoDB and saves a back-up to S3
       MemorySize: 128
       Timeout: 120
@@ -346,7 +455,7 @@ Resources:
         WriteCapacityUnits: 0
 
 ####################################################################################################
-# S3 bucket for email announcements
+# S3 buckets
 ####################################################################################################
 
   VocabAnnouncementsBucket:
@@ -359,6 +468,44 @@ Resources:
         BlockPublicPolicy: true
         IgnorePublicAcls: true
         RestrictPublicBuckets: true
+  
+  PronunciationAudioBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      AccessControl: Private
+      BucketName: !Sub hhtt-pronunciation-audio-${Stage}
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+
+####################################################################################################
+# State machine
+####################################################################################################
+
+  GenerateAudioStateMachine:
+    Type: AWS::Serverless::StateMachine
+    Properties:
+      Name: !Sub GenerateAudioStateMachine-${Stage}
+      DefinitionUri: src/generate_audio_state_machine.asl.json
+      DefinitionSubstitutions:
+        TableName: !Ref DynamoDBTable
+        GetCharsForListIdFunction: !Ref GetCharsForListId
+        PronunciationAudioBucket: !Ref PronunciationAudioBucket
+      Policies:
+        - S3WritePolicy:
+           BucketName: !Ref PronunciationAudioBucket
+        - DynamoDBCrudPolicy:
+           TableName: !Ref DynamoDBTable
+        - LambdaInvokePolicy:
+           FunctionName: !Ref GetCharsForListId
+        - Statement:
+          - Sid: PollySynthesizeText
+            Effect: Allow
+            Action:
+            - polly:StartSpeechSynthesisTask
+            Resource: '*'
 
 ####################################################################################################
 # Cognito & authentication workflow Lambda functions

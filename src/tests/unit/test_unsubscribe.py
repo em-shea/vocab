@@ -7,16 +7,13 @@ import unittest
 from unittest import mock
 
 with mock.patch.dict('os.environ', {'AWS_REGION': 'us-east-1', 'DYNAMODB_TABLE_NAME': 'mock-table', 'USER_POOL_ID': 'mock-id'}):
-    from set_subscriptions.app import lambda_handler
+    from unsubscribe.app import lambda_handler
 
-def mocked_create_user(date, cognito_id, email_address, char_set_preference): 
+def mocked_unsubscribe_single_list(date, cognito_id, list_data):
     return
 
-def mocked_subscribe(date, cognito_id, list_data):
-    return
-
-def mocked_unsubscribe(date, cognito_id, list_data):
-    return
+def mocked_look_up_cognito_id(event_body):
+    return '123456'
 
 def mocked_pull_user_data(cognito_id):
     response = [
@@ -29,6 +26,16 @@ def mocked_pull_user_data(cognito_id):
             "GSI1SK":"USER#770e2827-7666-123123123#LIST#1ebcad41-197a-123123#TRADITIONAL",
             "PK":"USER#770e2827-7666-123123123",
             "Character set":"traditional",
+        },
+        {
+            "Date subscribed":"2021-06-16T23:06:48.646688",
+            "GSI1PK":"USER",
+            "List name":"HSK Level 2",
+            "SK":"LIST#1ebcad41-197a-123123#TRADITIONAL",
+            "Status":"subscribed",
+            "GSI1SK":"USER#770e2827-7666-123123123#LIST#1ebcad41-197a-123123#TRADITIONAL",
+            "PK":"USER#770e2827-7666-123123123",
+            "Character set":"simplified",
         },
         {
             "GSI1PK":"USER",
@@ -45,59 +52,50 @@ def mocked_pull_user_data(cognito_id):
     ]
     return response
 
-class SetSubscriptionsTest(unittest.TestCase):
+class UnsubscribeTest(unittest.TestCase):
 
-    @mock.patch('set_subscriptions.app.create_user', side_effect=mocked_create_user)
-    @mock.patch('set_subscriptions.app.subscribe', side_effect=mocked_subscribe)
-    @mock.patch('set_subscriptions.app.unsubscribe', side_effect=mocked_unsubscribe)
+    @mock.patch('unsubscribe.app.unsubscribe_single_list', side_effect=mocked_unsubscribe_single_list)
+    @mock.patch('unsubscribe.app.look_up_cognito_id', side_effect=mocked_look_up_cognito_id)
     @mock.patch('user_service.pull_user_data', side_effect=mocked_pull_user_data)
-    def test_subscribe(self, pull_user_data_mock, unsubscribe_mock, subscribe_mock, create_user_mock):
+    def test_unsubscribe(self, pull_user_data_mock, look_up_cognito_id_mock, unsubscribe_single_list_mock):
 
         event_body = {
-            "cognito_id":"123",
+            "cognito_id":"",
             "email":"me@testemail.com",
             "character_set_preference":"simplified",
-            "lists": [
-                {
+            "list": {
                     "list_id":"123",
                     "list_name":"HSK Level 1",
                     "character_set":"simplified"
-                },
-                {
-                    "list_id":"234",
-                    "list_name":"HSK Level 2",
-                    "character_set":"simplified"
                 }
-            ]
         }
-        response = lambda_handler(self.sub_apig_event(json.dumps(event_body)), "")
+        response = lambda_handler(self.apig_event(json.dumps(event_body)), "")
 
-        self.assertEqual(create_user_mock.call_count, 1)
-        self.assertEqual(pull_user_data_mock.call_count, 1)
-        self.assertEqual(subscribe_mock.call_count, 2)
+        self.assertEqual(pull_user_data_mock.call_count, 0)
+        self.assertEqual(look_up_cognito_id_mock.call_count, 1)
+        self.assertEqual(unsubscribe_single_list_mock.call_count, 1)
     
-    @mock.patch('set_subscriptions.app.create_user', side_effect=mocked_create_user)
-    @mock.patch('set_subscriptions.app.subscribe', side_effect=mocked_subscribe)
-    @mock.patch('set_subscriptions.app.unsubscribe', side_effect=mocked_unsubscribe)
+    @mock.patch('unsubscribe.app.unsubscribe_single_list', side_effect=mocked_unsubscribe_single_list)
+    @mock.patch('unsubscribe.app.look_up_cognito_id', side_effect=mocked_look_up_cognito_id)
     @mock.patch('user_service.pull_user_data', side_effect=mocked_pull_user_data)
-    def test_unsubscribe_all(self, pull_user_data_mock, unsubscribe_mock, subscribe_mock, create_user_mock):
+    def test_unsubscribe_all(self, pull_user_data_mock, look_up_cognito_id_mock, unsubscribe_single_list_mock):
 
         event_body = {
-            "cognito_id":"123",
+            "cognito_id":"",
             "email":"me@testemail.com",
             "character_set_preference":"simplified",
-            "lists": []
+            "list": ""
         }
-        response = lambda_handler(self.sub_apig_event(json.dumps(event_body)), "")
+        response = lambda_handler(self.apig_event(json.dumps(event_body)), "")
 
-        self.assertEqual(create_user_mock.call_count, 1)
         self.assertEqual(pull_user_data_mock.call_count, 1)
-        self.assertEqual(unsubscribe_mock.call_count, 1)
-
-    def sub_apig_event(self, event_body):
+        self.assertEqual(look_up_cognito_id_mock.call_count, 1)
+        self.assertEqual(unsubscribe_single_list_mock.call_count, 2)
+    
+    def apig_event(self, event_body):
         return {
-            "resource":"/set_subs",
-            "path":"/set_subs",
+            "resource":"/unsub",
+            "path":"/unsub",
             "body":event_body,
             "httpMethod":"POST",
             "headers":{

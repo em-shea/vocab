@@ -6,100 +6,49 @@ sys.path.append('../../layer/python')
 import unittest
 from unittest import mock
 
-with mock.patch.dict('os.environ', {'AWS_REGION': 'us-east-1', 'DYNAMODB_TABLE_NAME': 'mock-table', 'USER_POOL_ID': 'mock-id'}):
-    from set_subscriptions.app import lambda_handler
+with mock.patch.dict('os.environ', {'AWS_REGION': 'us-east-1', 'TABLE_NAME': 'mock-table'}):
+    from get_sentences.app import lambda_handler
 
-def mocked_create_user(date, cognito_id, email_address, char_set_preference): 
-    return
+def mocked_pull_user_sentences(cognito_id):
+        example_response = [
+            {
+                "GSI1PK":"DATE#2021-11-04T17:33:56.893897",
+                "Date created":"2021-11-04T17:33:56.893897",
+                "Sentence":"我喜欢韩语。",
+                "SK":"SENTENCE#12345-3763-6260-bf4f-6a03d2d3da0b",
+                "GSI1SK":"USER#SENTENCE#12345-3763-6260-bf4f-6a03d2d3da0b",
+                "PK":"USER#12345-c759-48cd-97ea-3e8876eedb2d",
+                "List id":"12345",
+                "Character set":"simplified"
+            },
+            {
+                "GSI1PK":"DATE#2021-11-04T17:35:16.505909",
+                "Date created":"2021-11-04T17:35:16.505909",
+                "Sentence":"我喜欢法语。",
+                "SK":"SENTENCE#12345-2dd9-6886-bf4f-6a03d2d3da0b",
+                "GSI1SK":"USER#SENTENCE#12345-2dd9-6886-bf4f-6a03d2d3da0b",
+                "PK":"USER#996ca9a4-c759-48cd-97ea-3e8876eedb2d",
+                "List id":"5678",
+                "Character set":"simplified"
+            }
+        ]
+        return example_response
 
-def mocked_subscribe(date, cognito_id, list_data):
-    return
+class GetSentencesTest(unittest.TestCase):
 
-def mocked_unsubscribe(date, cognito_id, list_data):
-    return
+    @mock.patch('get_sentences.app.pull_user_sentences', side_effect=mocked_pull_user_sentences)
+    def test_build(self, pull_user_sentences_mock):
 
-def mocked_pull_user_data(cognito_id):
-    response = [
-        {
-            "Date subscribed":"2021-06-16T23:06:48.646688",
-            "GSI1PK":"USER",
-            "List name":"HSK Level 6",
-            "SK":"LIST#1ebcad41-197a-123123#TRADITIONAL",
-            "Status":"subscribed",
-            "GSI1SK":"USER#770e2827-7666-123123123#LIST#1ebcad41-197a-123123#TRADITIONAL",
-            "PK":"USER#770e2827-7666-123123123",
-            "Character set":"traditional",
-        },
-        {
-            "GSI1PK":"USER",
-            "Date created":"2021-06-16T23:06:48.467526",
-            "Character set preference":"traditional",
-            "SK":"USER#770e2827-7666-123123123",
-            "Email address":"test@email.com",
-            "GSI1SK":"USER#770e2827-7666-123123123",
-            "PK":"USER#770e2827-7666-123123123",
-            "User alias": "Not set",
-            "User alias pinyin": "Not set",
-            "User alias emoji": "Not set"
-        }
-    ]
-    return response
+        response = lambda_handler(self.sub_apig_event(), "")
 
-class SetSubscriptionsTest(unittest.TestCase):
-
-    @mock.patch('set_subscriptions.app.create_user', side_effect=mocked_create_user)
-    @mock.patch('set_subscriptions.app.subscribe', side_effect=mocked_subscribe)
-    @mock.patch('set_subscriptions.app.unsubscribe', side_effect=mocked_unsubscribe)
-    @mock.patch('user_service.pull_user_data', side_effect=mocked_pull_user_data)
-    def test_subscribe(self, pull_user_data_mock, unsubscribe_mock, subscribe_mock, create_user_mock):
-
-        event_body = {
-            "cognito_id":"123",
-            "email":"me@testemail.com",
-            "character_set_preference":"simplified",
-            "lists": [
-                {
-                    "list_id":"123",
-                    "list_name":"HSK Level 1",
-                    "character_set":"simplified"
-                },
-                {
-                    "list_id":"234",
-                    "list_name":"HSK Level 2",
-                    "character_set":"simplified"
-                }
-            ]
-        }
-        response = lambda_handler(self.sub_apig_event(json.dumps(event_body)), "")
-
-        self.assertEqual(create_user_mock.call_count, 1)
-        self.assertEqual(pull_user_data_mock.call_count, 1)
-        self.assertEqual(subscribe_mock.call_count, 2)
+        # self.assertEqual(pull_user_sentences_mock.call_count, 1)
     
-    @mock.patch('set_subscriptions.app.create_user', side_effect=mocked_create_user)
-    @mock.patch('set_subscriptions.app.subscribe', side_effect=mocked_subscribe)
-    @mock.patch('set_subscriptions.app.unsubscribe', side_effect=mocked_unsubscribe)
-    @mock.patch('user_service.pull_user_data', side_effect=mocked_pull_user_data)
-    def test_unsubscribe_all(self, pull_user_data_mock, unsubscribe_mock, subscribe_mock, create_user_mock):
-
-        event_body = {
-            "cognito_id":"123",
-            "email":"me@testemail.com",
-            "character_set_preference":"simplified",
-            "lists": []
-        }
-        response = lambda_handler(self.sub_apig_event(json.dumps(event_body)), "")
-
-        self.assertEqual(create_user_mock.call_count, 1)
-        self.assertEqual(pull_user_data_mock.call_count, 1)
-        self.assertEqual(unsubscribe_mock.call_count, 1)
-
-    def sub_apig_event(self, event_body):
+    def sub_apig_event(self):
         return {
-            "resource":"/set_subs",
-            "path":"/set_subs",
-            "body":event_body,
-            "httpMethod":"POST",
+            "resource":"/sentence",
+            "path":"/sentence",
+            "body":"",
+            "httpMethod":"GET",
             "headers":{
                 "Accept":"application/json, text/plain, */*",
                 "accept-encoding":"gzip, deflate, br",

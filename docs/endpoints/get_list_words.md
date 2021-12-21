@@ -1,3 +1,4 @@
+[Not yet implemented]
 # Get list words API
 
 The get list words function is a GET method at api.haohaotiantian.com/words.

@@ -1,0 +1,78 @@
+{
+    "Comment": "Generates and save audio files for a given list ID.",
+    "StartAt": "Get word list",
+    "States": {
+      "Get word list": {
+        "Type": "Task",
+        "Resource": "arn:aws:states:::lambda:invoke",
+        "OutputPath": "$.Payload",
+        "Parameters": {
+          "Payload.$": "$",
+          "FunctionName": "${GetCharsForListIdFunction}"
+        },
+        "Retry": [
+          {
+            "ErrorEquals": [
+              "Lambda.ServiceException",
+              "Lambda.AWSLambdaException",
+              "Lambda.SdkClientException"
+            ],
+            "IntervalSeconds": 2,
+            "MaxAttempts": 6,
+            "BackoffRate": 2
+          }
+        ],
+        "Next": "Iterate over word list"
+      },
+      "Iterate over word list": {
+        "Type": "Map",
+        "Iterator": {
+          "StartAt": "Generate audio file",
+          "States": {
+            "Generate audio file": {
+              "Type": "Task",
+              "Parameters": {
+                "OutputFormat": "mp3",
+                "OutputS3BucketName": "${PronunciationAudioBucket}",
+                "OutputS3KeyPrefix": "audio",
+                "Text.$": "$.text",
+                "VoiceId": "Zhiyu"
+              },
+              "Resource": "arn:aws:states:::aws-sdk:polly:startSpeechSynthesisTask",
+              "Next": "Update item with audio file key",
+              "ResultPath": "$.pollyOutput"
+            },
+            "Update item with audio file key": {
+              "Type": "Task",
+              "Resource": "arn:aws:states:::dynamodb:updateItem",
+              "Parameters": {
+                "TableName": "${TableName}",
+                "Key": {
+                  "PK": {
+                    "S.$": "$.list_id"
+                  },
+                  "SK": {
+                    "S.$": "$.word_id"
+                  }
+                },
+                "UpdateExpression": "set #w.#a = :audioFileKey",
+                "ExpressionAttributeValues": {
+                  ":audioFileKey": {
+                    "S.$": "$.pollyOutput.SynthesisTask.OutputUri"
+                  }
+                },
+                "ExpressionAttributeNames": {
+                  "#w": "Word",
+                  "#a": "Audio file key"
+                }
+              },
+              "End": true
+            }
+          }
+        },
+        "End": true,
+        "MaxConcurrency": 40,
+        "ItemsPath": "$.word_list"
+      }
+    }
+}

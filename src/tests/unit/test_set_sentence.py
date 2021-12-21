@@ -6,98 +6,44 @@ sys.path.append('../../layer/python')
 import unittest
 from unittest import mock
 
-with mock.patch.dict('os.environ', {'AWS_REGION': 'us-east-1', 'DYNAMODB_TABLE_NAME': 'mock-table', 'USER_POOL_ID': 'mock-id'}):
-    from set_subscriptions.app import lambda_handler
+with mock.patch.dict('os.environ', {'AWS_REGION': 'us-east-1', 'TABLE_NAME': 'mock-table'}):
+    from set_sentence.app import lambda_handler
 
-def mocked_create_user(date, cognito_id, email_address, char_set_preference): 
+def mocked_update_sentence(cognito_id, body, date):
     return
 
-def mocked_subscribe(date, cognito_id, list_data):
-    return
+class SetSentenceTest(unittest.TestCase):
 
-def mocked_unsubscribe(date, cognito_id, list_data):
-    return
-
-def mocked_pull_user_data(cognito_id):
-    response = [
-        {
-            "Date subscribed":"2021-06-16T23:06:48.646688",
-            "GSI1PK":"USER",
-            "List name":"HSK Level 6",
-            "SK":"LIST#1ebcad41-197a-123123#TRADITIONAL",
-            "Status":"subscribed",
-            "GSI1SK":"USER#770e2827-7666-123123123#LIST#1ebcad41-197a-123123#TRADITIONAL",
-            "PK":"USER#770e2827-7666-123123123",
-            "Character set":"traditional",
-        },
-        {
-            "GSI1PK":"USER",
-            "Date created":"2021-06-16T23:06:48.467526",
-            "Character set preference":"traditional",
-            "SK":"USER#770e2827-7666-123123123",
-            "Email address":"test@email.com",
-            "GSI1SK":"USER#770e2827-7666-123123123",
-            "PK":"USER#770e2827-7666-123123123",
-            "User alias": "Not set",
-            "User alias pinyin": "Not set",
-            "User alias emoji": "Not set"
-        }
-    ]
-    return response
-
-class SetSubscriptionsTest(unittest.TestCase):
-
-    @mock.patch('set_subscriptions.app.create_user', side_effect=mocked_create_user)
-    @mock.patch('set_subscriptions.app.subscribe', side_effect=mocked_subscribe)
-    @mock.patch('set_subscriptions.app.unsubscribe', side_effect=mocked_unsubscribe)
-    @mock.patch('user_service.pull_user_data', side_effect=mocked_pull_user_data)
-    def test_subscribe(self, pull_user_data_mock, unsubscribe_mock, subscribe_mock, create_user_mock):
+    @mock.patch('set_sentence.app.update_sentence', side_effect=mocked_update_sentence)
+    def test_create_new_sentence(self, update_sentence_mock):
 
         event_body = {
-            "cognito_id":"123",
-            "email":"me@testemail.com",
-            "character_set_preference":"simplified",
-            "lists": [
-                {
-                    "list_id":"123",
-                    "list_name":"HSK Level 1",
-                    "character_set":"simplified"
-                },
-                {
-                    "list_id":"234",
-                    "list_name":"HSK Level 2",
-                    "character_set":"simplified"
-                }
-            ]
+            "list_id": "123",
+            "character_set": "simplified",
+            "sentence": "我喜欢学习汉语。",
+            "sentence_id":""
         }
         response = lambda_handler(self.sub_apig_event(json.dumps(event_body)), "")
 
-        self.assertEqual(create_user_mock.call_count, 1)
-        self.assertEqual(pull_user_data_mock.call_count, 1)
-        self.assertEqual(subscribe_mock.call_count, 2)
+        self.assertEqual(update_sentence_mock.call_count, 1)
     
-    @mock.patch('set_subscriptions.app.create_user', side_effect=mocked_create_user)
-    @mock.patch('set_subscriptions.app.subscribe', side_effect=mocked_subscribe)
-    @mock.patch('set_subscriptions.app.unsubscribe', side_effect=mocked_unsubscribe)
-    @mock.patch('user_service.pull_user_data', side_effect=mocked_pull_user_data)
-    def test_unsubscribe_all(self, pull_user_data_mock, unsubscribe_mock, subscribe_mock, create_user_mock):
+    @mock.patch('set_sentence.app.update_sentence', side_effect=mocked_update_sentence)
+    def test_update_existing_sentence(self, update_sentence_mock):
 
         event_body = {
-            "cognito_id":"123",
-            "email":"me@testemail.com",
-            "character_set_preference":"simplified",
-            "lists": []
+            "list_id": "123",
+            "character_set": "simplified",
+            "sentence_id":"123",
+            "sentence": "我喜欢学习汉语。"
         }
         response = lambda_handler(self.sub_apig_event(json.dumps(event_body)), "")
 
-        self.assertEqual(create_user_mock.call_count, 1)
-        self.assertEqual(pull_user_data_mock.call_count, 1)
-        self.assertEqual(unsubscribe_mock.call_count, 1)
-
+        self.assertEqual(update_sentence_mock.call_count, 1)
+    
     def sub_apig_event(self, event_body):
         return {
-            "resource":"/set_subs",
-            "path":"/set_subs",
+            "resource":"/sentence",
+            "path":"/sentence",
             "body":event_body,
             "httpMethod":"POST",
             "headers":{

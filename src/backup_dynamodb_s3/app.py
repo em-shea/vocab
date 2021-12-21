@@ -37,7 +37,7 @@ def convert_to_rows(all_contacts_data, todays_date):
 
     # append today's date to each item as date of data pull
     for item in all_contacts_data:
-        item['ReportingDate'] = todays_date
+        item['Reporting date'] = todays_date
         data_rows.append(item)
 
     return data_rows

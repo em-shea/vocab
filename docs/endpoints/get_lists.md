@@ -1,3 +1,4 @@
+[Not yet implemented]
 # Get lists API
 
 The get lists function is a GET method at api.haohaotiantian.com/lists.

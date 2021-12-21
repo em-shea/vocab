@@ -162,7 +162,7 @@ def assemble_html_content(user, todays_words, todays_announcement):
     # TODO: Order the lists in some way?
     word_content = ""
     for list in user['lists']:
-        word_content = word_content + assemble_word_html_content(list, todays_words)
+        word_content = word_content + assemble_word_html_content(user['user_data']['Email address'], list, todays_words)
 
     # Open HTML template file
     # To run unit tests, we need to specify an absolute file path
@@ -172,10 +172,10 @@ def assemble_html_content(user, todays_words, todays_announcement):
 
     # Hard coding HSK level before list database refactor
     # Get first list user is subscribed to and use in unsub link
-    hsk_level = user['lists'][0]['List name'][-1]
-    char_set = user['lists'][0]['Character set']
-    email_contents = email_template.replace("{unsubscribe_link}", "https://haohaotiantian.com/unsub?level=" + hsk_level + "&email=" + user['user_data']['Email address'] + "&char=" + char_set)
-    
+    list_id_substring = user['lists'][0]['SK'].split('#')
+    print('substring, ', list_id_substring)
+    email_contents = email_template.replace("{unsubscribe_link}", "https://haohaotiantian.com/unsub?list=" + list_id_substring[1] + "&char=" + list_id_substring[2] + "&email=" + user['user_data']['Email address'])
+
     email_contents = email_contents.replace("{word_contents}", word_content)
 
     if todays_announcement is not None:
@@ -185,7 +185,7 @@ def assemble_html_content(user, todays_words, todays_announcement):
 
     return email_contents
 
-def assemble_word_html_content(list, todays_words):
+def assemble_word_html_content(user_email, list, todays_words):
 
     word = todays_words[list['List name']]
     if word is None:
@@ -216,6 +216,7 @@ def assemble_word_html_content(list, todays_words):
         word_contents = word_contents.replace("{link}", example_link)
         word_contents = word_contents.replace("{list}", list['List name'])
         word_contents = word_contents.replace("{quiz_link}", "https://haohaotiantian.com/quiz?list=HSKLevel" + hsk_level + "&days=14&ques=10&char=" + list['Character set'])
+        word_contents = word_contents.replace("{signin_link}", "https://haohaotiantian.com/quiz?email=" + user_email)
         word_contents = word_contents.replace("{history_link}", "https://haohaotiantian.com/history?list=HSKLevel" + hsk_level + "&dates=30&char=" + list['Character set'])
 
     return word_contents
