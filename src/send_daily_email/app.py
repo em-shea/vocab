@@ -172,9 +172,8 @@ def assemble_html_content(user, todays_words, todays_announcement):
 
     # Hard coding HSK level before list database refactor
     # Get first list user is subscribed to and use in unsub link
-    hsk_level = user['lists'][0]['List name'][-1]
-    char_set = user['lists'][0]['Character set']
-    email_contents = email_template.replace("{unsubscribe_link}", "https://haohaotiantian.com/unsub?level=" + hsk_level + "&email=" + user['user_data']['Email address'] + "&char=" + char_set)
+    unique_list_id = user['lists'][0]['SK'][5:]
+    email_contents = email_template.replace("{unsubscribe_link}", "https://haohaotiantian.com/unsub?list=" + unique_list_id + "&email=" + user['user_data']['Email address'])
     
     email_contents = email_contents.replace("{word_contents}", word_content)
 

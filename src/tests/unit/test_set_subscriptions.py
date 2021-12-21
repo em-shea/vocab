@@ -117,7 +117,7 @@ class SetSubscriptionsTest(unittest.TestCase):
         self.assertEqual(create_user_mock.call_count, 1)
         self.assertEqual(pull_user_data_mock.call_count, 1)
         self.assertEqual(unsubscribe_mock.call_count, 1)
-    
+
     def sub_apig_event(self, event_body):
         return {
             "resource":"/set_subs",
