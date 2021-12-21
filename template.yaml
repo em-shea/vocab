@@ -146,11 +146,11 @@ Resources:
         - DynamoDBCrudPolicy:
             TableName: !Ref DynamoDBTable
         - SNSPublishMessagePolicy:
-            TopicName: !GetAtt SentTextSNSTopic.TopicArn
+            TopicName: !GetAtt TempSNSTopic.TopicArn
       Environment:
         Variables:
           DYNAMODB_TABLE_NAME: !Ref DynamoDBTable
-          SNS_TOPIC_ARN: !Ref SentTextSNSTopic
+          USER_POOL_ID: !Ref UserPoolId
       Events:
         SetSubsApi:
           Type: Api
@@ -616,17 +616,6 @@ Resources:
       UserPoolId: !Ref UserPool
       ExplicitAuthFlows:
         - CUSTOM_AUTH_FLOW_ONLY
-
-####################################################################################################
-# SNS topic
-####################################################################################################
-
-  SentTextSNSTopic:
-    Type: AWS::SNS::Topic
-    Properties:
-      Subscription:
-      - Protocol: email
-        Endpoint: !Ref TempNotification
 
 ####################################################################################################
 # Outputs

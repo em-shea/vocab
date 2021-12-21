@@ -23,7 +23,15 @@ Example payload:
         }
     ]
 }
-# unsubscribe all lists
+# unsubscribe all lists (anonymous user)
+{
+    "cognito_id":"",
+    "email":"me@testemail.com",
+    "character_set_preference":"simplified",
+    "lists": []
+}
+
+# unsubscribe all lists (logged in user)
 {
     "cognito_id":"123",
     "email":"me@testemail.com",

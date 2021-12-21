@@ -6,20 +6,14 @@ import datetime
 import user_service
 
 # region_name specified in order to mock in unit tests
-sns_client = boto3.client('sns', region_name=os.environ['AWS_REGION'])
+cognito_client = boto3.client('cognito-idp', region_name = 'us-east-1')
 table = boto3.resource('dynamodb', region_name=os.environ['AWS_REGION']).Table(os.environ['DYNAMODB_TABLE_NAME'])
 
 # Set subscriptions and create user if none exists yet
 def lambda_handler(event, context):
     print(event)
-    # Temporary fix for unsub API endpoint
-    if 'cognito_id' not in event['body']:
-        try:
-            send_notification(event['body'])
-        except Exception as e:
-            print(f'Failed to send unsubscribe notification - {event["body"]}, {e} ')
 
-    body = json.loads(event["body"])
+    event_body = json.loads(event["body"])
     date = str(datetime.datetime.now().isoformat())
 
     error_message = {
@@ -31,20 +25,28 @@ def lambda_handler(event, context):
         'body': '{"success" : false}'
     }
 
+    if event_body['cognito_id'] == "":
+        try:
+            user_cognito_id = look_up_cognito_id(event_body)
+        except Exception as e:
+            print(f'Failed to find user Cognito ID - {event_body}, {e} ')
+            return error_message
+        event_body['cognito_id'] = user_cognito_id
+
     try:
-        create_user(date, body['cognito_id'], body['email'], body['character_set_preference'])
+        create_user(date, event_body['cognito_id'], event_body['email'], event_body['character_set_preference'])
     except Exception as e:
         if e.response['Error']['Code'] == "ConditionalCheckFailedException":
             # User already exists, skip
-            print(f"User already exists- {body['email'][5:]}.")
+            print(f"User already exists- {event_body['email'][5:]}.")
             pass
         else: 
-            print(f"Error: Failed to create user - {body['email'][5:]}, {body['cognito_id']}.")
+            print(f"Error: Failed to create user - {event_body['email'][5:]}, {event_body['cognito_id']}.")
             print(e)
             return error_message
 
     # Get a list of ids for all lists the user is currently subscribed to
-    user_data = user_service.get_user_data(body['cognito_id'])
+    user_data = user_service.get_user_data(event_body['cognito_id'])
     print(user_data['user_data'])
     current_user_lists = user_data['lists']
     if user_data['lists']:
@@ -56,32 +58,32 @@ def lambda_handler(event, context):
     # if the subscription is already stored
     # It will check if there are any existing lists not in the new list and it will unsubscribe
     new_list_ids = []
-    for list in body['lists']:
+    for list in event_body['lists']:
         new_list_ids.append(list['list_id'] + "#" + list['character_set'].upper())
 
 
     # TODO: Currently making an API call per update. Batch updates?
-    for list in body['lists']:
+    for list in event_body['lists']:
         try:
-            subscribe(date, body['cognito_id'], list)
+            subscribe(date, event_body['cognito_id'], list)
             print(f"sub {list['list_id']}, {list['character_set']}")
         except Exception as e:
             if e.response['Error']['Code'] == "ConditionalCheckFailedException":
                 # Subscription already exists, skip
-                print(f"Subcription already exists- {body['email'][5:]}, {list['list_id']}.")
+                print(f"Subcription already exists- {event_body['email'][5:]}, {list['list_id']}.")
                 pass
             else: 
-                print(f"Error: Failed to subscribe user - {body['email'][5:]}, {list['list_id']}.")
+                print(f"Error: Failed to subscribe user - {event_body['email'][5:]}, {list['list_id']}.")
                 print(e)
                 return error_message
     # does existing list check for simplified/traditional?
     for existing_list in current_user_lists:
         if existing_list['unique_id'] not in new_list_ids and existing_list['status'] == "subscribed":
             try:
-                unsubscribe(date, body['cognito_id'], existing_list)
+                unsubscribe(date, event_body['cognito_id'], existing_list)
                 print(f"unsub, {existing_list['unique_id']}")
             except Exception as e:
-                print(f"Error: Failed to unsubscribe user - {body['email'][5:]}, {existing_list['list_id']}.")
+                print(f"Error: Failed to unsubscribe user - {event_body['email'][5:]}, {existing_list['list_id']}.")
                 print(e)
                 return error_message
 
@@ -154,13 +156,19 @@ def unsubscribe(date, cognito_id, list_data):
 
     return response
 
-def send_notification(body):
-    print('send notification...', body)
+def look_up_cognito_id(event_body):
+    print('looking up cognito id...', event_body)
+    try:
+        response = cognito_client.admin_get_user(
+            UserPoolId=os.environ['USER_POOL_ID'],
+            Username=event_body['email']
+        )
+    except Exception as e:
+        if e.response['Error']['Code'] == "UserNotFoundException":
+            print(f'Error retrieving Cognito Id: user not found for email {event_body["email"]}')
+            raise
+        else:
+            print(f'Error retrieving Cognito Id for user {event_body["email"]}')
+            raise
 
-    response = sns_client.publish(
-        TargetArn = os.environ['SNS_TOPIC_ARN'], 
-        Message=json.dumps({'default': body}),
-        MessageStructure='json'
-    )
-
-    return response
+    return response['Username']

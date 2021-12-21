@@ -7,7 +7,7 @@ def lambda_handler(event, context):
     print('event', event)
     list_id = event['listId']
 
-    detailed_word_list = list_word_service.get_words_in_list(list_id)
+    detailed_word_list = list_word_service.get_words_in_list(list_id, limit=None, last_word_token=None)
 
     word_list = format_word_list(detailed_word_list)
     response_body = {
@@ -34,5 +34,7 @@ def format_word_list(detailed_word_list):
                     'text': item['word']['Simplified']
                 }
             )
+
+    # if word list is less than 1250, set 'last word processed', if not leave null
 
     return word_list
