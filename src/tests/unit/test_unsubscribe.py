@@ -15,11 +15,49 @@ def mocked_unsubscribe_single_list(date, cognito_id, list_data):
 def mocked_look_up_cognito_id(event_body):
     return '123456'
 
+def mocked_pull_user_data(cognito_id):
+    response = [
+        {
+            "Date subscribed":"2021-06-16T23:06:48.646688",
+            "GSI1PK":"USER",
+            "List name":"HSK Level 6",
+            "SK":"LIST#1ebcad41-197a-123123#TRADITIONAL",
+            "Status":"subscribed",
+            "GSI1SK":"USER#770e2827-7666-123123123#LIST#1ebcad41-197a-123123#TRADITIONAL",
+            "PK":"USER#770e2827-7666-123123123",
+            "Character set":"traditional",
+        },
+        {
+            "Date subscribed":"2021-06-16T23:06:48.646688",
+            "GSI1PK":"USER",
+            "List name":"HSK Level 2",
+            "SK":"LIST#1ebcad41-197a-123123#TRADITIONAL",
+            "Status":"subscribed",
+            "GSI1SK":"USER#770e2827-7666-123123123#LIST#1ebcad41-197a-123123#TRADITIONAL",
+            "PK":"USER#770e2827-7666-123123123",
+            "Character set":"simplified",
+        },
+        {
+            "GSI1PK":"USER",
+            "Date created":"2021-06-16T23:06:48.467526",
+            "Character set preference":"traditional",
+            "SK":"USER#770e2827-7666-123123123",
+            "Email address":"test@email.com",
+            "GSI1SK":"USER#770e2827-7666-123123123",
+            "PK":"USER#770e2827-7666-123123123",
+            "User alias": "Not set",
+            "User alias pinyin": "Not set",
+            "User alias emoji": "Not set"
+        }
+    ]
+    return response
+
 class UnsubscribeTest(unittest.TestCase):
 
     @mock.patch('unsubscribe.app.unsubscribe_single_list', side_effect=mocked_unsubscribe_single_list)
     @mock.patch('unsubscribe.app.look_up_cognito_id', side_effect=mocked_look_up_cognito_id)
-    def test_unsubscribe(self, look_up_cognito_id_mock, unsubscribe_single_list_mock):
+    @mock.patch('user_service.pull_user_data', side_effect=mocked_pull_user_data)
+    def test_unsubscribe(self, pull_user_data_mock, look_up_cognito_id_mock, unsubscribe_single_list_mock):
 
         event_body = {
             "cognito_id":"",
@@ -33,12 +71,14 @@ class UnsubscribeTest(unittest.TestCase):
         }
         response = lambda_handler(self.apig_event(json.dumps(event_body)), "")
 
+        self.assertEqual(pull_user_data_mock.call_count, 0)
         self.assertEqual(look_up_cognito_id_mock.call_count, 1)
         self.assertEqual(unsubscribe_single_list_mock.call_count, 1)
     
     @mock.patch('unsubscribe.app.unsubscribe_single_list', side_effect=mocked_unsubscribe_single_list)
     @mock.patch('unsubscribe.app.look_up_cognito_id', side_effect=mocked_look_up_cognito_id)
-    def test_unsubscribe_all(self, look_up_cognito_id_mock, unsubscribe_single_list_mock):
+    @mock.patch('user_service.pull_user_data', side_effect=mocked_pull_user_data)
+    def test_unsubscribe_all(self, pull_user_data_mock, look_up_cognito_id_mock, unsubscribe_single_list_mock):
 
         event_body = {
             "cognito_id":"",
@@ -48,8 +88,9 @@ class UnsubscribeTest(unittest.TestCase):
         }
         response = lambda_handler(self.apig_event(json.dumps(event_body)), "")
 
+        self.assertEqual(pull_user_data_mock.call_count, 1)
         self.assertEqual(look_up_cognito_id_mock.call_count, 1)
-        self.assertEqual(unsubscribe_single_list_mock.call_count, 1)
+        self.assertEqual(unsubscribe_single_list_mock.call_count, 2)
     
     def apig_event(self, event_body):
         return {
