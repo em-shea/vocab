@@ -5,11 +5,9 @@ import datetime
 
 import user_service
 
-# region_name specified in order to mock in unit tests
-cognito_client = boto3.client('cognito-idp', region_name = 'us-east-1')
 table = boto3.resource('dynamodb', region_name=os.environ['AWS_REGION']).Table(os.environ['DYNAMODB_TABLE_NAME'])
 
-# Set subscriptions and create user if none exists yet
+# Set subscriptions (subscribe or unsubscribe) and create user if none exists yet
 def lambda_handler(event, context):
     print(event)
 
@@ -24,14 +22,6 @@ def lambda_handler(event, context):
         },
         'body': '{"success" : false}'
     }
-
-    if event_body['cognito_id'] == "":
-        try:
-            user_cognito_id = look_up_cognito_id(event_body)
-        except Exception as e:
-            print(f'Failed to find user Cognito ID - {event_body}, {e} ')
-            return error_message
-        event_body['cognito_id'] = user_cognito_id
 
     try:
         create_user(date, event_body['cognito_id'], event_body['email'], event_body['character_set_preference'])
@@ -60,7 +50,6 @@ def lambda_handler(event, context):
     new_list_ids = []
     for list in event_body['lists']:
         new_list_ids.append(list['list_id'] + "#" + list['character_set'].upper())
-
 
     # TODO: Currently making an API call per update. Batch updates?
     for list in event_body['lists']:
@@ -155,20 +144,3 @@ def unsubscribe(date, cognito_id, list_data):
         )
 
     return response
-
-def look_up_cognito_id(event_body):
-    print('looking up cognito id...', event_body)
-    try:
-        response = cognito_client.admin_get_user(
-            UserPoolId=os.environ['USER_POOL_ID'],
-            Username=event_body['email']
-        )
-    except Exception as e:
-        if e.response['Error']['Code'] == "UserNotFoundException":
-            print(f'Error retrieving Cognito Id: user not found for email {event_body["email"]}')
-            raise
-        else:
-            print(f'Error retrieving Cognito Id for user {event_body["email"]}')
-            raise
-
-    return response['Username']
