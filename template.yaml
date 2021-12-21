@@ -153,7 +153,7 @@ Resources:
       Environment:
         Variables:
           DYNAMODB_TABLE_NAME: !Ref DynamoDBTable
-          USER_POOL_ID: !Ref UserPoolId
+          USER_POOL_ID: !Ref UserPool
       Events:
         SetSubsApi:
           Type: Api
