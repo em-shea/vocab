@@ -9,7 +9,7 @@ from unittest import mock
 with mock.patch.dict('os.environ', {'AWS_REGION': 'us-east-1', 'TABLE_NAME': 'mock-table'}):
     from get_chars_for_list_id.app import lambda_handler
 
-def mocked_query_dynamodb(list_id):
+def mocked_query_dynamodb(list_id, limit=None, last_word_token=None):
   return  { 
       "Items": 
         [

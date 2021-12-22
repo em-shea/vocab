@@ -81,7 +81,7 @@
         "Choices": [
           {
             "Variable": "$.last_word_token",
-            "StringEquals": "None",
+            "IsNull": true,
             "Next": "Go to end"
           }
         ]

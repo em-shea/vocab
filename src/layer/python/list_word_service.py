@@ -12,7 +12,7 @@ table = boto3.resource('dynamodb', region_name=os.environ['AWS_REGION']).Table(o
 def get_words_in_list(list_id, limit=None, last_word_token=None):
 
     try:
-        query_response = query_dynamodb(list_id)
+        query_response = query_dynamodb(list_id, limit=None, last_word_token=None)
     except Exception as e:
         print(f"Error: DyanmoDB query for word list failed.")
         print(e)
@@ -31,13 +31,16 @@ def query_dynamodb(list_id, limit=None, last_word_token=None):
     
     key_condition = Key('PK').eq('LIST#' + list_id) & Key('SK').begins_with('WORD#')
 
-    if not last_word_token:
+    if last_word_token is not None:
         key_condition = key_condition & Key('SK').gt(last_word_token)
 
-    query_response = table.query(
-        KeyConditionExpression=key_condition,
-        Limit=limit
-    )
+    query = {
+        'KeyConditionExpression': key_condition
+    }
+    if limit is not None:
+        query['Limit'] = limit
+
+    query_response = table.query(**query)
     # Limit may or may not work with None
     print('dynamo response ', query_response['Items'])
 
