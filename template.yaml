@@ -468,18 +468,26 @@ Resources:
         BlockPublicPolicy: true
         IgnorePublicAcls: true
         RestrictPublicBuckets: true
-  
+
   PronunciationAudioBucket:
     Type: AWS::S3::Bucket
     Properties:
-      AccessControl: Private
-      BucketName: !Sub hhtt-pronunciation-audio-${Stage}
-      PublicAccessBlockConfiguration:
-        BlockPublicAcls: true
-        BlockPublicPolicy: true
-        IgnorePublicAcls: true
-        RestrictPublicBuckets: true
+      AccessControl: PublicRead
+      BucketName: !Sub vocab-audio-${Stage}
 
+  AudioFileBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties: 
+      Bucket: !Ref PronunciationAudioBucket
+      PolicyDocument:
+        - Statement:
+          - Sid: AudioAllowRead
+            Effect: Allow
+            Principal: "*"
+            Action: 
+            - s3:GetObject
+            Resource: !Join ["", ["arn:aws:s3:::", !Ref PronunciationAudioBucket, "/audio/*"]]
+              
 ####################################################################################################
 # State machine
 ####################################################################################################
