@@ -1,3 +1,4 @@
+import sys
 import list_word_service
 
 # Given a list id, retrieve an array with word ids and simplified characters for that list
@@ -8,14 +9,16 @@ def lambda_handler(event, context):
     list_id = event['list_id']
     last_word_token = event['last_word_token']
 
-    detailed_word_list = list_word_service.get_words_in_list(list_id, limit=1200, last_word_token=last_word_token)
+    detailed_word_list = list_word_service.get_words_in_list(list_id, limit=250, last_word_token=last_word_token)
     print('detailed word list: ', detailed_word_list)
 
     word_list = format_word_list(detailed_word_list)
-    if len(word_list) == 1200:
+    if len(word_list) == 250:
         updated_last_word_token = word_list[-1]['word_id']
     else:
         updated_last_word_token = None
+    
+    print('word list bytes: ', sys.getsizeof(word_list))
 
     response_body = {
         "list_id": list_id,
