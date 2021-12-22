@@ -66,11 +66,16 @@
                   "#a": "Audio file key"
                 }
               },
+              "Next": "Wait"
+            },
+            "Wait": {
+              "Type": "Wait",
+              "Seconds": 2,
               "End": true
             }
           }
         },
-        "MaxConcurrency": 40,
+        "MaxConcurrency": 10,
         "ItemsPath": "$.word_list",
         "Next": "Is last_word_token present?",
         "ResultPath": "$.mapStepResult"
