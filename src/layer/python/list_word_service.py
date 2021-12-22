@@ -46,7 +46,7 @@ def query_dynamodb(list_id, limit=None, last_word_token=None):
 
     query_response = table.query(**query)
     # Limit may or may not work with None
-    print('dynamo response ', query_response['Items'])
+    print('dynamo response length ', len(query_response['Items']))
 
     return query_response
 
