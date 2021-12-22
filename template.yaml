@@ -480,13 +480,14 @@ Resources:
     Properties: 
       Bucket: !Ref PronunciationAudioBucket
       PolicyDocument:
-        - Statement:
+        Statement:
           - Sid: AudioAllowRead
             Effect: Allow
             Principal: "*"
             Action: 
             - s3:GetObject
-            Resource: !Join ["", ["arn:aws:s3:::", !Ref PronunciationAudioBucket, "/audio/*"]]
+            Resource:
+              - !Join ["", ["arn:aws:s3:::", !Ref PronunciationAudioBucket, "/audio/*"]]
               
 ####################################################################################################
 # State machine
