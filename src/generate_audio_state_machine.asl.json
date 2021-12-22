@@ -22,9 +22,9 @@
             "BackoffRate": 2
           }
         ],
-        "Next": "Iterate over word list"
+        "Next": "Iterate over word batch"
       },
-      "Iterate over word list": {
+      "Iterate over word batch": {
         "Type": "Map",
         "Iterator": {
           "StartAt": "Generate audio file",
@@ -70,9 +70,25 @@
             }
           }
         },
-        "End": true,
         "MaxConcurrency": 40,
-        "ItemsPath": "$.word_list"
+        "ItemsPath": "$.word_list",
+        "Next": "Is last_word_token present?",
+        "ResultPath": "$.mapStepResult"
+      },
+      "Is last_word_token present?": {
+        "Type": "Choice",
+        "Default": "Get word list",
+        "Choices": [
+          {
+            "Variable": "$.last_word_token",
+            "StringEquals": "None",
+            "Next": "Go to end"
+          }
+        ]
+      },
+      "Go to end": {
+        "Type": "Pass",
+        "End": true
       }
     }
 }

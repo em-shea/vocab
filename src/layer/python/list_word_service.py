@@ -30,8 +30,8 @@ def query_dynamodb(list_id, limit=None, last_word_token=None):
     # )
     
     key_condition = Key('PK').eq('LIST#' + list_id) & Key('SK').begins_with('WORD#')
-    
-    if last_word_token is not None:
+
+    if not last_word_token:
         key_condition = key_condition & Key('SK').gt(last_word_token)
 
     query_response = table.query(
@@ -47,12 +47,11 @@ def format_word_list(query_response):
     word_list = []
 
     for item in query_response['Items']:
-        if item['Word']['Audio file key'] != "":
-            word_list.append(
-                {
-                    "list_id": item['PK'],
-                    "word_id": item['SK'],
-                    "word": item['Word']
-                }
-            )
+        word_list.append(
+            {
+                "list_id": item['PK'],
+                "word_id": item['SK'],
+                "word": item['Word']
+            }
+        )
     return word_list
