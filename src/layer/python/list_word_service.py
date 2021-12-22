@@ -25,6 +25,8 @@ def get_words_in_list(list_id, limit=None, last_word_token=None):
 
 def query_dynamodb(list_id, limit=None, last_word_token=None):
 
+    print('limit: ', limit)
+
     # query_response = table.query(
     #     KeyConditionExpression=Key('PK').eq('LIST#' + list_id) & Key('SK').begins_with('WORD#')
     # )
@@ -39,6 +41,8 @@ def query_dynamodb(list_id, limit=None, last_word_token=None):
     }
     if limit is not None:
         query['Limit'] = limit
+    
+    print('query: ', query)
 
     query_response = table.query(**query)
     # Limit may or may not work with None

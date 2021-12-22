@@ -19,6 +19,7 @@ def lambda_handler(event, context):
         updated_last_word_token = None
     
     print('word list bytes: ', sys.getsizeof(word_list))
+    print('word list length: ', len(word_list))
 
     response_body = {
         "list_id": list_id,
