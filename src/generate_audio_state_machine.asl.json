@@ -34,7 +34,7 @@
               "Parameters": {
                 "OutputFormat": "mp3",
                 "OutputS3BucketName": "${PronunciationAudioBucket}",
-                "OutputS3KeyPrefix": "audio",
+                "OutputS3KeyPrefix": "audio/",
                 "Text.$": "$.text",
                 "VoiceId": "Zhiyu"
               },
