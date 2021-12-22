@@ -12,7 +12,7 @@ table = boto3.resource('dynamodb', region_name=os.environ['AWS_REGION']).Table(o
 def get_words_in_list(list_id, limit=None, last_word_token=None):
 
     try:
-        query_response = query_dynamodb(list_id, limit=None, last_word_token=None)
+        query_response = query_dynamodb(list_id, limit=limit, last_word_token=last_word_token)
     except Exception as e:
         print(f"Error: DyanmoDB query for word list failed.")
         print(e)
