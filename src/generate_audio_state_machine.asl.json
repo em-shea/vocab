@@ -7,8 +7,10 @@
         "Resource": "arn:aws:states:::lambda:invoke",
         "OutputPath": "$.Payload",
         "Parameters": {
-          "list_id.$": "$.list_id",
-          "last_word_token.$": "$.last_word_token",
+          "Payload": {
+            "list_id.$": "$.list_id",
+            "last_word_token.$": "$.last_word_token"
+          },
           "FunctionName": "${GetCharsForListIdFunction}"
         },
         "Retry": [
