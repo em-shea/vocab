@@ -70,7 +70,7 @@
             },
             "Wait": {
               "Type": "Wait",
-              "Seconds": 2,
+              "Seconds": 1,
               "End": true
             }
           }
@@ -78,7 +78,11 @@
         "MaxConcurrency": 10,
         "ItemsPath": "$.word_list",
         "Next": "Is last_word_token present?",
-        "ResultPath": "$.mapStepResult"
+        "ResultPath": "$.mapStepResult",
+        "ResultSelector": {
+          "list_id.$": "$.list_id",
+          "last_word_token.$": "$.last_word_token"
+        }
       },
       "Is last_word_token present?": {
         "Type": "Choice",
