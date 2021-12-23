@@ -7,7 +7,8 @@
         "Resource": "arn:aws:states:::lambda:invoke",
         "OutputPath": "$.Payload",
         "Parameters": {
-          "Payload.$": "$",
+          "list_id.$": "$.list_id",
+          "last_word_token.$": "$.last_word_token",
           "FunctionName": "${GetCharsForListIdFunction}"
         },
         "Retry": [
@@ -78,11 +79,7 @@
         "MaxConcurrency": 10,
         "ItemsPath": "$.word_list",
         "Next": "Is last_word_token present?",
-        "ResultPath": "$.mapStepResult",
-        "ResultSelector": {
-          "list_id.$": "$.list_id",
-          "last_word_token.$": "$.last_word_token"
-        }
+        "ResultPath": "$.mapStepResult"
       },
       "Is last_word_token present?": {
         "Type": "Choice",
