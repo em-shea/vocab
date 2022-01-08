@@ -106,19 +106,19 @@ def create_user(date, cognito_id, email_address, character_set_preference):
         )
     return response
 
-def subscribe(date, cognito_id, subscription):
+def subscribe(date, cognito_id, list):
 
     # PutItem will overwrite an existing item with the same key
     response = table.put_item(
         Item={
                 'PK': "USER#" + cognito_id,
-                'SK': "LIST#" + subscription.list_id + "#" + subscription.character_set.upper(),
-                'List name': subscription.list_name,
+                'SK': "LIST#" + list['list_id'] + "#" + list['character_set'].upper(),
+                'List name': list['list_name'],
                 'Date subscribed': date,
                 'Status': 'subscribed',
-                'Character set': subscription.character_set,
+                'Character set': list['character_set'],
                 'GSI1PK': "USER",
-                'GSI1SK': "USER#" + cognito_id + "#LIST#" + subscription.list_id + "#" + subscription.character_set.upper()
+                'GSI1SK': "USER#" + cognito_id + "#LIST#" + list['list_id'] + "#" + list['character_set'].upper()
         }
     )
 
