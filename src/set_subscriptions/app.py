@@ -26,8 +26,8 @@ def lambda_handler(event, context):
 
     try:
         create_user(date, event_body['cognito_id'], event_body['email'], event_body['character_set_preference'])
-    except ClientError as e:
-        print(e)
+    except Exception as e:
+        print('error creating user', e)
         if e.response['Error']['Code'] == "ConditionalCheckFailedException":
             # User already exists, skip
             print(f"User already exists- {event_body['email'][5:]}.")
@@ -55,6 +55,7 @@ def lambda_handler(event, context):
             subscribe(date, event_body['cognito_id'], list)
             print(f"sub {list['list_id']}, {list['character_set']}")
         except Exception as e:
+            print('error subscribing user', e)
             if e.response['Error']['Code'] == "ConditionalCheckFailedException":
                 # Subscription already exists, skip
                 print(f"Subcription already exists- {event_body['email'][5:]}, {list['list_id']}.")
@@ -70,6 +71,7 @@ def lambda_handler(event, context):
                 unsubscribe(date, event_body['cognito_id'], existing_subscription)
                 print(f"unsub, {existing_subscription.unique_list_id}")
             except Exception as e:
+                print('error unsubscribing user', e)
                 print(f"Error: Failed to unsubscribe user - {event_body['email'][5:]}, {existing_subscription.list_id}.")
                 print(e)
                 return error_message
