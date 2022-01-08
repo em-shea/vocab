@@ -96,13 +96,9 @@ Resources:
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref DynamoDBTable
-        # - S3ReadPolicy:
-        #     BucketName: !Ref WordsBucketName
       Environment:
         Variables:
-          DYNAMODB_TABLE_NAME: !Ref DynamoDBTable
-          # WORDS_BUCKET_NAME: !Ref WordsBucketName
-          # WORDS_BUCKET_KEY: !Ref WordsBucketKey
+          TABLE_NAME: !Ref DynamoDBTable
       Events:
         SampleVocabApi:
           Type: Api
