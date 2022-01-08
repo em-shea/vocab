@@ -2,6 +2,7 @@ import os
 import json
 import boto3
 import datetime
+from botocore.exceptions import ClientError
 
 import user_service
 
@@ -25,7 +26,8 @@ def lambda_handler(event, context):
 
     try:
         create_user(date, event_body['cognito_id'], event_body['email'], event_body['character_set_preference'])
-    except Exception as e:
+    except ClientError as e:
+        print(e)
         if e.response['Error']['Code'] == "ConditionalCheckFailedException":
             # User already exists, skip
             print(f"User already exists- {event_body['email'][5:]}.")
