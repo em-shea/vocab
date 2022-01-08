@@ -94,12 +94,15 @@ Resources:
       MemorySize: 128
       Timeout: 120
       Policies:
-        - S3ReadPolicy:
-            BucketName: !Ref WordsBucketName
+        - DynamoDBCrudPolicy:
+            TableName: !Ref DynamoDBTable
+        # - S3ReadPolicy:
+        #     BucketName: !Ref WordsBucketName
       Environment:
         Variables:
-          WORDS_BUCKET_NAME: !Ref WordsBucketName
-          WORDS_BUCKET_KEY: !Ref WordsBucketKey
+          DYNAMODB_TABLE_NAME: !Ref DynamoDBTable
+          # WORDS_BUCKET_NAME: !Ref WordsBucketName
+          # WORDS_BUCKET_KEY: !Ref WordsBucketKey
       Events:
         SampleVocabApi:
           Type: Api
