@@ -5,12 +5,15 @@ from boto3.dynamodb.conditions import Key
 import sys
 sys.path.append('../tests/')
 
+import format_user_data_service
+
 table = boto3.resource('dynamodb', region_name=os.environ['AWS_REGION']).Table(os.environ['DYNAMODB_TABLE_NAME'])
 
 def get_user_data(cognito_id):
 
     user_data = pull_user_data(cognito_id)
-    response = process_user_data(user_data)
+    # response = process_user_data(user_data)
+    response = format_user_data_service.format_user_data(user_data)
 
     return response
 
