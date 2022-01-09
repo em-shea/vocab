@@ -71,8 +71,9 @@ def pull_words_with_params(list_id, from_date, todays_date):
       response = table.query(
         KeyConditionExpression=Key('PK').eq("LIST#" + list_id) & Key('SK').between("DATESENT#" + str(from_date),"DATESENT#" + str(todays_date))
       )
-  except ClientError as e:
+  except Exception as e:
     print(e.response['Error']['Message'])
+    raise e
   else:
     words = response['Items']
     print(json.dumps(words, indent=4))

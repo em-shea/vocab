@@ -121,7 +121,7 @@ Resources:
       Timeout: 120
       Policies:
         - DynamoDBCrudPolicy:
-            TableName: !Ref WordHistoryDynamoDBTable
+            TableName: !Ref DynamoDBTable
       Environment:
         Variables:
           TABLE_NAME: !Ref DynamoDBTable
