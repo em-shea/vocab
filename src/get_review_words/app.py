@@ -6,18 +6,23 @@ from datetime import timedelta
 from boto3.dynamodb.conditions import Key
 from botocore.exceptions import ClientError
 
-# region_name specified in order to mock in unit tests
-dynamo = boto3.resource('dynamodb', region_name=os.environ['AWS_REGION'])
-table = dynamo.Table(os.environ['TABLE_NAME'])
+import vocab_list_service
 
-all_lists = [
-    'HSKLevel1',
-    'HSKLevel2',
-    'HSKLevel3',
-    'HSKLevel4',
-    'HSKLevel5',
-    'HSKLevel6'
-  ]
+# region_name specified in order to mock in unit tests
+# dynamo = boto3.resource('dynamodb', region_name=os.environ['AWS_REGION'])
+# table = dynamo.Table(os.environ['TABLE_NAME'])
+table = boto3.resource('dynamodb', region_name=os.environ['AWS_REGION']).Table(os.environ['TABLE_NAME'])
+
+# all_lists = [
+#     'HSKLevel1',
+#     'HSKLevel2',
+#     'HSKLevel3',
+#     'HSKLevel4',
+#     'HSKLevel5',
+#     'HSKLevel6'
+#   ]
+
+all_lists = vocab_list_service.get_vocab_lists()
 
 def lambda_handler(event,context):
 
@@ -32,8 +37,8 @@ def lambda_handler(event,context):
   if 'queryStringParameters' in event and event['queryStringParameters'] is not None:
 
     # Set word list
-    if 'list' in event['queryStringParameters']:
-      list_id = event["queryStringParameters"]['list']
+    if 'list_id' in event['queryStringParameters']:
+      list_id = event["queryStringParameters"]['list_id']
 
       # Set date range
       if 'date_range' in event["queryStringParameters"]:
@@ -67,7 +72,7 @@ def pull_words_with_params(list_id, from_date, todays_date):
 
   try:
       response = table.query(
-        KeyConditionExpression=Key('ListId').eq(list_id) & Key('Date').between(str(from_date),str(todays_date))
+        KeyConditionExpression=Key('PK').eq("LIST#" + list_id) & Key('SK').between("DATESENT#" + str(from_date),"DATESENT#" + str(todays_date))
       )
   except ClientError as e:
     print(e.response['Error']['Message'])
@@ -86,7 +91,7 @@ def pull_words_no_params(todays_date):
   for list_id in all_lists:
     try:
         response = table.query(
-          KeyConditionExpression=Key('ListId').eq(list_id) & Key('Date').between(str(from_date),str(todays_date))
+          KeyConditionExpression=Key('PK').eq("LIST#" + list_id) & Key('SK').between("DATESENT#" + str(from_date),"DATESENT#" + str(todays_date))
         )
     except ClientError as e:
       print(e.response['Error']['Message'])
