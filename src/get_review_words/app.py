@@ -26,9 +26,6 @@ all_lists = vocab_list_service.get_vocab_lists()
 
 def lambda_handler(event,context):
 
-  # Words returned from Dynamo
-  items = []
-
   # Set today's date and dates 30 and 90 days before today's date
   todays_date = format_date(datetime.today())
 
@@ -77,10 +74,10 @@ def pull_words_with_params(list_id, from_date, todays_date):
   except ClientError as e:
     print(e.response['Error']['Message'])
   else:
-    items = response['Items']
-    print(json.dumps(items, indent=4))
+    words = response['Items']
+    print(json.dumps(words, indent=4))
 
-  return {list_id : items}
+  return {list_id : words}
 
 def pull_words_no_params(todays_date):
 
