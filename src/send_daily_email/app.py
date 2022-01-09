@@ -178,7 +178,7 @@ def assemble_word_html_content(user_email, subscription, todays_words):
         word_contents = word_contents.replace("{list}", subscription.list_name)
         word_contents = word_contents.replace("{quiz_link}", "https://haohaotiantian.com/quiz?list=HSKLevel" + hsk_level + "&days=14&ques=10&char=" + subscription.character_set)
         word_contents = word_contents.replace("{signin_link}", "https://haohaotiantian.com/quiz?email=" + user_email)
-        word_contents = word_contents.replace("{review_link}", "https://haohaotiantian.com/review?list_id=" + subscription['list_id'] + "&dates=30&char=" + subscription.character_set)
+        word_contents = word_contents.replace("{review_link}", "https://haohaotiantian.com/review?list_id=" + subscription.list_id + "&dates=30&char=" + subscription.character_set)
 
     return word_contents
 
