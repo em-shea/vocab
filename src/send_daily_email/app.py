@@ -12,8 +12,8 @@ import vocab_list_service
 
 # region_name specified in order to mock in unit tests
 ses_client = boto3.client('ses', region_name=os.environ['AWS_REGION'])
-table = boto3.resource('dynamodb', region_name=os.environ['AWS_REGION']).Table(os.environ['DYNAMODB_TABLE_NAME'])
-word_history_table = boto3.resource('dynamodb', region_name=os.environ['AWS_REGION']).Table(os.environ['TABLE_NAME'])
+table = boto3.resource('dynamodb', region_name=os.environ['AWS_REGION']).Table(os.environ['TABLE_NAME'])
+# word_history_table = boto3.resource('dynamodb', region_name=os.environ['AWS_REGION']).Table(os.environ['TABLE_NAME'])
 
 def lambda_handler(event, context):
 

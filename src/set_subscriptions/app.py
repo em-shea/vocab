@@ -6,7 +6,7 @@ from botocore.exceptions import ClientError
 
 import user_service
 
-table = boto3.resource('dynamodb', region_name=os.environ['AWS_REGION']).Table(os.environ['DYNAMODB_TABLE_NAME'])
+table = boto3.resource('dynamodb', region_name=os.environ['AWS_REGION']).Table(os.environ['TABLE_NAME'])
 
 # Set subscriptions (subscribe or unsubscribe) and create user if none exists yet
 def lambda_handler(event, context):

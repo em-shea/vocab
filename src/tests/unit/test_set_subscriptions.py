@@ -6,7 +6,7 @@ sys.path.append('../../layer/python')
 import unittest
 from unittest import mock
 
-with mock.patch.dict('os.environ', {'AWS_REGION': 'us-east-1', 'DYNAMODB_TABLE_NAME': 'mock-table', 'USER_POOL_ID': 'mock-id'}):
+with mock.patch.dict('os.environ', {'AWS_REGION': 'us-east-1', 'TABLE_NAME': 'mock-table', 'USER_POOL_ID': 'mock-id'}):
     from set_subscriptions.app import lambda_handler
 
 def mocked_create_user(date, cognito_id, email_address, char_set_preference): 

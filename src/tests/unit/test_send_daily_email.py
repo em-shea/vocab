@@ -11,7 +11,7 @@ from unittest import mock
 # test cases:
 # a user with no lists (unsubscribed from all)
 
-with mock.patch.dict('os.environ', {'AWS_REGION': 'us-east-1', 'DYNAMODB_TABLE_NAME': 'mock-table', 'TABLE_NAME': 'mock-second-table', 'ANNOUNCEMENTS_BUCKET': 'mock-bucket', 'WORDS_BUCKET_NAME': 'mock-words-bucket', 'WORDS_BUCKET_KEY': 'mock-words-key'}):
+with mock.patch.dict('os.environ', {'AWS_REGION': 'us-east-1', 'TABLE_NAME': 'mock-table', 'ANNOUNCEMENTS_BUCKET': 'mock-bucket', 'WORDS_BUCKET_NAME': 'mock-words-bucket', 'WORDS_BUCKET_KEY': 'mock-words-key'}):
   from send_daily_email.app import lambda_handler
 
 def mocked_get_announcement():

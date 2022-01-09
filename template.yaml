@@ -71,8 +71,8 @@ Resources:
           # LISTS_BUCKET_NAME: !Ref ListsBucketName
           # LISTS_BUCKET_KEY: !Ref ListsBucketKey
           ANNOUNCEMENTS_BUCKET: !Ref VocabAnnouncementsBucket
-          DYNAMODB_TABLE_NAME: !Ref DynamoDBTable
-          TABLE_NAME: !Ref WordHistoryDynamoDBTable
+          TABLE_NAME: !Ref DynamoDBTable
+          # HISTORY_TABLE_NAME: !Ref WordHistoryDynamoDBTable
           CONTACT_TABLE_NAME: !Ref SubscriberContactListDynamoDBTable
           STAGE: !Ref Stage
       Events:
@@ -150,7 +150,7 @@ Resources:
             TableName: !Ref DynamoDBTable
       Environment:
         Variables:
-          DYNAMODB_TABLE_NAME: !Ref DynamoDBTable
+          TABLE_NAME: !Ref DynamoDBTable
       Events:
         SetSubsApi:
           Type: Api
@@ -182,7 +182,7 @@ Resources:
             Resource: !GetAtt UserPool.Arn
       Environment:
         Variables:
-          DYNAMODB_TABLE_NAME: !Ref DynamoDBTable
+          TABLE_NAME: !Ref DynamoDBTable
           USER_POOL_ID: !Ref UserPool
       Events:
         UnsubApi:
@@ -209,7 +209,7 @@ Resources:
             TableName: !Ref DynamoDBTable
       Environment:
         Variables:
-          DYNAMODB_TABLE_NAME: !Ref DynamoDBTable
+          TABLE_NAME: !Ref DynamoDBTable
       Events:
         GetUserDataApi:
           Type: Api
@@ -236,7 +236,7 @@ Resources:
             TableName: !Ref DynamoDBTable
       Environment:
         Variables:
-          DYNAMODB_TABLE_NAME: !Ref DynamoDBTable
+          TABLE_NAME: !Ref DynamoDBTable
       Events:
         SetUserDataApi:
           Type: Api
@@ -261,7 +261,7 @@ Resources:
             TableName: !Ref DynamoDBTable
       Environment:
         Variables:
-          DYNAMODB_TABLE_NAME: !Ref DynamoDBTable
+          TABLE_NAME: !Ref DynamoDBTable
       Events:
         SetLastLoginApi:
           Type: Api

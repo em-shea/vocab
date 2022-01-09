@@ -6,7 +6,7 @@ import datetime
 import user_service
 
 cognito_client = boto3.client('cognito-idp', region_name = os.environ['AWS_REGION'])
-table = boto3.resource('dynamodb', region_name=os.environ['AWS_REGION']).Table(os.environ['DYNAMODB_TABLE_NAME'])
+table = boto3.resource('dynamodb', region_name=os.environ['AWS_REGION']).Table(os.environ['TABLE_NAME'])
 
 # Unsubscribe function for users that are not signed in
 def lambda_handler(event, context):
