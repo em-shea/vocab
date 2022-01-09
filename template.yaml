@@ -124,8 +124,8 @@ Resources:
             TableName: !Ref WordHistoryDynamoDBTable
       Environment:
         Variables:
-          DYNAMODB_TABLE_NAME: !Ref DynamoDBTable
-          TABLE_NAME: !Ref WordHistoryDynamoDBTable
+          TABLE_NAME: !Ref DynamoDBTable
+          # TABLE_NAME: !Ref WordHistoryDynamoDBTable
       Events:
         GetReviewWordsApi:
           Type: Api
