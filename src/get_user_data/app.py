@@ -14,7 +14,7 @@ def lambda_handler(event, context):
     cognito_id = event['requestContext']['authorizer']['claims']['sub']
     print('user id',cognito_id)
     
-    user = user_service.get_user_data(cognito_id)
+    user = user_service.get_single_user(cognito_id)
 
     # print('user: ', user)
 

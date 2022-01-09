@@ -7,7 +7,7 @@ import unittest
 from unittest import mock
 
 with mock.patch.dict('os.environ', {'AWS_REGION': 'us-east-1', 'TABLE_NAME': 'mock-table-name'}):
-  from word_history.app import lambda_handler
+  from get_review_words.app import lambda_handler
 
 def get_words_with_params_mock(list_id, from_date, todays_date):
 

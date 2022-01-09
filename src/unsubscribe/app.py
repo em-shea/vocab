@@ -97,7 +97,7 @@ def unsubscribe_single_list(date, cognito_id, list_data):
 def unsubscribe_all(date, cognito_id):
     print('unsubscribing user from all lists...')
 
-    user = user_service.get_user_data(cognito_id)
+    user = user_service.get_single_user(cognito_id)
     if user.subscriptions:
         for list in user.subscriptions:
             unsubscribe_single_list(date, cognito_id, list)

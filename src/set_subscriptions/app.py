@@ -45,28 +45,28 @@ def lambda_handler(event, context):
     # It will call subscribe for all lists and do nothing (ConditionExpression = "attribute_not_exists(PK)")
     # if the subscription is already stored
     # It will check if there are any existing lists not in the new list and it will unsubscribe
-    new_list_ids = []
-    for list in event_body['lists']:
-        new_list_ids.append(list['list_id'] + "#" + list['character_set'].upper())
+    new_subscription_list_ids = []
+    for subscription in event_body['subscriptions']:
+        new_subscription_list_ids.append(subscription['list_id'] + "#" + subscription['character_set'].upper())
 
     # TODO: Currently making an API call per update. Batch updates?
-    for list in event_body['lists']:
+    for subscription in event_body['subscriptions']:
         try:
-            subscribe(date, event_body['cognito_id'], list)
-            print(f"sub {list['list_id']}, {list['character_set']}")
+            subscribe(date, event_body['cognito_id'], subscription)
+            print(f"sub {subscription['list_id']}, {subscription['character_set']}")
         except Exception as e:
             print('error subscribing user', e)
             if e.response['Error']['Code'] == "ConditionalCheckFailedException":
                 # Subscription already exists, skip
-                print(f"Subcription already exists- {event_body['email'][5:]}, {list['list_id']}.")
+                print(f"Subcription already exists- {event_body['email'][5:]}, {subscription['list_id']}.")
                 pass
             else: 
-                print(f"Error: Failed to subscribe user - {event_body['email'][5:]}, {list['list_id']}.")
+                print(f"Error: Failed to subscribe user - {event_body['email'][5:]}, {subscription['list_id']}.")
                 print(e)
                 return error_message
     # does existing list check for simplified/traditional?
     for existing_subscription in user.subscriptions:
-        if existing_subscription.unique_list_id not in new_list_ids and existing_subscription.status == "subscribed":
+        if existing_subscription.unique_list_id not in new_subscription_list_ids and existing_subscription.status == "subscribed":
             try:
                 unsubscribe(date, event_body['cognito_id'], existing_subscription)
                 print(f"unsub, {existing_subscription.unique_list_id}")
@@ -106,19 +106,19 @@ def create_user(date, cognito_id, email_address, character_set_preference):
         )
     return response
 
-def subscribe(date, cognito_id, list):
+def subscribe(date, cognito_id, subscription):
 
     # PutItem will overwrite an existing item with the same key
     response = table.put_item(
         Item={
                 'PK': "USER#" + cognito_id,
-                'SK': "LIST#" + list['list_id'] + "#" + list['character_set'].upper(),
-                'List name': list['list_name'],
+                'SK': "LIST#" + subscription['list_id'] + "#" + subscription['character_set'].upper(),
+                'List name': lisubscriptionst['list_name'],
                 'Date subscribed': date,
                 'Status': 'subscribed',
-                'Character set': list['character_set'],
+                'Character set': subscription['character_set'],
                 'GSI1PK': "USER",
-                'GSI1SK': "USER#" + cognito_id + "#LIST#" + list['list_id'] + "#" + list['character_set'].upper()
+                'GSI1SK': "USER#" + cognito_id + "#LIST#" + subscription['list_id'] + "#" + subscription['character_set'].upper()
         }
     )
 

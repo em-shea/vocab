@@ -6,9 +6,9 @@ from datetime import datetime
 from boto3.dynamodb.conditions import Key
 from botocore.exceptions import ClientError
 
-import vocab_list_service
+import user_service
 import list_word_service
-import all_users_service
+import vocab_list_service
 
 # region_name specified in order to mock in unit tests
 ses_client = boto3.client('ses', region_name=os.environ['AWS_REGION'])
@@ -29,7 +29,7 @@ def lambda_handler(event, context):
 
     todays_announcement = get_announcement()
 
-    user_list = all_users_service.get_all_users()
+    user_list = user_service.get_all_users()
 
     email_counter = 0
     for user in user_list:
@@ -99,18 +99,21 @@ def get_daily_words():
 
 def store_words(todays_words):
 
-    for list_name, word in todays_words.items():
+    for list_id, word in todays_words.items():
         date = str(datetime.today().strftime('%Y-%m-%d'))
 
-        # Write each word to Dynamo word history table
-        response = word_history_table.put_item(
-            Item={
-                    'ListId': list_name.replace(" ", ""),
-                    'Date': date,
-                    'Word': word,
+        try:
+            response = table.put_item(
+                Item={
+                    'PK': 'LIST#' + list_id,
+                    'SK': 'DATESENT#' + date,
+                    'Word': word
                 }
             )
-    print(response)
+        except Exception as e:
+            print('Failed to store todays word: ', word)
+            print('DynamoDB response: ', response)
+            print(e)
 
 def assemble_html_content(user, todays_words, todays_announcement):
 

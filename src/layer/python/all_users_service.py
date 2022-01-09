@@ -15,7 +15,7 @@ def get_all_users():
     grouped_user_and_subs = group_users_and_subs(dynamo_response)
     response = []
     for user_id, user in grouped_user_and_subs.items():
-        response.append(format_user_data_service.format_user_data(user))
+        response.append(format_user_data_service._format_user_data(user))
 
     return response
 

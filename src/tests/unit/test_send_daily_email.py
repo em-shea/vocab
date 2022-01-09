@@ -125,7 +125,7 @@ def mocked_get_words_in_list(list_id):
 class SendDailyEmailTest(unittest.TestCase):
 
   @mock.patch('send_daily_email.app.get_announcement', side_effect=mocked_get_announcement)
-  @mock.patch('all_users_service.pull_all_users', side_effect=mocked_pull_all_users)
+  @mock.patch('user_service.pull_all_users', side_effect=mocked_pull_all_users)
   @mock.patch('list_word_service.get_words_in_list', side_effect=mocked_get_words_in_list)
   @mock.patch('send_daily_email.app.store_words', side_effect=mocked_store_words)
   @mock.patch('send_daily_email.app.send_email', side_effect=mocked_send_email)

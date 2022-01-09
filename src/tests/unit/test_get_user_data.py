@@ -6,7 +6,7 @@ import unittest
 from unittest import mock
 
 with mock.patch.dict('os.environ', {'AWS_REGION': 'us-east-1', 'DYNAMODB_TABLE_NAME': 'mock-table'}):
-    from get_user_data.app import lambda_handler
+    from get_single_user.app import lambda_handler
 
 def mocked_pull_user_data(cognito_user_id):
   return  [

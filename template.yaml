@@ -109,13 +109,13 @@ Resources:
       Layers:
       - !Ref Layer
 
-  WordHistory:
+  GetReviewWords:
     Type: 'AWS::Serverless::Function'
     Properties:
-      FunctionName: !Sub WordHistory-${Stage}
+      FunctionName: !Sub GetReviewWords-${Stage}
       Handler: app.lambda_handler
       Runtime: python3.7
-      CodeUri: src/word_history
+      CodeUri: src/get_review_words
       Description: A function that returns a list of previous daily words.
       MemorySize: 128
       Timeout: 120
@@ -127,11 +127,11 @@ Resources:
           DYNAMODB_TABLE_NAME: !Ref DynamoDBTable
           TABLE_NAME: !Ref WordHistoryDynamoDBTable
       Events:
-        WordHistoryApi:
+        GetReviewWordsApi:
           Type: Api
           Properties:
             RestApiId: !Ref VocabAppApi
-            Path: /history
+            Path: /review
             Method: GET
   
   SetSubscriptions:
@@ -213,7 +213,7 @@ Resources:
           Type: Api
           Properties:
             RestApiId: !Ref VocabAppApi
-            Path: /user_data
+            Path: /user
             Method: GET
             Auth:
               Authorizer: CognitoAuthorizer
