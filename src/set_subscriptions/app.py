@@ -38,7 +38,7 @@ def lambda_handler(event, context):
             return error_message
 
     # Get a list of ids for all lists the user is currently subscribed to
-    user = user_service.get_user_data(event_body['cognito_id'])
+    user = user_service.get_single_user(event_body['cognito_id'])
     print(user)
 
     # API call will pass all of the users current lists
@@ -113,7 +113,7 @@ def subscribe(date, cognito_id, subscription):
         Item={
                 'PK': "USER#" + cognito_id,
                 'SK': "LIST#" + subscription['list_id'] + "#" + subscription['character_set'].upper(),
-                'List name': lisubscriptionst['list_name'],
+                'List name': subscription['list_name'],
                 'Date subscribed': date,
                 'Status': 'subscribed',
                 'Character set': subscription['character_set'],

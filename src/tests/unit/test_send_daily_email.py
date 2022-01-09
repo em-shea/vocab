@@ -39,7 +39,7 @@ def mocked_send_email(campaign_contents, email):
 
   return ses_success_response
 
-def mocked_pull_all_users():
+def mocked_query_all_users():
 
   return [
     {'GSI1PK': 'USER', 'Date created': '2021-06-16T23:06:48.467526', 'Character set preference': 'traditional', 'SK': 'USER#770e2827-7666-4087-9c58-17c2e862dba2', 'Email address': 'test1@gmail.com', 'PK': 'USER#770e2827-7666-4087-9c58-17c2e862dba2', 'GSI1SK': 'USER#770e2827-7666-4087-9c58-17c2e862dba2', 'User alias': '小陈', 'User alias pinyin': 'xiǎo chén', 'User alias emoji': '🪃'}, 
@@ -125,17 +125,17 @@ def mocked_get_words_in_list(list_id):
 class SendDailyEmailTest(unittest.TestCase):
 
   @mock.patch('send_daily_email.app.get_announcement', side_effect=mocked_get_announcement)
-  @mock.patch('user_service.pull_all_users', side_effect=mocked_pull_all_users)
+  @mock.patch('user_service.query_all_users', side_effect=mocked_query_all_users)
   @mock.patch('list_word_service.get_words_in_list', side_effect=mocked_get_words_in_list)
   @mock.patch('send_daily_email.app.store_words', side_effect=mocked_store_words)
   @mock.patch('send_daily_email.app.send_email', side_effect=mocked_send_email)
-  def test_build(self, send_email_mock, store_words_mock, get_words_in_list_mock, pull_all_users_mock, get_announcement_mock):
+  def test_build(self, send_email_mock, store_words_mock, get_words_in_list_mock, query_all_users_mock, get_announcement_mock):
 
     response = lambda_handler(self.scheduled_event(), "")
 
     self.assertEqual(get_announcement_mock.call_count, 1)
     self.assertEqual(store_words_mock.call_count, 1)
-    self.assertEqual(pull_all_users_mock.call_count, 1)
+    self.assertEqual(query_all_users_mock.call_count, 1)
     self.assertEqual(get_words_in_list_mock.call_count, 6)
     self.assertEqual(send_email_mock.call_count, 2)
 

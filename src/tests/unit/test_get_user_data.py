@@ -6,9 +6,9 @@ import unittest
 from unittest import mock
 
 with mock.patch.dict('os.environ', {'AWS_REGION': 'us-east-1', 'DYNAMODB_TABLE_NAME': 'mock-table'}):
-    from get_single_user.app import lambda_handler
+    from get_user_data.app import lambda_handler
 
-def mocked_pull_user_data(cognito_user_id):
+def mocked_query_single_user(cognito_user_id):
   return  [
         {
             "Date subscribed":"2021-06-16T23:06:48.646688",
@@ -46,12 +46,12 @@ def mocked_pull_user_data(cognito_user_id):
 
 class GetUserDataTest(unittest.TestCase):
 
-  @mock.patch('user_service.pull_user_data', side_effect=mocked_pull_user_data)
-  def test_build(self, pull_user_data_mock):
+  @mock.patch('user_service.query_single_user', side_effect=mocked_query_single_user)
+  def test_build(self, query_single_user_mock):
     
     response = lambda_handler(self.apig_event(), "")
 
-    self.assertEqual(pull_user_data_mock.call_count, 1)
+    self.assertEqual(query_single_user_mock.call_count, 1)
 
   def apig_event(self):
     return {

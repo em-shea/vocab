@@ -28,27 +28,27 @@ def get_words_no_params_mock(todays_date):
 
 class WordHistoryTest(unittest.TestCase):
 
-  @mock.patch('word_history.app.pull_words_with_params', side_effect=get_words_with_params_mock)
-  @mock.patch('word_history.app.pull_words_no_params', side_effect=get_words_no_params_mock)
+  @mock.patch('get_review_words.app.pull_words_with_params', side_effect=get_words_with_params_mock)
+  @mock.patch('get_review_words.app.pull_words_no_params', side_effect=get_words_no_params_mock)
   def test_build(self, no_params_mock, params_mock):
 
     params = {'list':'HSKLevel1', 'date_range': '10'}
 
-    response = lambda_handler(self.history_apig_event(params), "")
+    response = lambda_handler(self.review_apig_event(params), "")
 
     self.assertEqual(params_mock.call_count, 1)
   
-  @mock.patch('word_history.app.pull_words_with_params', side_effect=get_words_with_params_mock)
-  @mock.patch('word_history.app.pull_words_no_params', side_effect=get_words_no_params_mock)
+  @mock.patch('get_review_words.app.pull_words_with_params', side_effect=get_words_with_params_mock)
+  @mock.patch('get_review_words.app.pull_words_no_params', side_effect=get_words_no_params_mock)
   def test_no_params(self, no_params_mock, params_mock):
 
     params = None
 
-    response = lambda_handler(self.history_apig_event(params), "")
+    response = lambda_handler(self.review_apig_event(params), "")
 
     self.assertEqual(no_params_mock.call_count, 1)
 
-  def history_apig_event(self, params):
+  def review_apig_event(self, params):
     return {
       "body": json.dumps(params),
       "path": "/sub",
