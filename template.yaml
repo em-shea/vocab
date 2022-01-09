@@ -133,6 +133,8 @@ Resources:
             RestApiId: !Ref VocabAppApi
             Path: /review
             Method: GET
+      Layers:
+      - !Ref Layer
   
   SetSubscriptions:
     Type: 'AWS::Serverless::Function'
