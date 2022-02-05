@@ -103,7 +103,8 @@ def store_words(todays_words):
         date = str(datetime.today().strftime('%Y-%m-%d'))
 
         word_body = word_item['word']
-        word_body['Word id'] = word_item['word_id']
+        # TODO: move removing 'WORD#' on word_id into the list_word_service
+        word_body['Word id'] = word_item['word_id'].split('#')[1]
 
         try:
             response = table.put_item(
