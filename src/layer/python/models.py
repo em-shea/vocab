@@ -1,5 +1,5 @@
 import datetime
-from typing import List
+from typing import List, Dict
 from dataclasses import dataclass
 
 @dataclass
@@ -26,11 +26,24 @@ class User:
     user_alias_emoji: str
     subscriptions: List[Subscription]
 
-# @dataclass
-# class List
+@dataclass
+class Word:
+    word_id: str
+    simplified: str
+    traditional: str
+    pinyin: str
+    definition: str
+    audio_file_key: str
+    difficulty_level: str
+    hsk_level: str
 
-# @dataclass
-# class Word
+@dataclass
+class VocabList:
+    list_id: str
+    words: List[Word]
 
-# @dataclass
-# class ReviewWord
+@dataclass
+class ReviewWord:
+    list_id: str
+    date_sent: str
+    word: Dict[str, Word]

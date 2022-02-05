@@ -99,19 +99,23 @@ def get_daily_words():
 
 def store_words(todays_words):
 
-    for list_id, word in todays_words.items():
+    for list_id, word_item in todays_words.items():
         date = str(datetime.today().strftime('%Y-%m-%d'))
+
+        word_body = word_item['word']
+        word_body['Word id'] = word_item['word_id']
 
         try:
             response = table.put_item(
                 Item={
                     'PK': 'LIST#' + list_id,
                     'SK': 'DATESENT#' + date,
-                    'Word': word
+                    'Word': word_body
                 }
             )
+            print('stored word: ', word_body)
         except Exception as e:
-            print('Failed to store todays word: ', word)
+            print('Failed to store todays word: ', word_body)
             print('DynamoDB response: ', response)
             print(e)
 
