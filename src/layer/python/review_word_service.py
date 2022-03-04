@@ -20,7 +20,7 @@ def get_review_words(list_id, date_range):
 
     filtered_lists = [l for l in all_lists if (list_id is None or l['list_id'] == list_id)]
     
-    from_date = 7
+    from_date = format_date(datetime.today() - timedelta(days=int(7)))
     if date_range is not None:
         from_date = format_date(datetime.today() - timedelta(days=int(date_range)))
 
