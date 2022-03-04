@@ -23,13 +23,12 @@ def get_review_words(list_id, date_range):
     from_date = 7
     if date_range is not None:
         from_date = format_date(datetime.today() - timedelta(days=int(date_range)))
-    
+
     review_words = defaultdict(list)
     for vocab_list in filtered_lists:
         word_list_response = query_dynamodb(vocab_list['list_id'], todays_date, from_date)
         print('word list response', word_list_response)
-        
-        # for list_id, word_list in word_list_response.items():
+
         for word in word_list_response:
             formatted_word=format_review_word(word)
             review_words[vocab_list['list_id']].append(asdict(formatted_word))
