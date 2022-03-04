@@ -59,42 +59,42 @@ def lambda_handler(event,context):
           'body': json.dumps(review_words)
         }
 
-def pull_words_with_params(list_id, from_date, todays_date):
+# def pull_words_with_params(list_id, from_date, todays_date):
 
-  try:
-      response = table.query(
-        KeyConditionExpression=Key('PK').eq("LIST#" + list_id) & Key('SK').between("DATESENT#" + str(from_date),"DATESENT#" + str(todays_date))
-      )
-  except Exception as e:
-    print(e.response['Error']['Message'])
-    raise e
-  else:
-    words = response['Items']
-    print(json.dumps(words, indent=4))
+#   try:
+#       response = table.query(
+#         KeyConditionExpression=Key('PK').eq("LIST#" + list_id) & Key('SK').between("DATESENT#" + str(from_date),"DATESENT#" + str(todays_date))
+#       )
+#   except Exception as e:
+#     print(e.response['Error']['Message'])
+#     raise e
+#   else:
+#     words = response['Items']
+#     print(json.dumps(words, indent=4))
 
-  return {list_id : words}
+#   return {list_id : words}
 
-def pull_words_no_params(todays_date):
+# def pull_words_no_params(todays_date):
 
-  completed_item_list = {}
+#   completed_item_list = {}
 
-  from_date = format_date(datetime.today() - timedelta(days=int(7)))
+#   from_date = format_date(datetime.today() - timedelta(days=int(7)))
 
-  for list_id in all_lists:
-    try:
-        response = table.query(
-          KeyConditionExpression=Key('PK').eq("LIST#" + list_id) & Key('SK').between("DATESENT#" + str(from_date),"DATESENT#" + str(todays_date))
-        )
-    except ClientError as e:
-      print(e.response['Error']['Message'])
-    else:
-      completed_item_list[list_id] = response['Items']
+#   for list_id in all_lists:
+#     try:
+#         response = table.query(
+#           KeyConditionExpression=Key('PK').eq("LIST#" + list_id) & Key('SK').between("DATESENT#" + str(from_date),"DATESENT#" + str(todays_date))
+#         )
+#     except ClientError as e:
+#       print(e.response['Error']['Message'])
+#     else:
+#       completed_item_list[list_id] = response['Items']
 
-  print(json.dumps(completed_item_list, indent=4))
-  return completed_item_list
+#   print(json.dumps(completed_item_list, indent=4))
+#   return completed_item_list
 
-def format_date(date_object):
+# def format_date(date_object):
 
-  formatted_date = date_object.strftime('%Y-%m-%d')
+#   formatted_date = date_object.strftime('%Y-%m-%d')
 
-  return formatted_date
+#   return formatted_date

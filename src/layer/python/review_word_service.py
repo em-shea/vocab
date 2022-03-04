@@ -18,21 +18,6 @@ def get_review_words(list_id, date_range):
 
     todays_date = format_date(datetime.today())
 
-    # If list id and date range provided, query with those parameters
-    # If list id is provided and date range is not, set date range to 90 days
-    # if list_id is not None:
-    #     if date_range is not None:
-    #         from_date = format_date(datetime.today() - timedelta(days=int(date_range)))
-    #     else:
-    #         from_date = 90
-    #     query_response[list_id] = query_dynamodb(list_id, todays_date, from_date)
-    
-    # # If list id is not provided, query for all lists for past 7 days
-    # else:
-    #     for list in all_lists:
-    #         query_response[list['list_id']] = query_dynamodb(list['list_id'], todays_date, 7)
-
-    # Setup filter params
     filtered_lists = [l for l in all_lists if (list_id is None or l['list_id'] == list_id)]
     
     from_date = 7
@@ -44,15 +29,10 @@ def get_review_words(list_id, date_range):
         word_list_response = query_dynamodb(vocab_list['list_id'], todays_date, from_date)
         print('word list response', word_list_response)
         
-        # review_words[list['list_id']] = []
-        for list_id, word_list in word_list_response.items():
-            for word in word_list:
-                formatted_word=format_review_word(word)
-                review_words[vocab_list['list_id']].append(asdict(formatted_word))
-
-        # review_words[list['list_id']] = [format_review_word(word) for word in word_list_response]
-
-        # fix test data (doing pre-formatting)
+        # for list_id, word_list in word_list_response.items():
+        for word in word_list_response:
+            formatted_word=format_review_word(word)
+            review_words[vocab_list['list_id']].append(asdict(formatted_word))
 
     return review_words
 
@@ -66,7 +46,7 @@ def query_dynamodb(list_id, todays_date, from_date):
         print(e.response['Error']['Message'])
         raise e
     else:
-        print(json.dumps(response['Items'], indent=4))
+        print("dynamo query response: ", json.dumps(response['Items'], indent=4))
     
     return response['Items']
 
