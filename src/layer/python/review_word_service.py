@@ -63,9 +63,9 @@ def format_review_word(query_response_word):
     )
 
     review_word = ReviewWord(
-        list_id = query_response_word['PK'],
+        list_id = query_response_word['PK'].split('#')[1],
         date_sent = query_response_word['SK'].split('#')[1],
-        word = [query_response_word['Word']['Word id'], word_body]
+        word = word_body
     )
 
     return review_word
