@@ -2,6 +2,7 @@ import os
 import json
 import boto3
 import datetime
+from dataclasses import asdict
 
 import user_service
 
@@ -99,7 +100,7 @@ def unsubscribe_all(date, cognito_id):
 
     user = user_service.get_single_user(cognito_id)
     if user.subscriptions:
-        for list in user.subscriptions:
-            unsubscribe_single_list(date, cognito_id, list)
+        for subscription in user.subscriptions:
+            unsubscribe_single_list(date, cognito_id, asdict(subscription))
 
     return 
