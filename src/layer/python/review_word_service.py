@@ -52,7 +52,7 @@ def query_dynamodb(list_id, todays_date, from_date):
 def format_review_word(query_response_word):
     print('query response word', query_response_word)
     word_body = Word(
-        word_id = query_response_word['Word']['Word id'].split('#')[1],
+        word_id = query_response_word['Word']['Word id'],
         simplified = query_response_word['Word']['Simplified'],
         traditional = query_response_word['Word']['Traditional'],
         pinyin = query_response_word['Word']['Pinyin'],
@@ -65,7 +65,7 @@ def format_review_word(query_response_word):
     review_word = ReviewWord(
         list_id = query_response_word['PK'],
         date_sent = query_response_word['SK'].split('#')[1],
-        word = [query_response_word['Word']['Word id'].split('#')[1], word_body]
+        word = [query_response_word['Word']['Word id'], word_body]
     )
 
     return review_word
