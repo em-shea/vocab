@@ -52,20 +52,20 @@ def query_dynamodb(list_id, todays_date, from_date):
 def format_review_word(query_response_word):
     print('query response word', query_response_word)
     word_body = Word(
-        word_id = query_response_word['Word']['Word id'],
-        simplified = query_response_word['Word']['Simplified'],
-        traditional = query_response_word['Word']['Traditional'],
-        pinyin = query_response_word['Word']['Pinyin'],
-        definition = query_response_word['Word']['Definition'],
-        audio_file_key = query_response_word['Word']['Audio file key'],
-        difficulty_level = query_response_word['Word']['Difficulty level'],
-        hsk_level = query_response_word['Word']['HSK Level']
+        word_id = query_response_word['Word']['word_id'].split('#')[1],
+        simplified = query_response_word['Word']['word']['Simplified'],
+        traditional = query_response_word['Word']['word']['Traditional'],
+        pinyin = query_response_word['Word']['word']['Pinyin'],
+        definition = query_response_word['Word']['word']['Definition'],
+        audio_file_key = query_response_word['Word']['word']['Audio file key'],
+        difficulty_level = query_response_word['Word']['word']['Difficulty level'],
+        hsk_level = query_response_word['Word']['word']['HSK Level']
     )
 
     review_word = ReviewWord(
         list_id = query_response_word['PK'],
         date_sent = query_response_word['SK'].split('#')[1],
-        word = [query_response_word['Word']['Word id'], word_body]
+        word = [query_response_word['Word']['word_id'].split('#')[1], word_body]
     )
 
     return review_word
