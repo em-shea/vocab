@@ -9,7 +9,7 @@ def lambda_handler(event, context):
     list_id = event['list_id']
     last_word_token = event['last_word_token']
 
-    detailed_word_list = list_word_service.get_words_in_list(list_id, limit=20, last_word_token=last_word_token)
+    detailed_word_list = list_word_service.get_words_in_list(list_id, limit=20, last_word_token=last_word_token, audio_file_key_check=True)
     # print('detailed word list: ', detailed_word_list)
 
     word_list = format_word_list(detailed_word_list)
