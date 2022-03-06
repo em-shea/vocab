@@ -138,6 +138,7 @@ def assemble_html_content(user, todays_words, todays_announcement):
 
     # Get first list user is subscribed to and use in unsub link
     email_contents = email_template.replace("{unsubscribe_link}", "https://haohaotiantian.com/unsub?list=" + user.subscriptions[0].list_id + "&char=" + user.subscriptions[0].character_set + "&email=" + urllib.parse.quote_plus(user.email_address))
+    email_contents = email_contents.replace("{signin_link}", "https://haohaotiantian.com/signin?email=" + urllib.parse.quote_plus(user.email_address))
 
     email_contents = email_contents.replace("{word_contents}", word_content)
 
@@ -182,7 +183,6 @@ def assemble_word_html_content(user_email, subscription, todays_words):
         word_contents = word_contents.replace("{link}", example_link)
         word_contents = word_contents.replace("{list}", subscription.list_name)
         word_contents = word_contents.replace("{quiz_link}", "https://haohaotiantian.com/quiz?list_id=" + subscription.list_id + "&date_range=30&ques=10&char=" + subscription.character_set)
-        word_contents = word_contents.replace("{signin_link}", "https://haohaotiantian.com/signin?email=" + urllib.parse.quote_plus(user_email))
         word_contents = word_contents.replace("{review_link}", "https://haohaotiantian.com/review?list_id=" + subscription.list_id + "&date_range=30&char=" + subscription.character_set)
 
     return word_contents
