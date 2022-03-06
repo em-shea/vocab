@@ -53,6 +53,7 @@ def query_dynamodb(list_id, limit=None, last_word_token=None, audio_file_key_che
 def format_word_list(query_response):
     word_list = []
 
+    # Reformat item['Word'] contents to lower caps/underscores?
     for item in query_response['Items']:
         word_list.append(
             {
