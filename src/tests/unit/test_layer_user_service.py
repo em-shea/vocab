@@ -8,7 +8,7 @@ from unittest import mock
 with mock.patch.dict('os.environ', {'AWS_REGION': 'us-east-1', 'DYNAMODB_TABLE_NAME': 'mock-table'}):
     import user_service
 
-def mocked_pull_user_data(user_id):
+def mocked_query_single_user(user_id):
 
   return [
     {
@@ -47,14 +47,14 @@ def mocked_pull_user_data(user_id):
 
 class UserServiceTest(unittest.TestCase):
 
-  @mock.patch('user_service.pull_user_data', side_effect=mocked_pull_user_data)
-  def test_build(self, pull_user_data_mock):
+  @mock.patch('user_service.query_single_user', side_effect=mocked_query_single_user)
+  def test_build(self, query_single_user_mock):
 
     cognito_id = "1234"
-    response = user_service.get_user_data(cognito_id)
+    response = user_service.get_single_user(cognito_id)
     print(response)
 
-    self.assertEqual(pull_user_data_mock.call_count, 1)
+    self.assertEqual(query_single_user_mock.call_count, 1)
 
 if __name__ == '__main__':
     unittest.main()

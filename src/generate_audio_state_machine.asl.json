@@ -7,7 +7,10 @@
         "Resource": "arn:aws:states:::lambda:invoke",
         "OutputPath": "$.Payload",
         "Parameters": {
-          "Payload.$": "$",
+          "Payload": {
+            "list_id.$": "$.list_id",
+            "last_word_token.$": "$.last_word_token"
+          },
           "FunctionName": "${GetCharsForListIdFunction}"
         },
         "Retry": [
@@ -22,9 +25,9 @@
             "BackoffRate": 2
           }
         ],
-        "Next": "Iterate over word list"
+        "Next": "Iterate over word batch"
       },
-      "Iterate over word list": {
+      "Iterate over word batch": {
         "Type": "Map",
         "Iterator": {
           "StartAt": "Generate audio file",
@@ -34,7 +37,7 @@
               "Parameters": {
                 "OutputFormat": "mp3",
                 "OutputS3BucketName": "${PronunciationAudioBucket}",
-                "OutputS3KeyPrefix": "audio",
+                "OutputS3KeyPrefix": "audio/",
                 "Text.$": "$.text",
                 "VoiceId": "Zhiyu"
               },
@@ -66,13 +69,34 @@
                   "#a": "Audio file key"
                 }
               },
+              "Next": "Wait"
+            },
+            "Wait": {
+              "Type": "Wait",
+              "Seconds": 1,
               "End": true
             }
           }
         },
-        "End": true,
-        "MaxConcurrency": 40,
-        "ItemsPath": "$.word_list"
+        "MaxConcurrency": 10,
+        "ItemsPath": "$.word_list",
+        "Next": "Is last_word_token present?",
+        "ResultPath": "$.mapStepResult"
+      },
+      "Is last_word_token present?": {
+        "Type": "Choice",
+        "Default": "Get word list",
+        "Choices": [
+          {
+            "Variable": "$.last_word_token",
+            "IsNull": true,
+            "Next": "Go to end"
+          }
+        ]
+      },
+      "Go to end": {
+        "Type": "Pass",
+        "End": true
       }
     }
 }

@@ -6,7 +6,7 @@ sys.path.append('../../layer/python')
 import unittest
 from unittest import mock
 
-with mock.patch.dict('os.environ', {'AWS_REGION': 'us-east-1', 'DYNAMODB_TABLE_NAME': 'mock-table', 'USER_POOL_ID': 'mock-id'}):
+with mock.patch.dict('os.environ', {'AWS_REGION': 'us-east-1', 'TABLE_NAME': 'mock-table', 'USER_POOL_ID': 'mock-id'}):
     from unsubscribe.app import lambda_handler
 
 def mocked_unsubscribe_single_list(date, cognito_id, list_data):
@@ -15,7 +15,7 @@ def mocked_unsubscribe_single_list(date, cognito_id, list_data):
 def mocked_look_up_cognito_id(event_body):
     return '123456'
 
-def mocked_pull_user_data(cognito_id):
+def mocked_query_single_user(cognito_id):
     response = [
         {
             "Date subscribed":"2021-06-16T23:06:48.646688",
@@ -56,8 +56,8 @@ class UnsubscribeTest(unittest.TestCase):
 
     @mock.patch('unsubscribe.app.unsubscribe_single_list', side_effect=mocked_unsubscribe_single_list)
     @mock.patch('unsubscribe.app.look_up_cognito_id', side_effect=mocked_look_up_cognito_id)
-    @mock.patch('user_service.pull_user_data', side_effect=mocked_pull_user_data)
-    def test_unsubscribe(self, pull_user_data_mock, look_up_cognito_id_mock, unsubscribe_single_list_mock):
+    @mock.patch('user_service.query_single_user', side_effect=mocked_query_single_user)
+    def test_unsubscribe(self, query_single_user_mock, look_up_cognito_id_mock, unsubscribe_single_list_mock):
 
         event_body = {
             "cognito_id":"",
@@ -71,14 +71,14 @@ class UnsubscribeTest(unittest.TestCase):
         }
         response = lambda_handler(self.apig_event(json.dumps(event_body)), "")
 
-        self.assertEqual(pull_user_data_mock.call_count, 0)
+        self.assertEqual(query_single_user_mock.call_count, 0)
         self.assertEqual(look_up_cognito_id_mock.call_count, 1)
         self.assertEqual(unsubscribe_single_list_mock.call_count, 1)
     
     @mock.patch('unsubscribe.app.unsubscribe_single_list', side_effect=mocked_unsubscribe_single_list)
     @mock.patch('unsubscribe.app.look_up_cognito_id', side_effect=mocked_look_up_cognito_id)
-    @mock.patch('user_service.pull_user_data', side_effect=mocked_pull_user_data)
-    def test_unsubscribe_all(self, pull_user_data_mock, look_up_cognito_id_mock, unsubscribe_single_list_mock):
+    @mock.patch('user_service.query_single_user', side_effect=mocked_query_single_user)
+    def test_unsubscribe_all(self, query_single_user_mock, look_up_cognito_id_mock, unsubscribe_single_list_mock):
 
         event_body = {
             "cognito_id":"",
@@ -88,7 +88,7 @@ class UnsubscribeTest(unittest.TestCase):
         }
         response = lambda_handler(self.apig_event(json.dumps(event_body)), "")
 
-        self.assertEqual(pull_user_data_mock.call_count, 1)
+        self.assertEqual(query_single_user_mock.call_count, 1)
         self.assertEqual(look_up_cognito_id_mock.call_count, 1)
         self.assertEqual(unsubscribe_single_list_mock.call_count, 2)
     

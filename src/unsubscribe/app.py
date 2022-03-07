@@ -2,11 +2,12 @@ import os
 import json
 import boto3
 import datetime
+from dataclasses import asdict
 
 import user_service
 
 cognito_client = boto3.client('cognito-idp', region_name = os.environ['AWS_REGION'])
-table = boto3.resource('dynamodb', region_name=os.environ['AWS_REGION']).Table(os.environ['DYNAMODB_TABLE_NAME'])
+table = boto3.resource('dynamodb', region_name=os.environ['AWS_REGION']).Table(os.environ['TABLE_NAME'])
 
 # Unsubscribe function for users that are not signed in
 def lambda_handler(event, context):
@@ -97,9 +98,9 @@ def unsubscribe_single_list(date, cognito_id, list_data):
 def unsubscribe_all(date, cognito_id):
     print('unsubscribing user from all lists...')
 
-    user_data = user_service.get_user_data(cognito_id)
-    if user_data['lists']:
-        for list in user_data['lists']:
-            unsubscribe_single_list(date, cognito_id, list)
+    user = user_service.get_single_user(cognito_id)
+    if user.subscriptions:
+        for subscription in user.subscriptions:
+            unsubscribe_single_list(date, cognito_id, asdict(subscription))
 
     return 

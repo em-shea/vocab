@@ -4,7 +4,7 @@ import boto3
 import datetime
 from boto3.dynamodb.conditions import Key
 
-table = boto3.resource('dynamodb', region_name=os.environ['AWS_REGION']).Table(os.environ['DYNAMODB_TABLE_NAME'])
+table = boto3.resource('dynamodb', region_name=os.environ['AWS_REGION']).Table(os.environ['TABLE_NAME'])
 
 # For a given user (requires sign-in), update user metadata
 def lambda_handler(event, context):

@@ -5,7 +5,7 @@ sys.path.append('../../')
 import unittest
 from unittest import mock
 
-with mock.patch.dict('os.environ', {'AWS_REGION': 'us-east-1', 'DYNAMODB_TABLE_NAME': 'mock-table'}):
+with mock.patch.dict('os.environ', {'AWS_REGION': 'us-east-1', 'TABLE_NAME': 'mock-table'}):
     from set_last_login.app import lambda_handler
 
 def mocked_update_last_login(cognito_user_id):

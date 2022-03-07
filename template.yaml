@@ -71,8 +71,8 @@ Resources:
           # LISTS_BUCKET_NAME: !Ref ListsBucketName
           # LISTS_BUCKET_KEY: !Ref ListsBucketKey
           ANNOUNCEMENTS_BUCKET: !Ref VocabAnnouncementsBucket
-          DYNAMODB_TABLE_NAME: !Ref DynamoDBTable
-          TABLE_NAME: !Ref WordHistoryDynamoDBTable
+          TABLE_NAME: !Ref DynamoDBTable
+          # HISTORY_TABLE_NAME: !Ref WordHistoryDynamoDBTable
           CONTACT_TABLE_NAME: !Ref SubscriberContactListDynamoDBTable
           STAGE: !Ref Stage
       Events:
@@ -94,12 +94,11 @@ Resources:
       MemorySize: 128
       Timeout: 120
       Policies:
-        - S3ReadPolicy:
-            BucketName: !Ref WordsBucketName
+        - DynamoDBCrudPolicy:
+            TableName: !Ref DynamoDBTable
       Environment:
         Variables:
-          WORDS_BUCKET_NAME: !Ref WordsBucketName
-          WORDS_BUCKET_KEY: !Ref WordsBucketKey
+          TABLE_NAME: !Ref DynamoDBTable
       Events:
         SampleVocabApi:
           Type: Api
@@ -110,30 +109,32 @@ Resources:
       Layers:
       - !Ref Layer
 
-  WordHistory:
+  GetReviewWords:
     Type: 'AWS::Serverless::Function'
     Properties:
-      FunctionName: !Sub WordHistory-${Stage}
+      FunctionName: !Sub GetReviewWords-${Stage}
       Handler: app.lambda_handler
       Runtime: python3.7
-      CodeUri: src/word_history
+      CodeUri: src/get_review_words
       Description: A function that returns a list of previous daily words.
       MemorySize: 128
       Timeout: 120
       Policies:
         - DynamoDBCrudPolicy:
-            TableName: !Ref WordHistoryDynamoDBTable
+            TableName: !Ref DynamoDBTable
       Environment:
         Variables:
-          DYNAMODB_TABLE_NAME: !Ref DynamoDBTable
-          TABLE_NAME: !Ref WordHistoryDynamoDBTable
+          TABLE_NAME: !Ref DynamoDBTable
+          # TABLE_NAME: !Ref WordHistoryDynamoDBTable
       Events:
-        WordHistoryApi:
+        GetReviewWordsApi:
           Type: Api
           Properties:
             RestApiId: !Ref VocabAppApi
-            Path: /history
+            Path: /review
             Method: GET
+      Layers:
+      - !Ref Layer
   
   SetSubscriptions:
     Type: 'AWS::Serverless::Function'
@@ -149,7 +150,7 @@ Resources:
             TableName: !Ref DynamoDBTable
       Environment:
         Variables:
-          DYNAMODB_TABLE_NAME: !Ref DynamoDBTable
+          TABLE_NAME: !Ref DynamoDBTable
       Events:
         SetSubsApi:
           Type: Api
@@ -181,7 +182,7 @@ Resources:
             Resource: !GetAtt UserPool.Arn
       Environment:
         Variables:
-          DYNAMODB_TABLE_NAME: !Ref DynamoDBTable
+          TABLE_NAME: !Ref DynamoDBTable
           USER_POOL_ID: !Ref UserPool
       Events:
         UnsubApi:
@@ -208,13 +209,13 @@ Resources:
             TableName: !Ref DynamoDBTable
       Environment:
         Variables:
-          DYNAMODB_TABLE_NAME: !Ref DynamoDBTable
+          TABLE_NAME: !Ref DynamoDBTable
       Events:
         GetUserDataApi:
           Type: Api
           Properties:
             RestApiId: !Ref VocabAppApi
-            Path: /user_data
+            Path: /user
             Method: GET
             Auth:
               Authorizer: CognitoAuthorizer
@@ -235,7 +236,7 @@ Resources:
             TableName: !Ref DynamoDBTable
       Environment:
         Variables:
-          DYNAMODB_TABLE_NAME: !Ref DynamoDBTable
+          TABLE_NAME: !Ref DynamoDBTable
       Events:
         SetUserDataApi:
           Type: Api
@@ -260,7 +261,7 @@ Resources:
             TableName: !Ref DynamoDBTable
       Environment:
         Variables:
-          DYNAMODB_TABLE_NAME: !Ref DynamoDBTable
+          TABLE_NAME: !Ref DynamoDBTable
       Events:
         SetLastLoginApi:
           Type: Api
@@ -468,18 +469,27 @@ Resources:
         BlockPublicPolicy: true
         IgnorePublicAcls: true
         RestrictPublicBuckets: true
-  
+
   PronunciationAudioBucket:
     Type: AWS::S3::Bucket
     Properties:
-      AccessControl: Private
-      BucketName: !Sub hhtt-pronunciation-audio-${Stage}
-      PublicAccessBlockConfiguration:
-        BlockPublicAcls: true
-        BlockPublicPolicy: true
-        IgnorePublicAcls: true
-        RestrictPublicBuckets: true
+      AccessControl: PublicRead
+      BucketName: !Sub vocab-audio-${Stage}
 
+  AudioFileBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties: 
+      Bucket: !Ref PronunciationAudioBucket
+      PolicyDocument:
+        Statement:
+          - Sid: AudioAllowRead
+            Effect: Allow
+            Principal: "*"
+            Action: 
+            - s3:GetObject
+            Resource:
+              - !Join ["", ["arn:aws:s3:::", !Ref PronunciationAudioBucket, "/audio/*"]]
+              
 ####################################################################################################
 # State machine
 ####################################################################################################

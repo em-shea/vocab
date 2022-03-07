@@ -1,18 +1,20 @@
 import os
 import json
 import boto3
+import urllib.parse
+from random import randint
 from datetime import datetime
 from boto3.dynamodb.conditions import Key
 from botocore.exceptions import ClientError
 
-# TODO: Add cognito id to unsub URL params
-
-import random_word_service
+import user_service
+import list_word_service
+import vocab_list_service
 
 # region_name specified in order to mock in unit tests
 ses_client = boto3.client('ses', region_name=os.environ['AWS_REGION'])
-table = boto3.resource('dynamodb', region_name=os.environ['AWS_REGION']).Table(os.environ['DYNAMODB_TABLE_NAME'])
-word_history_table = boto3.resource('dynamodb', region_name=os.environ['AWS_REGION']).Table(os.environ['TABLE_NAME'])
+table = boto3.resource('dynamodb', region_name=os.environ['AWS_REGION']).Table(os.environ['TABLE_NAME'])
+# word_history_table = boto3.resource('dynamodb', region_name=os.environ['AWS_REGION']).Table(os.environ['TABLE_NAME'])
 
 def lambda_handler(event, context):
 
@@ -28,15 +30,15 @@ def lambda_handler(event, context):
 
     todays_announcement = get_announcement()
 
-    # Scan the contacts table for a list of all contacts
-    users_and_subscriptions = get_users_and_subscriptions()
-
-    users_and_subscriptions_grouped = process_users_and_subscriptions(users_and_subscriptions)
+    user_list = user_service.get_all_users()
 
     email_counter = 0
-    for user_id, user in users_and_subscriptions_grouped.items():
-        # print('loop through users')
-        if len(user['lists'])>0:
+    for user in user_list:
+        active_subscription_count = 0
+        for subscription in user.subscriptions:
+            if subscription.status == 'subscribed':
+                active_subscription_count += 1
+        if active_subscription_count>0:
             email_content = assemble_html_content(user, todays_words, todays_announcement)
             try:
                 # print('send emails')
@@ -77,92 +79,56 @@ def get_announcement():
         return announcement_html
 
 def get_daily_words():
+    print('getting daily words...')
 
     todays_words = {}
 
-    # Hard coding list names for now before refactoring list database
-    list_names = ['HSK Level 1', 'HSK Level 2', 'HSK Level 3', 'HSK Level 4', 'HSK Level 5', 'HSK Level 6']
+    all_lists = vocab_list_service.get_vocab_lists()
 
-    # Loop through all lists and select word
-    for list in list_names:
-        level = str(list_names.index(list)+1)
+    for list in all_lists:
         try:
-            word = random_word_service.select_random_word(level)
-            todays_words[list] = word
+            all_words = list_word_service.get_words_in_list(list['list_id'])
+            random_number = randint(0,len(all_words)-1)
+            random_word = all_words[random_number]
+            todays_words[list['list_id']] = random_word
         except Exception as e:
-            # Appending None to the list as a placeholder for the level's word. Emails will not send for this level.
-            todays_words[list] = None
+            todays_words[list['list_id']] = None
             print(e)
 
+    print('daily words: ', todays_words)
     return todays_words
 
 def store_words(todays_words):
 
-    for list_name, word in todays_words.items():
+    for list_id, word_item in todays_words.items():
         date = str(datetime.today().strftime('%Y-%m-%d'))
 
-        # Write each word to Dynamo word history table
-        response = word_history_table.put_item(
-            Item={
-                    'ListId': list_name.replace(" ", ""),
-                    'Date': date,
-                    'Word': word,
+        word_body = word_item['word']
+        # TODO: move removing 'WORD#' on word_id into the list_word_service
+        word_body['Word id'] = word_item['word_id'].split('#')[1]
+
+        try:
+            response = table.put_item(
+                Item={
+                    'PK': 'LIST#' + list_id,
+                    'SK': 'DATESENT#' + date,
+                    'Word': word_body
                 }
             )
-    print(response)
-
-def get_users_and_subscriptions():
-
-    response = table.query(
-        IndexName='GSI1',
-        KeyConditionExpression=Key('GSI1PK').eq('USER')
-    )
-    # print(response['Items'])
-    return response['Items']
-
-def process_users_and_subscriptions(users_and_subscriptions):
-
-    users_and_subscriptions_grouped = {}
-    # users_and_subscriptions_grouped = {
-    #     user_id: {
-    #         'user_data': {user metadata},
-    #         'lists': [
-    #             {sub metadata}
-    #         ]
-    #     }
-    # }
-
-    # Loop through all users and subs
-    for item in users_and_subscriptions:
-        # If user is not yet in the grouped dict, add a new dict for the user
-        if item['PK'] not in users_and_subscriptions_grouped:
-            users_and_subscriptions_grouped[item['PK']] = {'user_data': None, 'lists': []}
-        
-        # If Dynamo item is a user, add user metadata to the user's dict
-        if 'Email address' in item:
-            print('user metadata', item['Email address'])
-            users_and_subscriptions_grouped[item['PK']]['user_data'] = item
-
-        # If Dynamo item is a list subscription and the status is subscribed, add the list to the user's dict
-        if 'List name' in item:
-            print('user list', item['List name'])
-            if item['Status'] == 'subscribed':
-                users_and_subscriptions_grouped[item['PK']]['lists'].append(item)
-                print('subscribed')
-            else:
-                print('unsubscribed')
-
-    print(users_and_subscriptions_grouped)
-
-    return users_and_subscriptions_grouped
+            print('stored word: ', word_body)
+        except Exception as e:
+            print('Failed to store todays word: ', word_body)
+            print('DynamoDB response: ', response)
+            print(e)
 
 def assemble_html_content(user, todays_words, todays_announcement):
 
     # Appends multiple words into the same email
     # TODO: Order the lists in some way?
     word_content = ""
-    for list in user['lists']:
-        word_content = word_content + assemble_word_html_content(user['user_data']['Email address'], list, todays_words)
+    for subscription in user.subscriptions:
+        if subscription.status == 'subscribed':
+            word_content = word_content + assemble_word_html_content(user.email_address, subscription, todays_words)
 
     # Open HTML template file
     # To run unit tests, we need to specify an absolute file path
@@ -170,11 +136,9 @@ def assemble_html_content(user, todays_words, todays_announcement):
     with open(os.path.join(abs_dir, 'email_template.html')) as fh:
         email_template = fh.read()
 
-    # Hard coding HSK level before list database refactor
     # Get first list user is subscribed to and use in unsub link
-    list_id_substring = user['lists'][0]['SK'].split('#')
-    print('substring, ', list_id_substring)
-    email_contents = email_template.replace("{unsubscribe_link}", "https://haohaotiantian.com/unsub?list=" + list_id_substring[1] + "&char=" + list_id_substring[2] + "&email=" + user['user_data']['Email address'])
+    email_contents = email_template.replace("{unsubscribe_link}", "https://haohaotiantian.com/unsub?list=" + user.subscriptions[0].list_id + "&char=" + user.subscriptions[0].character_set + "&email=" + urllib.parse.quote_plus(user.email_address))
+    email_contents = email_contents.replace("{signin_link}", "https://haohaotiantian.com/signin?email=" + urllib.parse.quote_plus(user.email_address))
 
     email_contents = email_contents.replace("{word_contents}", word_content)
 
@@ -185,20 +149,23 @@ def assemble_html_content(user, todays_words, todays_announcement):
 
     return email_contents
 
-def assemble_word_html_content(user_email, list, todays_words):
+def assemble_word_html_content(user_email, subscription, todays_words):
+    print('assembling word content...')
+    print('list subscription: ', subscription)
 
-    word = todays_words[list['List name']]
+    word = todays_words[subscription.list_id]['word']
+    print('selected word, ', word)
     if word is None:
         return ""
     else:
         # Select simplified or traditional character 
-        if list['Character set'] == "simplified":
-            selected_word = word["Word"]
+        if subscription.character_set == "simplified":
+            selected_word = word["Simplified"]
         else:
-            selected_word = word["Word-Traditional"]
-        
+            selected_word = word["Traditional"]
+
         # Hard coding list names and sentence URLs before list database refactor
-        if list['List name'] in ['HSK Level 1', 'HSK Level 2', 'HSK Level 3']:
+        if subscription.list_name in ['HSK Level 1', 'HSK Level 2', 'HSK Level 3']:
             example_link = "https://www.yellowbridge.com/chinese/sentsearch.php?word=" + selected_word
         else:
             example_link = "https://fanyi.baidu.com/#zh/en/" + selected_word
@@ -208,16 +175,15 @@ def assemble_word_html_content(user_email, list, todays_words):
             word_template = fh.read()
 
         # Hard coding HSK level before list database refactor
-        hsk_level = list['List name'][-1]
+        hsk_level = subscription.list_name[-1]
 
         word_contents = word_template.replace("{word}", selected_word)
-        word_contents = word_contents.replace("{pronunciation}", word["Pronunciation"])
+        word_contents = word_contents.replace("{pronunciation}", word["Pinyin"])
         word_contents = word_contents.replace("{definition}", word["Definition"])
         word_contents = word_contents.replace("{link}", example_link)
-        word_contents = word_contents.replace("{list}", list['List name'])
-        word_contents = word_contents.replace("{quiz_link}", "https://haohaotiantian.com/quiz?list=HSKLevel" + hsk_level + "&days=14&ques=10&char=" + list['Character set'])
-        word_contents = word_contents.replace("{signin_link}", "https://haohaotiantian.com/quiz?email=" + user_email)
-        word_contents = word_contents.replace("{history_link}", "https://haohaotiantian.com/history?list=HSKLevel" + hsk_level + "&dates=30&char=" + list['Character set'])
+        word_contents = word_contents.replace("{list}", subscription.list_name)
+        word_contents = word_contents.replace("{quiz_link}", "https://haohaotiantian.com/quiz?list_id=" + subscription.list_id + "&date_range=30&ques=10&char=" + subscription.character_set)
+        word_contents = word_contents.replace("{review_link}", "https://haohaotiantian.com/review?list_id=" + subscription.list_id + "&date_range=30&char=" + subscription.character_set)
 
     return word_contents
 
@@ -227,7 +193,7 @@ def send_email(user, email_content):
         Source = "Haohaotiantian <vocab@haohaotiantian.com>",
         Destination = {
             "ToAddresses" : [
-            user['user_data']['Email address']
+            user.email_address
             ]
         },
         Message = {
