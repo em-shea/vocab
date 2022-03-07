@@ -36,6 +36,8 @@ def query_dynamodb(list_id, limit=None, last_word_token=None, audio_file_key_che
     }
     if limit is not None:
         query['Limit'] = limit
+    # Decided against using a filter expression (audio_file_check set to False) since I need to set a last_word_token
+    # TODO: limit/filter results with fewer DynamoDB calls and Step Functions map iterations
     if audio_file_key_check is not False:
         query['FilterExpression'] = "#w.#af = :val"
         query['ExpressionAttributeNames'] = {
