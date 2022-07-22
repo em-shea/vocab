@@ -753,19 +753,6 @@ Resources:
       AlarmName: SetSubscriptionsErrorAlarm
       AlarmActions: 
       - !Ref AlarmTopic
-      # Metrics:
-      # - Id: !Sub "errors_${SetSubscriptions}"
-      #   MetricStat: 
-      #     Metric:
-      #       Namespace: VocabFunctionErrors
-      #       MetricName: SetSubscriptionsErrorMetrics
-      #       Dimensions:
-      #         - Name: FunctionName
-      #           Value: !Sub '${SetSubscriptions}'
-      #         - Name: Stage
-      #           Value: !Sub '${Stage}'
-      #     Period: 120
-      #     Stat: Sum
       MetricName: SetSubscriptionsErrorMetrics
       Namespace: VocabFunctionErrors
       ComparisonOperator: GreaterThanOrEqualToThreshold
