@@ -745,7 +745,7 @@ Resources:
         - MetricValue: "1"
           MetricNamespace: "VocabFunctionErrors"
           MetricName: "SetSubscriptionsErrorMetrics"
-  
+
   SetSubscriptionsErrorAlarm:
     Type: AWS::CloudWatch::Alarm
     DependsOn: SetSubscriptionsErrorMetricFilter
