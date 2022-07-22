@@ -10,6 +10,8 @@ Parameters:
     Type: String
   DynamoBackupsS3BucketName:
     Type: String
+  AlarmEmail:
+    Type: String
   Stage:
     Type: String
 
@@ -709,6 +711,62 @@ Resources:
       UserPoolId: !Ref UserPool
       ExplicitAuthFlows:
         - CUSTOM_AUTH_FLOW_ONLY
+
+####################################################################################################
+# CloudWatch Logs & Alarms
+####################################################################################################
+
+  AlarmTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      Subscription:
+      - Protocol: email
+        Endpoint: !Ref AlarmEmail
+
+  SetSubscriptionsLogGroup:
+    Type: AWS::Logs::LogGroup
+    DependsOn:
+      - SetSubscriptions
+    Properties:
+      RetentionInDays: 90
+      LogGroupName:
+        !Join [
+          '',
+          ['/aws/lambda/', !Sub 'SetSubscriptions-${Stage}']
+        ]
+
+  SetSubscriptionsErrorMetricFilter: 
+    Type: AWS::Logs::MetricFilter
+    DependsOn: SetSubscriptionsLogGroup
+    Properties: 
+      LogGroupName: !Ref SetSubscriptionsLogGroup
+      FilterPattern: 'Error'
+      MetricTransformations: 
+        - MetricValue: "1"
+          MetricNamespace: "VocabFunctionErrors"
+          MetricName: "SetSubscriptionsErrorMetrics"
+
+  SetSubscriptionsErrorAlarm:
+    Type: AWS::CloudWatch::Alarm
+    DependsOn: SetSubscriptionsErrorMetricFilter
+    Properties:
+      AlarmName: SetSubscriptionsErrorAlarm
+      AlarmActions: 
+      - !Ref AlarmTopic
+      MetricName: SetSubscriptionsErrorMetrics
+      Namespace: VocabFunctionErrors
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      EvaluationPeriods: 1
+      DatapointsToAlarm: 1
+      Dimensions:
+        - Name: FunctionName
+          Value: !Sub '${SetSubscriptions}'
+        - Name: Stage
+          Value: !Sub '${Stage}'
+      Period: 60
+      Statistic: Maximum
+      Threshold: 1
+      TreatMissingData: missing
 
 ####################################################################################################
 # Outputs
