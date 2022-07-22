@@ -723,7 +723,7 @@ Resources:
       LogGroupName:
         !Join [
           '',
-          ['/aws/lambda/', !Sub 'SetSubscriptions-${Stage}']
+          ['/aws/lambda/', !Sub 'SetSubscriptionsLogs-${Stage}']
         ]
 
   SetSubscriptionsErrorMetricFilter: 
