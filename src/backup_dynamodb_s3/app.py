@@ -23,11 +23,12 @@ def lambda_handler(event, context):
 def scan_contacts_table():
 
     # Loop through contacts in Dynamo
-    results = table.scan(
-        Select = "ALL_ATTRIBUTES"
-    )
+    response = table.scan()
+    all_contacts = response['Items']
 
-    all_contacts = results['Items']
+    while 'LastEvaluatedKey' in response:
+        response = table.scan(ExclusiveStartKey=response['LastEvaluatedKey'])
+        all_contacts.extend(response['Items'])
 
     return all_contacts
 
