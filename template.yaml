@@ -10,6 +10,8 @@ Parameters:
     Type: String
   DynamoBackupsS3BucketName:
     Type: String
+  AlarmEmail:
+    Type: String
   Stage:
     Type: String
 
@@ -714,6 +716,14 @@ Resources:
 # CloudWatch Logs & Alarms
 ####################################################################################################
 
+  AlarmTopic:
+    # A topic that error notifications are published to
+    Type: AWS::SNS::Topic
+    Properties:
+      Subscription:
+      - Protocol: email
+        Endpoint: !Ref AlarmEmail
+
   SetSubscriptionsLogGroup:
     Type: AWS::Logs::LogGroup
     DependsOn:
@@ -723,7 +733,7 @@ Resources:
       LogGroupName:
         !Join [
           '',
-          ['/aws/lambda/', !Sub 'SetSubscriptionsLogs-${Stage}']
+          ['/aws/lambda/', !Sub 'SetSubscriptions-${Stage}']
         ]
 
   SetSubscriptionsErrorMetricFilter: 
@@ -734,8 +744,30 @@ Resources:
       FilterPattern: 'Error'
       MetricTransformations: 
         - MetricValue: "1"
-          MetricNamespace: "vocab-function-errors"
+          MetricNamespace: "VocabFunctionErrors"
           MetricName: "SetSubscriptionsErrorMetrics"
+  
+  SetSubscriptionsErrorAlarm:
+    Type: AWS::CloudWatch::Alarm
+    DependsOn: SetSubscriptionsErrorMetricFilter
+    Properties:
+      AlarmName: SetSubscriptionsErrorAlarm
+      AlarmActions: 
+      - !Ref AlarmTopic
+      MetricName: SetSubscriptionsErrorMetrics
+      Namespace: VocabFunctionErrors
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      EvaluationPeriods: 1
+      DatapointsToAlarm: 1
+      Dimensions:
+        - Name: FunctionName
+          Value: !Sub '${SetSubscriptions}'
+        - Name: Stage
+          Value: !Sub '${Stage}'
+      Period: 5
+      Statistic: Maximum
+      Threshold: 1
+      TreatMissingData: breaching
 
   # SetSubscriptionsErrorAlarm:
   #   Type: AWS::CloudWatch::Alarm
