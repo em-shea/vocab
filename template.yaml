@@ -711,6 +711,39 @@ Resources:
         - CUSTOM_AUTH_FLOW_ONLY
 
 ####################################################################################################
+# CloudWatch Logs & Alarms
+####################################################################################################
+
+  SetSubscriptionsLogGroup:
+    Type: AWS::Logs::LogGroup
+    DependsOn:
+      - SetSubscriptions
+    Properties:
+      RetentionInDays: 90
+      LogGroupName:
+        !Join [
+          '',
+          ['/aws/lambda/', !Sub 'SetSubscriptions-${Stage}']
+        ]
+
+  SetSubscriptionsErrorMetricFilter: 
+    Type: AWS::Logs::MetricFilter
+    DependsOn: SetSubscriptionsLogGroup
+    Properties: 
+      LogGroupName: !Ref SetSubscriptionsLogGroup
+      FilterPattern: 'Error'
+      MetricTransformations: 
+        - MetricValue: "1"
+          MetricNamespace: "vocab-function-errors"
+          MetricName: "SetSubscriptionsErrorMetrics"
+
+  # SetSubscriptionsErrorAlarm:
+  #   Type: AWS::CloudWatch::Alarm
+  #   Properties:
+  #     Namespace:
+  #     MetricName: 
+
+####################################################################################################
 # Outputs
 ####################################################################################################
 
