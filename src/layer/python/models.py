@@ -10,10 +10,6 @@ class Subscription:
     character_set: str
     status: str
     date_subscribed: str
-    # def to_dict(self):
-    #     return {
-    #         'list_name': self.list_name
-    #     }
 
 @dataclass
 class User:
@@ -47,3 +43,14 @@ class ReviewWord:
     list_id: str
     date_sent: str
     word: Dict[str, Word]
+
+@dataclass
+class QuizResults:
+    quiz_id: str
+    date_created: datetime.datetime
+    list_id: str
+    character_set: str
+    question_set_type: str
+    quiz_data: Dict[str, str] #?
+    question_quantity: int
+    percentage_correct: int

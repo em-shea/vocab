@@ -6,10 +6,6 @@ Parameters:
     Type: String
   WordsBucketKey:
     Type: String
-  # ListsBucketName:
-  #   Type: String
-  # ListsBucketKey:
-  #   Type: String
   OTPSecretKey:
     Type: String
   DynamoBackupsS3BucketName:
@@ -174,7 +170,6 @@ Resources:
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref DynamoDBTable
-            Events:
         - Statement:
           - Effect: Allow
             Action:
@@ -271,6 +266,62 @@ Resources:
             Method: POST
             Auth:
               Authorizer: CognitoAuthorizer
+
+  SetQuizResults:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      FunctionName: !Sub SetQuizResults-${Stage}
+      Handler: app.lambda_handler
+      Runtime: python3.7
+      CodeUri: src/set_quiz_results
+      Description: A function that saves quiz result records
+      MemorySize: 128
+      Timeout: 120
+      Policies:
+        - DynamoDBCrudPolicy:
+           TableName: !Ref DynamoDBTable
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref DynamoDBTable
+      Events:
+        SetQuizResultsApi:
+          Type: Api
+          Properties:
+            RestApiId: !Ref VocabAppApi
+            Path: /quiz
+            Method: POST
+            Auth:
+              Authorizer: CognitoAuthorizer
+      Layers:
+      - !Ref Layer
+
+  GetQuizResults:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      FunctionName: !Sub GetQuizResults-${Stage}
+      Handler: app.lambda_handler
+      Runtime: python3.7
+      CodeUri: src/get_quiz_results
+      Description: A function that retrievess quiz result records
+      MemorySize: 128
+      Timeout: 120
+      Policies:
+        - DynamoDBCrudPolicy:
+           TableName: !Ref DynamoDBTable
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref DynamoDBTable
+      Events:
+        SetQuizResultsApi:
+          Type: Api
+          Properties:
+            RestApiId: !Ref VocabAppApi
+            Path: /quiz
+            Method: GET
+            Auth:
+              Authorizer: CognitoAuthorizer
+      Layers:
+      - !Ref Layer
 
   SetSentence:
     Type: 'AWS::Serverless::Function'

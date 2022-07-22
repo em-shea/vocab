@@ -32,7 +32,7 @@ And in this blog post series:
 | User practice sentences | |
 | User created vocab lists | |
 | 成语 vocab list | |
-| Add pronunciation audio | |
+| Add pronunciation audio | :heavy_check_mark: |
 | Add user profiles | :heavy_check_mark: |
 | Auto-generated quizzes | :heavy_check_mark: |
 | Build subscriber analytics QuickSight dashboard | :heavy_check_mark: |

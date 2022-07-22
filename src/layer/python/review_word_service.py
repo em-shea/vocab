@@ -27,7 +27,7 @@ def get_review_words(list_id, date_range):
     review_words = defaultdict(list)
     for vocab_list in filtered_lists:
         word_list_response = query_dynamodb(vocab_list['list_id'], todays_date, from_date)
-        print('word list response', word_list_response)
+        # print('word list response', word_list_response)
 
         for word in word_list_response:
             formatted_word=format_review_word(word)
@@ -44,13 +44,13 @@ def query_dynamodb(list_id, todays_date, from_date):
     except Exception as e:
         print(e.response['Error']['Message'])
         raise e
-    else:
-        print("dynamo query response: ", json.dumps(response['Items'], indent=4))
+    # else:
+        # print("dynamo query response: ", json.dumps(response['Items'], indent=4))
     
     return response['Items']
 
 def format_review_word(query_response_word):
-    print('query response word', query_response_word)
+    # print('query response word', query_response_word)
     word_body = Word(
         word_id = query_response_word['Word']['Word id'],
         simplified = query_response_word['Word']['Simplified'],

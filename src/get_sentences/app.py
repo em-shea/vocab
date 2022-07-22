@@ -3,40 +3,25 @@ import json
 import boto3
 from boto3.dynamodb.conditions import Key
 
+import api_response
+
 table = boto3.resource('dynamodb', region_name=os.environ['AWS_REGION']).Table(os.environ['TABLE_NAME'])
 
 # Create or update daily practice sentences
 def lambda_handler(event, context):
     print(event)
     cognito_id = event['requestContext']['authorizer']['claims']['sub']
-    print('user id, ',cognito_id)
-
-    error_message = {
-        'statusCode': 502,
-        'headers': {
-            'Access-Control-Allow-Methods': 'GET,OPTIONS',
-            'Access-Control-Allow-Origin': '*',
-        },
-        'body': '{"success" : false}'
-    }
 
     try:
         sentences_response = pull_user_sentences(cognito_id)
     except Exception as e:
         print(f"Error: Failed to get user sentences.")
         print(e)
-        return error_message
+        return api_response.response(502, "Failed to retrieve user sentences.")
     
     user_sentences = format_user_sentences(sentences_response)
 
-    return {
-        'statusCode': 200,
-        'headers': {
-            'Access-Control-Allow-Methods': 'GET,OPTIONS',
-            'Access-Control-Allow-Origin': '*',
-        },
-        'body': json.dumps(user_sentences)
-    }
+    return api_response.response(200, "Successfully retrieved user sentences.", user_sentences)
 
 def pull_user_sentences(congito_id):
 
