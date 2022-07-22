@@ -750,7 +750,7 @@ Resources:
     Type: AWS::CloudWatch::Alarm
     DependsOn: SetSubscriptionsErrorMetricFilter
     Properties:
-      AlarmName: SetSubscriptionsErrorAlarm
+      AlarmName: !Sub SetSubscriptionsErrorAlarm-${Stage}
       AlarmActions: 
       - !Ref AlarmTopic
       MetricName: SetSubscriptionsErrorMetrics
