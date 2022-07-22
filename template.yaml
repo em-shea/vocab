@@ -717,7 +717,6 @@ Resources:
 ####################################################################################################
 
   AlarmTopic:
-    # A topic that error notifications are published to
     Type: AWS::SNS::Topic
     Properties:
       Subscription:
@@ -768,12 +767,6 @@ Resources:
       Statistic: Maximum
       Threshold: 1
       TreatMissingData: breaching
-
-  # SetSubscriptionsErrorAlarm:
-  #   Type: AWS::CloudWatch::Alarm
-  #   Properties:
-  #     Namespace:
-  #     MetricName: 
 
 ####################################################################################################
 # Outputs
