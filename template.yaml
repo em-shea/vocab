@@ -170,7 +170,6 @@ Resources:
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref DynamoDBTable
-            Events:
         - Statement:
           - Effect: Allow
             Action:
