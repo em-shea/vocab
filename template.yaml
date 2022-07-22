@@ -743,8 +743,8 @@ Resources:
       FilterPattern: 'Error'
       MetricTransformations: 
         - MetricValue: "1"
-          MetricNamespace: "VocabFunctionErrors"
-          MetricName: "SetSubscriptionsErrorMetrics"
+          MetricNamespace: !Sub "VocabFunctionErrors-${Stage}"
+          MetricName: !Sub "SetSubscriptionsErrorMetrics-${Stage}"
 
   SetSubscriptionsErrorAlarm:
     Type: AWS::CloudWatch::Alarm
@@ -753,8 +753,8 @@ Resources:
       AlarmName: !Sub SetSubscriptionsErrorAlarm-${Stage}
       AlarmActions: 
       - !Ref AlarmTopic
-      MetricName: SetSubscriptionsErrorMetrics
-      Namespace: VocabFunctionErrors
+      MetricName: !Sub SetSubscriptionsErrorMetrics-${Stage}
+      Namespace: !Sub VocabFunctionErrors-${Stage}
       ComparisonOperator: GreaterThanOrEqualToThreshold
       EvaluationPeriods: 1
       DatapointsToAlarm: 1
