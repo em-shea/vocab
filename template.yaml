@@ -763,7 +763,7 @@ Resources:
           Value: !Sub '${SetSubscriptions}'
         - Name: Stage
           Value: !Sub '${Stage}'
-      Period: 300
+      Period: 60
       Statistic: Maximum
       Threshold: 1
       TreatMissingData: breaching
