@@ -41,6 +41,8 @@ def convert_to_rows(all_contacts_data, todays_date):
         item['Reporting date'] = todays_date
         if 'Date subscribed' in item:
             item['Date subscribed'] = datetime.fromisoformat(item['Date subscribed']).strftime('%Y-%m-%dT%H:%M:%S') # yyyy-MM-dd'T'HH:mm:ss
+        if 'Date unsubscribed' in item:
+            item['Date unsubscribed'] = datetime.fromisoformat(item['Date unsubscribed']).strftime('%Y-%m-%dT%H:%M:%S') # yyyy-MM-dd'T'HH:mm:ss
         if 'Date created' in item:
             item['Date created'] = datetime.fromisoformat(item['Date created']).strftime('%Y-%m-%dT%H:%M:%S') # yyyy-MM-dd'T'HH:mm:ss
         data_rows.append(item)

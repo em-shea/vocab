@@ -766,7 +766,7 @@ Resources:
       Period: 60
       Statistic: Maximum
       Threshold: 1
-      TreatMissingData: breaching
+      TreatMissingData: missing
 
 ####################################################################################################
 # Outputs
