@@ -802,6 +802,46 @@ Resources:
       Period: 120
       Statistic: Sum
       TreatMissingData: notBreaching
+  
+  SendDailyEmailLogGroup:
+    Type: AWS::Logs::LogGroup
+    DependsOn:
+      - SendDailyEmail
+    Properties:
+      RetentionInDays: 90
+      LogGroupName:
+        !Join [
+          '',
+          ['/aws/lambda/', !Sub 'SendDailyEmail-${Stage}']
+        ]
+
+  SendDailyEmailErrorMetricFilter: 
+    Type: AWS::Logs::MetricFilter
+    DependsOn: SendDailyEmailLogGroup
+    Properties: 
+      LogGroupName: !Ref SendDailyEmailLogGroup
+      FilterPattern: 'Error'
+      MetricTransformations: 
+        - MetricValue: "1"
+          MetricNamespace: !Sub "VocabFunctionErrors-${Stage}"
+          MetricName: !Sub "SendDailyEmailErrorMetrics-${Stage}"
+
+  SendDailyEmailErrorAlarm:
+    Type: AWS::CloudWatch::Alarm
+    DependsOn: SendDailyEmailErrorMetricFilter
+    Properties:
+      AlarmName: !Sub SendDailyEmailErrorAlarm-${Stage}
+      AlarmActions: 
+      - !Ref AlarmTopic
+      MetricName: !Sub SendDailyEmailErrorMetrics-${Stage}
+      Namespace: !Sub VocabFunctionErrors-${Stage}
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      EvaluationPeriods: 1
+      DatapointsToAlarm: 1
+      Threshold: 1
+      Period: 120
+      Statistic: Sum
+      TreatMissingData: notBreaching
 
 ####################################################################################################
 # Outputs
