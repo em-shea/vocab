@@ -762,6 +762,86 @@ Resources:
       Period: 120
       Statistic: Sum
       TreatMissingData: notBreaching
+  
+  UnsubscribeLogGroup:
+    Type: AWS::Logs::LogGroup
+    DependsOn:
+      - Unsubscribe
+    Properties:
+      RetentionInDays: 90
+      LogGroupName:
+        !Join [
+          '',
+          ['/aws/lambda/', !Sub 'Unsubscribe-${Stage}']
+        ]
+
+  UnsubscribeErrorMetricFilter: 
+    Type: AWS::Logs::MetricFilter
+    DependsOn: UnsubscribeLogGroup
+    Properties: 
+      LogGroupName: !Ref UnsubscribeLogGroup
+      FilterPattern: 'Error'
+      MetricTransformations: 
+        - MetricValue: "1"
+          MetricNamespace: !Sub "VocabFunctionErrors-${Stage}"
+          MetricName: !Sub "UnsubscribeErrorMetrics-${Stage}"
+
+  UnsubscribeErrorAlarm:
+    Type: AWS::CloudWatch::Alarm
+    DependsOn: UnsubscribeErrorMetricFilter
+    Properties:
+      AlarmName: !Sub UnsubscribeErrorAlarm-${Stage}
+      AlarmActions: 
+      - !Ref AlarmTopic
+      MetricName: !Sub UnsubscribeErrorMetrics-${Stage}
+      Namespace: !Sub VocabFunctionErrors-${Stage}
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      EvaluationPeriods: 1
+      DatapointsToAlarm: 1
+      Threshold: 1
+      Period: 120
+      Statistic: Sum
+      TreatMissingData: notBreaching
+  
+  SendDailyEmailLogGroup:
+    Type: AWS::Logs::LogGroup
+    DependsOn:
+      - SendDailyEmail
+    Properties:
+      RetentionInDays: 90
+      LogGroupName:
+        !Join [
+          '',
+          ['/aws/lambda/', !Sub 'SendDailyEmail-${Stage}']
+        ]
+
+  SendDailyEmailErrorMetricFilter: 
+    Type: AWS::Logs::MetricFilter
+    DependsOn: SendDailyEmailLogGroup
+    Properties: 
+      LogGroupName: !Ref SendDailyEmailLogGroup
+      FilterPattern: 'Error'
+      MetricTransformations: 
+        - MetricValue: "1"
+          MetricNamespace: !Sub "VocabFunctionErrors-${Stage}"
+          MetricName: !Sub "SendDailyEmailErrorMetrics-${Stage}"
+
+  SendDailyEmailErrorAlarm:
+    Type: AWS::CloudWatch::Alarm
+    DependsOn: SendDailyEmailErrorMetricFilter
+    Properties:
+      AlarmName: !Sub SendDailyEmailErrorAlarm-${Stage}
+      AlarmActions: 
+      - !Ref AlarmTopic
+      MetricName: !Sub SendDailyEmailErrorMetrics-${Stage}
+      Namespace: !Sub VocabFunctionErrors-${Stage}
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      EvaluationPeriods: 1
+      DatapointsToAlarm: 1
+      Threshold: 1
+      Period: 120
+      Statistic: Sum
+      TreatMissingData: notBreaching
 
 ####################################################################################################
 # Outputs
