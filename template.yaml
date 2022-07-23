@@ -43,7 +43,7 @@ Resources:
     Properties:
       FunctionName: !Sub SetTodaysWords-${Stage}
       Handler: app.lambda_handler
-      Runtime: python3.9
+      Runtime: python3.7
       CodeUri: src/set_todays_words
       Description: Sets daily word for each vocab list
       MemorySize: 128
@@ -421,7 +421,7 @@ Resources:
     Properties:
       FunctionName: !Sub PostVocabTweet-${Stage}
       Handler: app.lambda_handler
-      Runtime: python3.9
+      Runtime: python3.7
       CodeUri: src/post_tweet
       Description: Posts a tweet with daily vocab word
       MemorySize: 128
