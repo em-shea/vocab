@@ -56,6 +56,7 @@ Resources:
       Environment:
         Variables:
           TABLE_NAME: !Ref DynamoDBTable
+          EVENT_BUS_NAME: !Ref EventBus
       Layers:
       - !Ref Layer
 
