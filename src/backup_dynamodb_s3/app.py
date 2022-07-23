@@ -36,7 +36,8 @@ def convert_to_rows(all_contacts_data, todays_date):
 
     data_rows = []
 
-    # append today's date to each item as date of data pull
+    # Append today's date to each item as date of data pull
+    # Standardizing date formats since QuickSight can't handle mixed date formats
     for item in all_contacts_data:
         item['Reporting date'] = todays_date
         if 'Date subscribed' in item:

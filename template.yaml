@@ -38,6 +38,27 @@ Resources:
 # Lambda functions
 ####################################################################################################
 
+  SetTodaysWords:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      FunctionName: !Sub SetTodaysWords-${Stage}
+      Handler: app.lambda_handler
+      Runtime: python3.9
+      CodeUri: src/set_todays_words
+      Description: Sets daily word for each vocab list
+      MemorySize: 128
+      Timeout: 120
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref DynamoDBTable
+        - EventBridgePutEventsPolicy:
+            EventBusName: !Ref EventBus
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref DynamoDBTable
+      Layers:
+      - !Ref Layer
+
   SendDailyEmail:
     Type: 'AWS::Serverless::Function'
     Properties:
@@ -52,26 +73,21 @@ Resources:
       Policies:
         - SESCrudPolicy:
             IdentityName: haohaotiantian.com
-        - S3ReadPolicy:
-            BucketName: !Ref WordsBucketName
+        # - S3ReadPolicy:
+        #     BucketName: !Ref WordsBucketName
         - S3ReadPolicy:
             BucketName: !Ref VocabAnnouncementsBucket
         - DynamoDBCrudPolicy:
             TableName: !Ref DynamoDBTable
-        - DynamoDBCrudPolicy:
-            TableName: !Ref WordHistoryDynamoDBTable
-        - DynamoDBCrudPolicy:
-            TableName: !Ref SubscriberContactListDynamoDBTable
+        # - DynamoDBCrudPolicy:
+        #     TableName: !Ref SubscriberContactListDynamoDBTable
       Environment:
         Variables:
-          WORDS_BUCKET_NAME: !Ref WordsBucketName
-          WORDS_BUCKET_KEY: !Ref WordsBucketKey
-          # LISTS_BUCKET_NAME: !Ref ListsBucketName
-          # LISTS_BUCKET_KEY: !Ref ListsBucketKey
+          # WORDS_BUCKET_NAME: !Ref WordsBucketName
+          # WORDS_BUCKET_KEY: !Ref WordsBucketKey
           ANNOUNCEMENTS_BUCKET: !Ref VocabAnnouncementsBucket
           TABLE_NAME: !Ref DynamoDBTable
-          # HISTORY_TABLE_NAME: !Ref WordHistoryDynamoDBTable
-          CONTACT_TABLE_NAME: !Ref SubscriberContactListDynamoDBTable
+          # CONTACT_TABLE_NAME: !Ref SubscriberContactListDynamoDBTable
           STAGE: !Ref Stage
       Events:
         DailySchedule:
@@ -398,6 +414,25 @@ Resources:
           TABLE_NAME: !Ref DynamoDBTable
       Layers:
       - !Ref Layer
+  
+  PostTweet:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      FunctionName: !Sub PostVocabTweet-${Stage}
+      Handler: app.lambda_handler
+      Runtime: python3.9
+      CodeUri: src/post_tweet
+      Description: Posts a tweet with daily vocab word
+      MemorySize: 128
+      Timeout: 120
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref DynamoDBTable
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref DynamoDBTable
+      Layers:
+      - !Ref Layer
 
   BackupDynamoDBToS3:
     Type: 'AWS::Serverless::Function'
@@ -543,6 +578,44 @@ Resources:
             Resource:
               - !Join ["", ["arn:aws:s3:::", !Ref PronunciationAudioBucket, "/audio/*"]]
               
+####################################################################################################
+# Event bus
+####################################################################################################
+
+  EventBus:
+    Type: AWS::Events::EventBus
+    Properties:
+      Name: !Sub VocabEventBus-${Stage}
+
+  TodaysWordsSetEventRule:
+    Type: AWS::Events::Rule
+    Properties:
+      EventBusName: !Ref EventBus
+      EventPattern:
+        detail-type:
+          - todays-words-set
+      Targets:
+        - Arn: !GetAtt SendDailyEmail.Arn
+          Id: SendDailyEmailFunction
+        - Arn: !GetAtt PostTweet.Arn
+          Id: PostTweetFunction
+  
+  EventsToInvokeLambdaPolicy: 
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref SendDailyEmail
+      Action: "lambda:InvokeFunction"
+      Principal: "events.amazonaws.com"
+      SourceArn: !GetAtt TodaysWordsSetEventRule.Arn
+  
+  EventsToInvokeLambdaPolicy: 
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref PostTweet
+      Action: "lambda:InvokeFunction"
+      Principal: "events.amazonaws.com"
+      SourceArn: !GetAtt TodaysWordsSetEventRule.Arn
+
 ####################################################################################################
 # State machine
 ####################################################################################################
