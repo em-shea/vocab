@@ -57,6 +57,11 @@ Resources:
         Variables:
           TABLE_NAME: !Ref DynamoDBTable
           EVENT_BUS_NAME: !Ref EventBus
+      # Events:
+      #   DailySchedule:
+      #     Type: Schedule
+      #     Properties:
+      #       Schedule: cron(0 20 * * ? *)
       Layers:
       - !Ref Layer
 
@@ -74,21 +79,17 @@ Resources:
       Policies:
         - SESCrudPolicy:
             IdentityName: haohaotiantian.com
-        # - S3ReadPolicy:
-        #     BucketName: !Ref WordsBucketName
         - S3ReadPolicy:
             BucketName: !Ref VocabAnnouncementsBucket
         - DynamoDBCrudPolicy:
             TableName: !Ref DynamoDBTable
-        # - DynamoDBCrudPolicy:
-        #     TableName: !Ref SubscriberContactListDynamoDBTable
+        - DynamoDBCrudPolicy:
+            TableName: !Ref IdempotencyTable
       Environment:
         Variables:
-          # WORDS_BUCKET_NAME: !Ref WordsBucketName
-          # WORDS_BUCKET_KEY: !Ref WordsBucketKey
           ANNOUNCEMENTS_BUCKET: !Ref VocabAnnouncementsBucket
           TABLE_NAME: !Ref DynamoDBTable
-          # CONTACT_TABLE_NAME: !Ref SubscriberContactListDynamoDBTable
+          IDEMPOTENCY_TABLE: IdempotencyTable
           STAGE: !Ref Stage
       Events:
         DailySchedule:
@@ -429,9 +430,12 @@ Resources:
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref DynamoDBTable
+        - DynamoDBCrubPolicy:
+            TableName: !Ref IdempotencyTable
       Environment:
         Variables:
           TABLE_NAME: !Ref DynamoDBTable
+          IDEMPOTENCY_TABLE: !Ref IdempotencyTable
       Layers:
       - !Ref Layer
 
@@ -499,6 +503,26 @@ Resources:
               KeyType: RANGE
           Projection:
             ProjectionType: ALL
+      BillingMode: PAY_PER_REQUEST
+      ProvisionedThroughput:
+        ReadCapacityUnits: 0
+        WriteCapacityUnits: 0
+  
+  IdempotencyTable:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    Properties:
+      TableName: !Sub VocabAppIdempotencyTable-${Stage}
+      AttributeDefinitions:
+        - AttributeName: IdempotencyKey
+          AttributeType: S
+        - AttributeName: Consumer
+          AttributeType: S
+      KeySchema:
+        - AttributeName: IdempotencyKey
+          AttributeType: S
+        - AttributeName: Consumer
+          AttributeType: S
       BillingMode: PAY_PER_REQUEST
       ProvisionedThroughput:
         ReadCapacityUnits: 0
@@ -601,7 +625,7 @@ Resources:
         - Arn: !GetAtt PostTweet.Arn
           Id: PostTweetFunction
   
-  EventsToInvokeLambdaPolicy: 
+  EventsToInvokeLambdaPolicyEmail: 
     Type: AWS::Lambda::Permission
     Properties:
       FunctionName: !Ref SendDailyEmail
@@ -609,13 +633,61 @@ Resources:
       Principal: "events.amazonaws.com"
       SourceArn: !GetAtt TodaysWordsSetEventRule.Arn
   
-  EventsToInvokeLambdaPolicy: 
+  EventsToInvokeLambdaPolicyTweet: 
     Type: AWS::Lambda::Permission
     Properties:
       FunctionName: !Ref PostTweet
       Action: "lambda:InvokeFunction"
       Principal: "events.amazonaws.com"
       SourceArn: !GetAtt TodaysWordsSetEventRule.Arn
+  
+  # Logs all events for debugging
+  CloudWatchLogsGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/events/VocabEventBusLogs-${Stage}
+
+  AllEventsRule:
+    Type: AWS::Events::Rule
+    Properties:
+      EventBusName: !Ref EventBus
+      Targets:
+        - Arn: !GetAtt CloudWatchLogsGroup.Arn
+          Id: CloudWatchLogsGroup
+
+  EventsToCloudWatchLogGroupPolicy:
+    Type: AWS::Logs::ResourcePolicy
+    Properties:
+      PolicyName: EventBridgeToCWLogsPolicy
+      PolicyDocument: !Sub 
+      - >
+        {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Sid": "EventBridgetoCWLogsPolicy2",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": [
+                  "delivery.logs.amazonaws.com",
+                  "events.amazonaws.com"
+                ]
+              },
+              "Action": [
+                "logs:CreateLogStream",
+                "logs:PutLogEvents"
+              ],
+              "Resource": [
+                "${logArn}"
+              ],
+              "Condition": {
+                "ArnEquals": {"aws:SourceArn": [ "${AllEventsRule}", "${ruleArn}" ]}
+              }
+            }
+          ]
+        }
+      - { logArn: !GetAtt CloudWatchLogsGroup.Arn, ruleArn: !GetAtt AllEventsRule.Arn }
+
 
 ####################################################################################################
 # State machine

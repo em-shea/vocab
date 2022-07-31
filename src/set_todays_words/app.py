@@ -1,8 +1,10 @@
 import os
+import json
 import boto3
 from random import randint
 from datetime import datetime
 
+import ksuid_service
 import list_word_service
 import vocab_list_service
 
@@ -23,7 +25,7 @@ def lambda_handler(event, context):
 
     try:
         # Send EventBridge event
-        send_event()
+        send_event(todays_words)
     except Exception as e:
         print(e)
 
@@ -61,23 +63,29 @@ def store_words(todays_words):
                 Item={
                     'PK': 'LIST#' + list_id,
                     'SK': 'DATESENT#' + date,
-                    'Word': word_body
+                    'Word': word_body,
+                    'GSI1PK': 'DATESENT#' + date,
+                    'GSI1SK': 'LIST#' + list_id
                 }
             )
             print('stored word: ', word_body)
         except Exception as e:
-            print('Failed to store todays word: ', word_body)
+            print('Error: Failed to store todays word: ', word_body)
             print('DynamoDB response: ', response)
             print(e)
 
-def send_event():
-    
+def send_event(todays_words):
+
     response = eventbridge.put_event(
         Entries=[
             {
                 'Source': 'vocab-app',
                 'DetailType': 'todays-words-set',
-                'Detail': 'todays-words-set',
+                'Detail': json.dumps({
+                    'idempotency-key': str(ksuid_service.generate_ksuid()),
+                    'todays-words': todays_words
+                    }),
+                # Idempotency key, save to light database table to ensure emails aren't sent twice
                 'EventBusName': os.environ['EVENT_BUS_NAME']
             }
         ]
