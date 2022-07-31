@@ -430,7 +430,7 @@ Resources:
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref DynamoDBTable
-        - DynamoDBCrubPolicy:
+        - DynamoDBCrudPolicy:
             TableName: !Ref IdempotencyTable
       Environment:
         Variables:
