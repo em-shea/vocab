@@ -520,9 +520,9 @@ Resources:
           AttributeType: S
       KeySchema:
         - AttributeName: IdempotencyKey
-          AttributeType: S
+          KeyType: HASH
         - AttributeName: Consumer
-          AttributeType: S
+          KeyType: RANGE
       BillingMode: PAY_PER_REQUEST
       ProvisionedThroughput:
         ReadCapacityUnits: 0
