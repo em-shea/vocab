@@ -85,7 +85,6 @@ def send_event(todays_words):
                     'idempotency-key': str(ksuid_service.generate_ksuid()),
                     'todays-words': todays_words
                     }),
-                # Idempotency key, save to light database table to ensure emails aren't sent twice
                 'EventBusName': os.environ['EVENT_BUS_NAME']
             }
         ]
