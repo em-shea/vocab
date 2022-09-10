@@ -7,4 +7,10 @@ def lambda_handler(event, context):
 
     print('event: ', event)
 
+    check_idempotency_key()
+
     return
+
+def check_idempotency_key():
+
+    # query
