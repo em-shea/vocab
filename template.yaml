@@ -100,7 +100,7 @@ Resources:
           ANNOUNCEMENTS_BUCKET: !Ref VocabAnnouncementsBucket
           TABLE_NAME: !Ref DynamoDBTable
           IDEMPOTENCY_TABLE: !Ref IdempotencyTable
-          STAGE: !Ref Stage
+          URL: !Ref DomainName
       Events:
         DailySchedule:
           Type: Schedule

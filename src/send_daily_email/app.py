@@ -134,60 +134,9 @@ def get_announcement():
 
 def get_daily_words():
     print('getting daily words...')
-
     todays_words = review_word_service.get_review_words(list_id=None, date_range=0)
     print("words: ", dict(todays_words))
-    # word_list = []
-    # for value in dict(todays_words).values():
-    #     word_list.append(value[0])
-    # print('word list: ', word_list)
-    # random_number = randint(0,len(word_list)-1)
-    # random_word = word_list[random_number]
-    # print('selected word: ', random_word)
     return dict(todays_words)
-
-# def get_daily_words():
-#     print('getting daily words...')
-
-#     todays_words = {}
-
-#     all_lists = vocab_list_service.get_vocab_lists()
-
-#     for list in all_lists:
-#         try:
-#             all_words = list_word_service.get_words_in_list(list['list_id'])
-#             random_number = randint(0,len(all_words)-1)
-#             random_word = all_words[random_number]
-#             todays_words[list['list_id']] = random_word
-#         except Exception as e:
-#             todays_words[list['list_id']] = None
-#             print(e)
-
-#     print('daily words: ', todays_words)
-#     return todays_words
-
-# def store_words(todays_words):
-
-#     for list_id, word_item in todays_words.items():
-#         date = str(datetime.today().strftime('%Y-%m-%d'))
-
-#         word_body = word_item['word']
-#         # TODO: move removing 'WORD#' on word_id into the list_word_service
-#         word_body['Word id'] = word_item['word_id'].split('#')[1]
-
-#         try:
-#             response = table.put_item(
-#                 Item={
-#                     'PK': 'LIST#' + list_id,
-#                     'SK': 'DATESENT#' + date,
-#                     'Word': word_body
-#                 }
-#             )
-#             print('stored word: ', word_body)
-#         except Exception as e:
-#             print('Failed to store todays word: ', word_body)
-#             print('DynamoDB response: ', response)
-#             print(e)
 
 def assemble_html_content(user, todays_words, todays_announcement):
 
@@ -205,8 +154,9 @@ def assemble_html_content(user, todays_words, todays_announcement):
         email_template = fh.read()
 
     # Get first list user is subscribed to and use in unsub link
-    email_contents = email_template.replace("{unsubscribe_link}", "https://haohaotiantian.com/unsub?list=" + user.subscriptions[0].list_id + "&char=" + user.subscriptions[0].character_set + "&email=" + urllib.parse.quote_plus(user.email_address))
-    email_contents = email_contents.replace("{signin_link}", "https://haohaotiantian.com/signin?email=" + urllib.parse.quote_plus(user.email_address))
+    url = os.environ['URL']
+    email_contents = email_template.replace("{unsubscribe_link}", f"{url}/unsub?list=" + user.subscriptions[0].list_id + "&char=" + user.subscriptions[0].character_set + "&email=" + urllib.parse.quote_plus(user.email_address))
+    email_contents = email_contents.replace("{signin_link}", f"{url}/signin?email=" + urllib.parse.quote_plus(user.email_address))
 
     email_contents = email_contents.replace("{word_contents}", word_content)
 
@@ -221,6 +171,7 @@ def assemble_word_html_content(user_email, subscription, todays_words):
     print('assembling word content...')
     print('list subscription: ', subscription)
 
+    url = os.environ['URL']
     word = todays_words[subscription.list_id][0]['word']
     print('selected word, ', word)
     if word is None:
@@ -250,8 +201,8 @@ def assemble_word_html_content(user_email, subscription, todays_words):
         word_contents = word_contents.replace("{definition}", word["definition"])
         word_contents = word_contents.replace("{link}", example_link)
         word_contents = word_contents.replace("{list}", subscription.list_name)
-        word_contents = word_contents.replace("{quiz_link}", "https://haohaotiantian.com/quiz?list_id=" + subscription.list_id + "&date_range=30&ques=10&char=" + subscription.character_set)
-        word_contents = word_contents.replace("{review_link}", "https://haohaotiantian.com/review?list_id=" + subscription.list_id + "&date_range=30&char=" + subscription.character_set)
+        word_contents = word_contents.replace("{quiz_link}", f"{url}/quiz?list_id=" + subscription.list_id + "&date_range=30&ques=10&char=" + subscription.character_set)
+        word_contents = word_contents.replace("{review_link}", f"{url}/review?list_id=" + subscription.list_id + "&date_range=30&char=" + subscription.character_set)
 
     return word_contents
 
