@@ -71,7 +71,7 @@ Resources:
         DailySchedule:
           Type: Schedule
           Properties:
-            Schedule: cron(0 20 * * ? *)
+            Schedule: cron(0 18 * * ? *)
       Layers:
       - !Ref Layer
 
