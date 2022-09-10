@@ -17,7 +17,7 @@ def lambda_handler(event, context):
     except Exception as e:
         print(f"Error: Failed to check idempotency key - {idempotency_key, consumer}.")
         print(e)
-    if len(idempotency_response) > 0:
+    if len(idempotency_response) == 0:
         try:
             update_idempotency_table(idempotency_key, consumer, time)
         except Exception as e:
