@@ -97,7 +97,7 @@ Resources:
         Variables:
           ANNOUNCEMENTS_BUCKET: !Ref VocabAnnouncementsBucket
           TABLE_NAME: !Ref DynamoDBTable
-          IDEMPOTENCY_TABLE: IdempotencyTable
+          IDEMPOTENCY_TABLE: !Ref IdempotencyTable
           STAGE: !Ref Stage
       Events:
         DailySchedule:
