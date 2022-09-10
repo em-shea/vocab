@@ -52,32 +52,35 @@ def lambda_handler(event, context):
             print(f"Error: Failed to update idempotency key - {idempotency_key, consumer}.")
             print(e)
         
+        try:
+            todays_word = get_daily_words()
+        except Exception as e:
+            print(f"Error: Failed to retrieve todays words - {idempotency_key, consumer}.")
+            print(e)
+            return
+        
         print('Send emails here')
+        todays_announcement = get_announcement()
+
+        user_list = user_service.get_all_users()
+
+        email_counter = 0
+        for user in user_list:
+            active_subscription_count = 0
+            for subscription in user.subscriptions:
+                if subscription.status == 'subscribed':
+                    active_subscription_count += 1
+            if active_subscription_count>0:
+                email_content = assemble_html_content(user, todays_words, todays_announcement)
+                try:
+                    # print('send emails')
+                    response = send_email(user, email_content)
+                    email_counter += 1
+                except Exception as e:
+                    print(f"Error: Failed to send email - {user['user_data']['PK']}.")
+                    print(e)
         
-        # get words
-        # send email
-
-        # todays_announcement = get_announcement()
-
-        # user_list = user_service.get_all_users()
-
-        # email_counter = 0
-        # for user in user_list:
-        #     active_subscription_count = 0
-        #     for subscription in user.subscriptions:
-        #         if subscription.status == 'subscribed':
-        #             active_subscription_count += 1
-        #     if active_subscription_count>0:
-        #         email_content = assemble_html_content(user, todays_words, todays_announcement)
-        #         try:
-        #             # print('send emails')
-        #             response = send_email(user, email_content)
-        #             email_counter += 1
-        #         except Exception as e:
-        #             print(f"Error: Failed to send email - {user['user_data']['PK']}.")
-        #             print(e)
-        
-        # print(f"{email_counter} emails sent.")
+        print(f"{email_counter} emails sent.")
     else:
         print(f'Email already sent for event with idempotency key: {idempotency_key}')
 
@@ -134,57 +137,57 @@ def get_daily_words():
 
     todays_words = review_word_service.get_review_words(list_id=None, date_range=0)
     print("words: ", dict(todays_words))
-    word_list = []
-    for value in dict(todays_words).values():
-        word_list.append(value[0])
-    print('word list: ', word_list)
-    random_number = randint(0,len(word_list)-1)
-    random_word = word_list[random_number]
-    print('selected word: ', random_word)
-    return random_word
+    # word_list = []
+    # for value in dict(todays_words).values():
+    #     word_list.append(value[0])
+    # print('word list: ', word_list)
+    # random_number = randint(0,len(word_list)-1)
+    # random_word = word_list[random_number]
+    # print('selected word: ', random_word)
+    return dict(todays_words)
 
-def get_daily_words():
-    print('getting daily words...')
+# def get_daily_words():
+#     print('getting daily words...')
 
-    todays_words = {}
+#     todays_words = {}
 
-    all_lists = vocab_list_service.get_vocab_lists()
+#     all_lists = vocab_list_service.get_vocab_lists()
 
-    for list in all_lists:
-        try:
-            all_words = list_word_service.get_words_in_list(list['list_id'])
-            random_number = randint(0,len(all_words)-1)
-            random_word = all_words[random_number]
-            todays_words[list['list_id']] = random_word
-        except Exception as e:
-            todays_words[list['list_id']] = None
-            print(e)
+#     for list in all_lists:
+#         try:
+#             all_words = list_word_service.get_words_in_list(list['list_id'])
+#             random_number = randint(0,len(all_words)-1)
+#             random_word = all_words[random_number]
+#             todays_words[list['list_id']] = random_word
+#         except Exception as e:
+#             todays_words[list['list_id']] = None
+#             print(e)
 
-    print('daily words: ', todays_words)
-    return todays_words
+#     print('daily words: ', todays_words)
+#     return todays_words
 
-def store_words(todays_words):
+# def store_words(todays_words):
 
-    for list_id, word_item in todays_words.items():
-        date = str(datetime.today().strftime('%Y-%m-%d'))
+#     for list_id, word_item in todays_words.items():
+#         date = str(datetime.today().strftime('%Y-%m-%d'))
 
-        word_body = word_item['word']
-        # TODO: move removing 'WORD#' on word_id into the list_word_service
-        word_body['Word id'] = word_item['word_id'].split('#')[1]
+#         word_body = word_item['word']
+#         # TODO: move removing 'WORD#' on word_id into the list_word_service
+#         word_body['Word id'] = word_item['word_id'].split('#')[1]
 
-        try:
-            response = table.put_item(
-                Item={
-                    'PK': 'LIST#' + list_id,
-                    'SK': 'DATESENT#' + date,
-                    'Word': word_body
-                }
-            )
-            print('stored word: ', word_body)
-        except Exception as e:
-            print('Failed to store todays word: ', word_body)
-            print('DynamoDB response: ', response)
-            print(e)
+#         try:
+#             response = table.put_item(
+#                 Item={
+#                     'PK': 'LIST#' + list_id,
+#                     'SK': 'DATESENT#' + date,
+#                     'Word': word_body
+#                 }
+#             )
+#             print('stored word: ', word_body)
+#         except Exception as e:
+#             print('Failed to store todays word: ', word_body)
+#             print('DynamoDB response: ', response)
+#             print(e)
 
 def assemble_html_content(user, todays_words, todays_announcement):
 
@@ -218,16 +221,16 @@ def assemble_word_html_content(user_email, subscription, todays_words):
     print('assembling word content...')
     print('list subscription: ', subscription)
 
-    word = todays_words[subscription.list_id]['word']
+    word = todays_words[subscription.list_id][0]['word']
     print('selected word, ', word)
     if word is None:
         return ""
     else:
         # Select simplified or traditional character 
         if subscription.character_set == "simplified":
-            selected_word = word["Simplified"]
+            selected_word = word["simplified"]
         else:
-            selected_word = word["Traditional"]
+            selected_word = word["traditional"]
 
         # Hard coding list names and sentence URLs before list database refactor
         if subscription.list_name in ['HSK Level 1', 'HSK Level 2', 'HSK Level 3']:
@@ -243,8 +246,8 @@ def assemble_word_html_content(user_email, subscription, todays_words):
         hsk_level = subscription.list_name[-1]
 
         word_contents = word_template.replace("{word}", selected_word)
-        word_contents = word_contents.replace("{pronunciation}", word["Pinyin"])
-        word_contents = word_contents.replace("{definition}", word["Definition"])
+        word_contents = word_contents.replace("{pronunciation}", word["pinyin"])
+        word_contents = word_contents.replace("{definition}", word["definition"])
         word_contents = word_contents.replace("{link}", example_link)
         word_contents = word_contents.replace("{list}", subscription.list_name)
         word_contents = word_contents.replace("{quiz_link}", "https://haohaotiantian.com/quiz?list_id=" + subscription.list_id + "&date_range=30&ques=10&char=" + subscription.character_set)
