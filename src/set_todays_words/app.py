@@ -15,7 +15,7 @@ def lambda_handler(event, context):
 
     # Select a random word for each level
     # TODO: Check if words were sent in the last 2 weeks - challenge with Level 1 with only 148 words
-    todays_words = get_daily_words()
+    todays_words = set_daily_words()
 
     try:
         # Write to Dynamo
@@ -29,7 +29,7 @@ def lambda_handler(event, context):
     except Exception as e:
         print(e)
 
-def get_daily_words():
+def set_daily_words():
     print('selecting todays words...')
 
     todays_words = {}

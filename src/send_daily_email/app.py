@@ -10,6 +10,7 @@ from botocore.exceptions import ClientError
 import user_service
 import list_word_service
 import vocab_list_service
+import review_word_service
 
 # region_name specified in order to mock in unit tests
 ses_client = boto3.client('ses', region_name=os.environ['AWS_REGION'])
@@ -127,6 +128,20 @@ def get_announcement():
 
         announcement_html = announcement_html.replace("{announcement_message}", announcement_file_message)
         return announcement_html
+
+def get_daily_words():
+    print('getting daily words...')
+
+    todays_words = review_word_service.get_review_words(list_id=None, date_range=0)
+    print("words: ", dict(todays_words))
+    word_list = []
+    for value in dict(todays_words).values():
+        word_list.append(value[0])
+    print('word list: ', word_list)
+    random_number = randint(0,len(word_list)-1)
+    random_word = word_list[random_number]
+    print('selected word: ', random_word)
+    return random_word
 
 def get_daily_words():
     print('getting daily words...')
