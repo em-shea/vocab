@@ -68,20 +68,17 @@ def select_word():
     todays_words = review_word_service.get_review_words(list_id=None, date_range=0)
     print("words: ", dict(todays_words))
     word_list = []
-    # print("print 1", todays_words[0])
-    # print("print 2", todays_words[0].values)
-    # print("print 3", todays_words[0].keys)
-    for value in todays_words.values():
+    for value in dict(todays_words).values():
         word_list.append(value[0]['word'])
-    print(word_list)
+    print('word list: ', word_list)
     random_number = randint(0,len(word_list)-1)
     random_word = word_list[random_number]
-    print(random_word)
+    print('selected word: ', random_word)
     return random_word
 
 def post_tweet(word):
 
-    tweet = f"Here's a word: {word['word']['simplified']}"
+    tweet = f"Here's a word: {word['simplified']}"
 
     print("Get credentials")
     client = tweepy.Client(
