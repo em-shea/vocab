@@ -67,11 +67,11 @@ Resources:
         Variables:
           TABLE_NAME: !Ref DynamoDBTable
           EVENT_BUS_NAME: !Ref EventBus
-      # Events:
-      #   DailySchedule:
-      #     Type: Schedule
-      #     Properties:
-      #       Schedule: cron(0 20 * * ? *)
+      Events:
+        DailySchedule:
+          Type: Schedule
+          Properties:
+            Schedule: cron(0 20 * * ? *)
       Layers:
       - !Ref Layer
 
@@ -101,11 +101,11 @@ Resources:
           TABLE_NAME: !Ref DynamoDBTable
           IDEMPOTENCY_TABLE: !Ref IdempotencyTable
           URL: !Ref DomainName
-      Events:
-        DailySchedule:
-          Type: Schedule
-          Properties:
-            Schedule: cron(0 20 * * ? *)
+      # Events:
+      #   DailySchedule:
+      #     Type: Schedule
+      #     Properties:
+      #       Schedule: cron(0 20 * * ? *)
       Layers:
       - !Ref Layer
 
