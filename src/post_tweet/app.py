@@ -69,7 +69,7 @@ def select_word():
     print("words: ", dict(todays_words))
     word_list = []
     for value in dict(todays_words).values():
-        word_list.append(value[0]['word'])
+        word_list.append(value[0])
     print('word list: ', word_list)
     random_number = randint(0,len(word_list)-1)
     random_word = word_list[random_number]
@@ -77,8 +77,12 @@ def select_word():
     return random_word
 
 def post_tweet(word):
+    word_dict = word['word']
+    print('word dict ', word_dict)
+    review_url = f"https://haohaotiantian.com/review?list_id={word['list_id']}&date_range=30&char=simplified"
+    print('url: ', 'review_url')
+    tweet = f"Today's word 📙 HSK Level {word_dict['hsk_level']}\n\n{word_dict['simplified']}\n{word_dict['pinyin']}\n{word_dict['definition']}\n\n{review_url}"
 
-    tweet = f"Here's a word: {word['simplified']}"
 
     print("Get credentials")
     client = tweepy.Client(
