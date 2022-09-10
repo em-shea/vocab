@@ -2,6 +2,7 @@ import os
 import boto3
 import tweepy
 from random import randint
+from collections import defaultdict
 from boto3.dynamodb.conditions import Key
 
 import review_word_service
@@ -61,12 +62,12 @@ def update_idempotency_table(idempotency_key, consumer, time):
 
 def select_word():
     todays_words = review_word_service.get_review_words(list_id=None, date_range=0)
-    print("words: ", todays_words)
+    print("words: ", defaultdict(todays_words))
     word_list = []
-    print("print 1", todays_words[0])
-    print("print 2", todays_words[0].values)
-    print("print 3", todays_words[0].keys)
-    for value in todays_words[0].values():
+    # print("print 1", todays_words[0])
+    # print("print 2", todays_words[0].values)
+    # print("print 3", todays_words[0].keys)
+    for value in todays_words.values():
         word_list.append(value[0]['word'])
     print(word_list)
     random_number = randint(0,len(word_list)-1)
