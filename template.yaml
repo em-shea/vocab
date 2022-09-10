@@ -12,6 +12,16 @@ Parameters:
     Type: String
   AlarmEmail:
     Type: String
+  TwitterConsumerKey:
+    Type: String
+  TwitterConsumerSecret:
+    Type: String
+  TwitterAccessToken:
+    Type: String
+  TwitterAccessTokenSecret:
+    Type: String
+  DomainName:
+    Type: String
   Stage:
     Type: String
 
@@ -38,6 +48,33 @@ Resources:
 # Lambda functions
 ####################################################################################################
 
+  SetTodaysWords:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      FunctionName: !Sub SetTodaysWords-${Stage}
+      Handler: app.lambda_handler
+      Runtime: python3.7
+      CodeUri: src/set_todays_words
+      Description: Sets daily word for each vocab list
+      MemorySize: 128
+      Timeout: 120
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref DynamoDBTable
+        - EventBridgePutEventsPolicy:
+            EventBusName: !Ref EventBus
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref DynamoDBTable
+          EVENT_BUS_NAME: !Ref EventBus
+      Events:
+        DailySchedule:
+          Type: Schedule
+          Properties:
+            Schedule: cron(0 20 * * ? *)
+      Layers:
+      - !Ref Layer
+
   SendDailyEmail:
     Type: 'AWS::Serverless::Function'
     Properties:
@@ -53,31 +90,22 @@ Resources:
         - SESCrudPolicy:
             IdentityName: haohaotiantian.com
         - S3ReadPolicy:
-            BucketName: !Ref WordsBucketName
-        - S3ReadPolicy:
             BucketName: !Ref VocabAnnouncementsBucket
         - DynamoDBCrudPolicy:
             TableName: !Ref DynamoDBTable
         - DynamoDBCrudPolicy:
-            TableName: !Ref WordHistoryDynamoDBTable
-        - DynamoDBCrudPolicy:
-            TableName: !Ref SubscriberContactListDynamoDBTable
+            TableName: !Ref IdempotencyTable
       Environment:
         Variables:
-          WORDS_BUCKET_NAME: !Ref WordsBucketName
-          WORDS_BUCKET_KEY: !Ref WordsBucketKey
-          # LISTS_BUCKET_NAME: !Ref ListsBucketName
-          # LISTS_BUCKET_KEY: !Ref ListsBucketKey
           ANNOUNCEMENTS_BUCKET: !Ref VocabAnnouncementsBucket
           TABLE_NAME: !Ref DynamoDBTable
-          # HISTORY_TABLE_NAME: !Ref WordHistoryDynamoDBTable
-          CONTACT_TABLE_NAME: !Ref SubscriberContactListDynamoDBTable
-          STAGE: !Ref Stage
-      Events:
-        DailySchedule:
-          Type: Schedule
-          Properties:
-            Schedule: cron(0 20 * * ? *)
+          IDEMPOTENCY_TABLE: !Ref IdempotencyTable
+          URL: !Ref DomainName
+      # Events:
+      #   DailySchedule:
+      #     Type: Schedule
+      #     Properties:
+      #       Schedule: cron(0 20 * * ? *)
       Layers:
       - !Ref Layer
 
@@ -123,7 +151,6 @@ Resources:
       Environment:
         Variables:
           TABLE_NAME: !Ref DynamoDBTable
-          # TABLE_NAME: !Ref WordHistoryDynamoDBTable
       Events:
         GetReviewWordsApi:
           Type: Api
@@ -398,6 +425,33 @@ Resources:
           TABLE_NAME: !Ref DynamoDBTable
       Layers:
       - !Ref Layer
+  
+  PostTweet:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      FunctionName: !Sub PostVocabTweet-${Stage}
+      Handler: app.lambda_handler
+      Runtime: python3.7
+      CodeUri: src/post_tweet
+      Description: Posts a tweet with daily vocab word
+      MemorySize: 128
+      Timeout: 120
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref DynamoDBTable
+        - DynamoDBCrudPolicy:
+            TableName: !Ref IdempotencyTable
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref DynamoDBTable
+          IDEMPOTENCY_TABLE: !Ref IdempotencyTable
+          CONSUMER_KEY: !Ref TwitterConsumerKey
+          CONSUMER_SECRET: !Ref TwitterConsumerSecret
+          ACCESS_TOKEN: !Ref TwitterAccessToken
+          ACCESS_TOKEN_SECRET: !Ref TwitterAccessTokenSecret
+          URL: !Ref DomainName
+      Layers:
+      - !Ref Layer
 
   BackupDynamoDBToS3:
     Type: 'AWS::Serverless::Function'
@@ -467,41 +521,21 @@ Resources:
       ProvisionedThroughput:
         ReadCapacityUnits: 0
         WriteCapacityUnits: 0
-
-  WordHistoryDynamoDBTable:
+  
+  IdempotencyTable:
     Type: AWS::DynamoDB::Table
     DeletionPolicy: Retain
     Properties:
-      TableName: !Sub WordHistory-${Stage}
+      TableName: !Sub VocabAppIdempotencyTable-${Stage}
       AttributeDefinitions:
-        - AttributeName: ListId
+        - AttributeName: IdempotencyKey
           AttributeType: S
-        - AttributeName: Date
+        - AttributeName: Consumer
           AttributeType: S
       KeySchema:
-        - AttributeName: ListId
+        - AttributeName: IdempotencyKey
           KeyType: HASH
-        - AttributeName: Date
-          KeyType: RANGE
-      BillingMode: PAY_PER_REQUEST
-      ProvisionedThroughput:
-        ReadCapacityUnits: 0
-        WriteCapacityUnits: 0
-
-  SubscriberContactListDynamoDBTable:
-    Type: AWS::DynamoDB::Table
-    DeletionPolicy: Retain
-    Properties:
-      TableName: !Sub SubscriberContactList-${Stage}
-      AttributeDefinitions:
-        - AttributeName: ListId
-          AttributeType: S
-        - AttributeName: SubscriberEmail
-          AttributeType: S
-      KeySchema:
-        - AttributeName: ListId
-          KeyType: HASH
-        - AttributeName: SubscriberEmail
+        - AttributeName: Consumer
           KeyType: RANGE
       BillingMode: PAY_PER_REQUEST
       ProvisionedThroughput:
@@ -543,6 +577,95 @@ Resources:
             Resource:
               - !Join ["", ["arn:aws:s3:::", !Ref PronunciationAudioBucket, "/audio/*"]]
               
+####################################################################################################
+# Event bus
+####################################################################################################
+
+  EventBus:
+    Type: AWS::Events::EventBus
+    Properties:
+      Name: !Sub VocabEventBus-${Stage}
+
+  TodaysWordsSetEventRule:
+    Type: AWS::Events::Rule
+    Properties:
+      EventBusName: !Ref EventBus
+      EventPattern:
+        detail-type:
+          - todays-words-set
+      Targets:
+        - Arn: !GetAtt SendDailyEmail.Arn
+          Id: SendDailyEmailFunction
+        - Arn: !GetAtt PostTweet.Arn
+          Id: PostTweetFunction
+  
+  EventsToInvokeLambdaPolicyEmail: 
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref SendDailyEmail
+      Action: "lambda:InvokeFunction"
+      Principal: "events.amazonaws.com"
+      SourceArn: !GetAtt TodaysWordsSetEventRule.Arn
+  
+  EventsToInvokeLambdaPolicyTweet: 
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref PostTweet
+      Action: "lambda:InvokeFunction"
+      Principal: "events.amazonaws.com"
+      SourceArn: !GetAtt TodaysWordsSetEventRule.Arn
+  
+  # Logs all events for debugging
+  CloudWatchLogsGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/events/VocabEventBusLogs-${Stage}
+
+  AllEventsRule:
+    Type: AWS::Events::Rule
+    Properties:
+      EventBusName: !Ref EventBus
+      EventPattern:
+        account: 
+          - AWS::AccountId
+      Targets:
+        - Arn: !GetAtt CloudWatchLogsGroup.Arn
+          Id: CloudWatchLogsGroup
+
+  EventsToCloudWatchLogGroupPolicy:
+    Type: AWS::Logs::ResourcePolicy
+    Properties:
+      PolicyName: !Sub EventBridgeToCWLogsPolicy-${Stage}
+      PolicyDocument: !Sub 
+      - >
+        {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Sid": "EventBridgetoCWLogsPolicy2",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": [
+                  "delivery.logs.amazonaws.com",
+                  "events.amazonaws.com"
+                ]
+              },
+              "Action": [
+                "logs:CreateLogStream",
+                "logs:PutLogEvents"
+              ],
+              "Resource": [
+                "${logArn}"
+              ],
+              "Condition": {
+                "ArnEquals": {"aws:SourceArn": [ "${AllEventsRule}", "${ruleArn}" ]}
+              }
+            }
+          ]
+        }
+      - { logArn: !GetAtt CloudWatchLogsGroup.Arn, ruleArn: !GetAtt AllEventsRule.Arn }
+
+
 ####################################################################################################
 # State machine
 ####################################################################################################
