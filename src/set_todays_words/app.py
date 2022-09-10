@@ -82,12 +82,13 @@ def send_event(todays_words):
                 'Source': 'vocab-app',
                 'DetailType': 'todays-words-set',
                 'Detail': json.dumps({
-                    'idempotency-key': str(ksuid_service.generate_ksuid()),
-                    'todays-words': todays_words
+                    'idempotency-key': str(ksuid_service.generate_ksuid())
+                    # 'todays-words': todays_words
                     }),
                 'EventBusName': os.environ['EVENT_BUS_NAME']
             }
         ]
     )
 
+    print('Put events response: ', response)
     return response

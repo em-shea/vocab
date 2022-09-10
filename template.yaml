@@ -12,6 +12,14 @@ Parameters:
     Type: String
   AlarmEmail:
     Type: String
+  TwitterConsumerKey:
+    Type: String
+  TwitterConsumerSecret:
+    Type: String
+  TwitterAccessToken:
+    Type: String
+  TwitterAccessTokenSecret:
+    Type: String
   Stage:
     Type: String
 
@@ -435,6 +443,10 @@ Resources:
         Variables:
           TABLE_NAME: !Ref DynamoDBTable
           IDEMPOTENCY_TABLE: !Ref IdempotencyTable
+          CONSUMER_KEY: !Ref TwitterConsumerKey
+          CONSUMER_SECRET: !Ref TwitterConsumerSecret
+          ACCESS_TOKEN: !Ref TwitterAccessToken
+          ACCESS_TOKEN_SECRET: !Ref TwitterAccessTokenSecret
       Layers:
       - !Ref Layer
 
@@ -526,46 +538,6 @@ Resources:
       ProvisionedThroughput:
         ReadCapacityUnits: 0
         WriteCapacityUnits: 0
-
-  # WordHistoryDynamoDBTable:
-  #   Type: AWS::DynamoDB::Table
-  #   DeletionPolicy: Retain
-  #   Properties:
-  #     TableName: !Sub WordHistory-${Stage}
-  #     AttributeDefinitions:
-  #       - AttributeName: ListId
-  #         AttributeType: S
-  #       - AttributeName: Date
-  #         AttributeType: S
-  #     KeySchema:
-  #       - AttributeName: ListId
-  #         KeyType: HASH
-  #       - AttributeName: Date
-  #         KeyType: RANGE
-  #     BillingMode: PAY_PER_REQUEST
-  #     ProvisionedThroughput:
-  #       ReadCapacityUnits: 0
-  #       WriteCapacityUnits: 0
-
-  # SubscriberContactListDynamoDBTable:
-  #   Type: AWS::DynamoDB::Table
-  #   DeletionPolicy: Retain
-  #   Properties:
-  #     TableName: !Sub SubscriberContactList-${Stage}
-  #     AttributeDefinitions:
-  #       - AttributeName: ListId
-  #         AttributeType: S
-  #       - AttributeName: SubscriberEmail
-  #         AttributeType: S
-  #     KeySchema:
-  #       - AttributeName: ListId
-  #         KeyType: HASH
-  #       - AttributeName: SubscriberEmail
-  #         KeyType: RANGE
-  #     BillingMode: PAY_PER_REQUEST
-  #     ProvisionedThroughput:
-  #       ReadCapacityUnits: 0
-  #       WriteCapacityUnits: 0
 
 ####################################################################################################
 # S3 buckets
@@ -660,7 +632,7 @@ Resources:
   EventsToCloudWatchLogGroupPolicy:
     Type: AWS::Logs::ResourcePolicy
     Properties:
-      PolicyName: EventBridgeToCWLogsPolicy
+      PolicyName: !Sub EventBridgeToCWLogsPolicy-${Stage}
       PolicyDocument: !Sub 
       - >
         {
