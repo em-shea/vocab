@@ -76,7 +76,7 @@ def store_words(todays_words):
 
 def send_event(todays_words):
 
-    response = eventbridge.put_event(
+    response = eventbridge.put_events(
         Entries=[
             {
                 'Source': 'vocab-app',
