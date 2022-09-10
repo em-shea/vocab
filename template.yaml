@@ -71,7 +71,7 @@ Resources:
         DailySchedule:
           Type: Schedule
           Properties:
-            Schedule: cron(0 18 * * ? *)
+            Schedule: cron(0 20 * * ? *)
       Layers:
       - !Ref Layer
 
@@ -101,11 +101,6 @@ Resources:
           TABLE_NAME: !Ref DynamoDBTable
           IDEMPOTENCY_TABLE: !Ref IdempotencyTable
           URL: !Ref DomainName
-      # Events:
-      #   DailySchedule:
-      #     Type: Schedule
-      #     Properties:
-      #       Schedule: cron(0 20 * * ? *)
       Layers:
       - !Ref Layer
 
