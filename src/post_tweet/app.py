@@ -10,15 +10,12 @@ def lambda_handler(event, context):
 
     check_idempotency_key(event['Detail']['idempotency-key'])
 
-
     return
 
 def check_idempotency_key(idempotency_key):
 
-    user_key = "USER#" + cognito_id
-
     response = idempotency_table.query(
-        KeyConditionExpression=Key('IdempotencyKey').eq(user_key) & Key('Consumer').eq('PostTweet')
+        KeyConditionExpression=Key('IdempotencyKey').eq(idempotency_key) & Key('Consumer').eq('PostTweet')
     )
     print('dynamo response ', response['Items'])
     return response['Items']

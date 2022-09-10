@@ -141,7 +141,6 @@ Resources:
       Environment:
         Variables:
           TABLE_NAME: !Ref DynamoDBTable
-          # TABLE_NAME: !Ref WordHistoryDynamoDBTable
       Events:
         GetReviewWordsApi:
           Type: Api
@@ -528,45 +527,45 @@ Resources:
         ReadCapacityUnits: 0
         WriteCapacityUnits: 0
 
-  WordHistoryDynamoDBTable:
-    Type: AWS::DynamoDB::Table
-    DeletionPolicy: Retain
-    Properties:
-      TableName: !Sub WordHistory-${Stage}
-      AttributeDefinitions:
-        - AttributeName: ListId
-          AttributeType: S
-        - AttributeName: Date
-          AttributeType: S
-      KeySchema:
-        - AttributeName: ListId
-          KeyType: HASH
-        - AttributeName: Date
-          KeyType: RANGE
-      BillingMode: PAY_PER_REQUEST
-      ProvisionedThroughput:
-        ReadCapacityUnits: 0
-        WriteCapacityUnits: 0
+  # WordHistoryDynamoDBTable:
+  #   Type: AWS::DynamoDB::Table
+  #   DeletionPolicy: Retain
+  #   Properties:
+  #     TableName: !Sub WordHistory-${Stage}
+  #     AttributeDefinitions:
+  #       - AttributeName: ListId
+  #         AttributeType: S
+  #       - AttributeName: Date
+  #         AttributeType: S
+  #     KeySchema:
+  #       - AttributeName: ListId
+  #         KeyType: HASH
+  #       - AttributeName: Date
+  #         KeyType: RANGE
+  #     BillingMode: PAY_PER_REQUEST
+  #     ProvisionedThroughput:
+  #       ReadCapacityUnits: 0
+  #       WriteCapacityUnits: 0
 
-  SubscriberContactListDynamoDBTable:
-    Type: AWS::DynamoDB::Table
-    DeletionPolicy: Retain
-    Properties:
-      TableName: !Sub SubscriberContactList-${Stage}
-      AttributeDefinitions:
-        - AttributeName: ListId
-          AttributeType: S
-        - AttributeName: SubscriberEmail
-          AttributeType: S
-      KeySchema:
-        - AttributeName: ListId
-          KeyType: HASH
-        - AttributeName: SubscriberEmail
-          KeyType: RANGE
-      BillingMode: PAY_PER_REQUEST
-      ProvisionedThroughput:
-        ReadCapacityUnits: 0
-        WriteCapacityUnits: 0
+  # SubscriberContactListDynamoDBTable:
+  #   Type: AWS::DynamoDB::Table
+  #   DeletionPolicy: Retain
+  #   Properties:
+  #     TableName: !Sub SubscriberContactList-${Stage}
+  #     AttributeDefinitions:
+  #       - AttributeName: ListId
+  #         AttributeType: S
+  #       - AttributeName: SubscriberEmail
+  #         AttributeType: S
+  #     KeySchema:
+  #       - AttributeName: ListId
+  #         KeyType: HASH
+  #       - AttributeName: SubscriberEmail
+  #         KeyType: RANGE
+  #     BillingMode: PAY_PER_REQUEST
+  #     ProvisionedThroughput:
+  #       ReadCapacityUnits: 0
+  #       WriteCapacityUnits: 0
 
 ####################################################################################################
 # S3 buckets
