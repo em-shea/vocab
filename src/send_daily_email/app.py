@@ -14,40 +14,74 @@ import vocab_list_service
 # region_name specified in order to mock in unit tests
 ses_client = boto3.client('ses', region_name=os.environ['AWS_REGION'])
 table = boto3.resource('dynamodb', region_name=os.environ['AWS_REGION']).Table(os.environ['TABLE_NAME'])
+idempotency_table = boto3.resource('dynamodb', region_name=os.environ['AWS_REGION']).Table(os.environ['IDEMPOTENCY_TABLE'])
 
 def lambda_handler(event, context):
 
+    # check idempotency
+    # put idempotency item
+    # get words
+
     # Select a random word for each level
-    todays_words = get_daily_words()
+    # todays_words = get_daily_words()
 
     # If unable to store word in Dynamo, continue sending emails
-    try:
-        # Write to Dynamo
-        store_words(todays_words)
-    except Exception as e:
-        print(e)
+    # try:
+    #     # Write to Dynamo
+    #     store_words(todays_words)
+    # except Exception as e:
+    #     print(e)
 
-    todays_announcement = get_announcement()
+    print('event: ', event)
+    idempotency_key = event['detail']['idempotency-key']
+    time = event['time']
+    consumer = "SendEmail"
 
-    user_list = user_service.get_all_users()
+    idempotency_response = check_idempotency_key(idempotency_key, consumer)
+    if len(idempotency_response) > 0:
+        update_idempotency_table(idempotency_key, consumer, time)
 
-    email_counter = 0
-    for user in user_list:
-        active_subscription_count = 0
-        for subscription in user.subscriptions:
-            if subscription.status == 'subscribed':
-                active_subscription_count += 1
-        if active_subscription_count>0:
-            email_content = assemble_html_content(user, todays_words, todays_announcement)
-            try:
-                # print('send emails')
-                response = send_email(user, email_content)
-                email_counter += 1
-            except Exception as e:
-                print(f"Error: Failed to send email - {user['user_data']['PK']}.")
-                print(e)
-    
-    print(f"{email_counter} emails sent.")
+        todays_announcement = get_announcement()
+
+        user_list = user_service.get_all_users()
+
+        email_counter = 0
+        for user in user_list:
+            active_subscription_count = 0
+            for subscription in user.subscriptions:
+                if subscription.status == 'subscribed':
+                    active_subscription_count += 1
+            if active_subscription_count>0:
+                email_content = assemble_html_content(user, todays_words, todays_announcement)
+                try:
+                    # print('send emails')
+                    response = send_email(user, email_content)
+                    email_counter += 1
+                except Exception as e:
+                    print(f"Error: Failed to send email - {user['user_data']['PK']}.")
+                    print(e)
+        
+        print(f"{email_counter} emails sent.")
+
+def check_idempotency_key(idempotency_key, consumer):
+
+    response = idempotency_table.query(
+        KeyConditionExpression=Key('IdempotencyKey').eq(idempotency_key) & Key('Consumer').eq(consumer)
+    )
+    print('check key response ', response)
+    return response['Items']
+
+def update_idempotency_table(idempotency_key, consumer, time):
+
+    response = idempotency_table.put_item(
+        Item = {
+                'IdempotencyKey': idempotency_key,
+                'Consumer': consumer,
+                'Date': time
+            }
+        )
+    print('update key response ', response)
+    return response
 
 def get_announcement():
 

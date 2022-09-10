@@ -9,31 +9,32 @@ def lambda_handler(event, context):
 
     print('event: ', event)
     idempotency_key = event['detail']['idempotency-key']
-    time = event['detail']['time']
+    time = event['time']
+    consumer = "PostTweet"
 
-    idempotency_response = check_idempotency_key(idempotency_key)
+    idempotency_response = check_idempotency_key(idempotency_key, consumer)
     if len(idempotency_response) > 0:
-        update_idempotency_table(idempotency_key, time)
+        update_idempotency_table(idempotency_key, consumer, time)
         try:
             post_tweet(event)
         except Exception as e:
             print(e)
     return
 
-def check_idempotency_key(idempotency_key):
+def check_idempotency_key(idempotency_key, consumer):
 
     response = idempotency_table.query(
-        KeyConditionExpression=Key('IdempotencyKey').eq(idempotency_key) & Key('Consumer').eq('PostTweet')
+        KeyConditionExpression=Key('IdempotencyKey').eq(idempotency_key) & Key('Consumer').eq(consumer)
     )
     print('check key response ', response)
     return response['Items']
 
-def update_idempotency_table(idempotency_key, time):
+def update_idempotency_table(idempotency_key, consumer, time):
 
     response = idempotency_table.put_item(
         Item = {
                 'IdempotencyKey': idempotency_key,
-                'Consumer': 'PostTweet',
+                'Consumer': consumer,
                 'Date': time
             }
         )

@@ -30,7 +30,7 @@ def lambda_handler(event, context):
         print(e)
 
 def get_daily_words():
-    print('getting daily words...')
+    print('selecting todays words...')
 
     todays_words = {}
 
