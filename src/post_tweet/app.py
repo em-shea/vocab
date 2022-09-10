@@ -3,6 +3,8 @@ import boto3
 import tweepy
 from boto3.dynamodb.conditions import Key
 
+import review_word_service
+
 idempotency_table = boto3.resource('dynamodb', region_name=os.environ['AWS_REGION']).Table(os.environ['IDEMPOTENCY_TABLE'])
 
 def lambda_handler(event, context):
@@ -17,6 +19,7 @@ def lambda_handler(event, context):
     except Exception as e:
         print(f"Error: Failed to check idempotency key - {idempotency_key, consumer}.")
         print(e)
+        return e
     if len(idempotency_response) == 0:
         try:
             update_idempotency_table(idempotency_key, consumer, time)
@@ -24,12 +27,15 @@ def lambda_handler(event, context):
             print(f"Error: Failed to update idempotency key - {idempotency_key, consumer}.")
             print(e)
         try:
+            select_word()
             post_tweet(event)
         except Exception as e:
             print(f"Error: Failed to post tweet - {idempotency_key, consumer}.")
             print(e)
+            return e
         print('Tweet sent successfully.')
-    print(f'Tweet already sent for event: {idempotency_key}')
+    else:
+        print(f'Tweet already sent for event with idempotency key: {idempotency_key}')
     return
 
 def check_idempotency_key(idempotency_key, consumer):
@@ -51,6 +57,10 @@ def update_idempotency_table(idempotency_key, consumer, time):
         )
     print('update key response ', response)
     return response
+
+def select_word():
+    todays_words = review_word_service.get_review_words(list_id=None, date_range=1)
+    print("words: ", todays_words)
 
 def post_tweet(event):
 

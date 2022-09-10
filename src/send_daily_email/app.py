@@ -42,6 +42,7 @@ def lambda_handler(event, context):
     except Exception as e:
         print(f"Error: Failed to check idempotency key - {idempotency_key, consumer}.")
         print(e)
+        return e
         print("length:", len(idempotency_response))
     if len(idempotency_response) == 0:
         try:
@@ -76,7 +77,8 @@ def lambda_handler(event, context):
         #             print(e)
         
         # print(f"{email_counter} emails sent.")
-    print(f'Email already sent for event: {idempotency_key}')
+    else:
+        print(f'Email already sent for event with idempotency key: {idempotency_key}')
 
 def check_idempotency_key(idempotency_key, consumer):
 
