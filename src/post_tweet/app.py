@@ -2,7 +2,6 @@ import os
 import boto3
 import tweepy
 from random import randint
-from collections import defaultdict
 from boto3.dynamodb.conditions import Key
 
 import review_word_service
@@ -30,6 +29,11 @@ def lambda_handler(event, context):
             print(e)
         try:
             word = select_word()
+        except Exception as e:
+            print(f"Error: Failed to select word - {idempotency_key, consumer}.")
+            print(e)
+            return e
+        try:    
             post_tweet(word)
         except Exception as e:
             print(f"Error: Failed to post tweet - {idempotency_key, consumer}.")
@@ -62,7 +66,7 @@ def update_idempotency_table(idempotency_key, consumer, time):
 
 def select_word():
     todays_words = review_word_service.get_review_words(list_id=None, date_range=0)
-    print("words: ", defaultdict(todays_words))
+    print("words: ", dict(todays_words))
     word_list = []
     # print("print 1", todays_words[0])
     # print("print 2", todays_words[0].values)
