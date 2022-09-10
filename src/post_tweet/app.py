@@ -79,10 +79,9 @@ def select_word():
 def post_tweet(word):
     word_dict = word['word']
     print('word dict ', word_dict)
-    review_url = f"https://haohaotiantian.com/review?list_id={word['list_id']}&date_range=30&char=simplified"
+    review_url = f"{os.environ['URL']}/review?list_id={word['list_id']}&date_range=30&char=simplified"
     print('url: ', 'review_url')
     tweet = f"Today's word 📙 HSK Level {word_dict['hsk_level']}\n\n{word_dict['simplified']}\n{word_dict['pinyin']}\n{word_dict['definition']}\n\n{review_url}"
-
 
     print("Get credentials")
     client = tweepy.Client(

@@ -20,6 +20,8 @@ Parameters:
     Type: String
   TwitterAccessTokenSecret:
     Type: String
+  DomainName:
+    Type: String
   Stage:
     Type: String
 
@@ -447,6 +449,7 @@ Resources:
           CONSUMER_SECRET: !Ref TwitterConsumerSecret
           ACCESS_TOKEN: !Ref TwitterAccessToken
           ACCESS_TOKEN_SECRET: !Ref TwitterAccessTokenSecret
+          DOMAIN_NAME: !Ref DomainName
       Layers:
       - !Ref Layer
 
