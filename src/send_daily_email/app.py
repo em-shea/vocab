@@ -53,7 +53,7 @@ def lambda_handler(event, context):
             print(e)
         
         try:
-            todays_word = get_daily_words()
+            todays_words = get_daily_words()
         except Exception as e:
             print(f"Error: Failed to retrieve todays words - {idempotency_key, consumer}.")
             print(e)
