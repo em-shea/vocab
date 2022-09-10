@@ -37,31 +37,45 @@ def lambda_handler(event, context):
     time = event['time']
     consumer = "SendEmail"
 
-    idempotency_response = check_idempotency_key(idempotency_key, consumer)
+    try:
+        idempotency_response = check_idempotency_key(idempotency_key, consumer)
+    except Exception as e:
+        print(f"Error: Failed to check idempotency key - {idempotency_key, consumer}.")
+        print(e)
     if len(idempotency_response) > 0:
-        update_idempotency_table(idempotency_key, consumer, time)
-
-        todays_announcement = get_announcement()
-
-        user_list = user_service.get_all_users()
-
-        email_counter = 0
-        for user in user_list:
-            active_subscription_count = 0
-            for subscription in user.subscriptions:
-                if subscription.status == 'subscribed':
-                    active_subscription_count += 1
-            if active_subscription_count>0:
-                email_content = assemble_html_content(user, todays_words, todays_announcement)
-                try:
-                    # print('send emails')
-                    response = send_email(user, email_content)
-                    email_counter += 1
-                except Exception as e:
-                    print(f"Error: Failed to send email - {user['user_data']['PK']}.")
-                    print(e)
+        try:
+            update_idempotency_table(idempotency_key, consumer, time)
+        except Exception as e:
+            print(f"Error: Failed to update idempotency key - {idempotency_key, consumer}.")
+            print(e)
         
-        print(f"{email_counter} emails sent.")
+        print('Send emails here')
+        
+        # get words
+        # send email
+
+        # todays_announcement = get_announcement()
+
+        # user_list = user_service.get_all_users()
+
+        # email_counter = 0
+        # for user in user_list:
+        #     active_subscription_count = 0
+        #     for subscription in user.subscriptions:
+        #         if subscription.status == 'subscribed':
+        #             active_subscription_count += 1
+        #     if active_subscription_count>0:
+        #         email_content = assemble_html_content(user, todays_words, todays_announcement)
+        #         try:
+        #             # print('send emails')
+        #             response = send_email(user, email_content)
+        #             email_counter += 1
+        #         except Exception as e:
+        #             print(f"Error: Failed to send email - {user['user_data']['PK']}.")
+        #             print(e)
+        
+        # print(f"{email_counter} emails sent.")
+    print(f'Email already sent for event: {idempotency_key}')
 
 def check_idempotency_key(idempotency_key, consumer):
 

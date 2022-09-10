@@ -12,13 +12,24 @@ def lambda_handler(event, context):
     time = event['time']
     consumer = "PostTweet"
 
-    idempotency_response = check_idempotency_key(idempotency_key, consumer)
+    try:
+        idempotency_response = check_idempotency_key(idempotency_key, consumer)
+    except Exception as e:
+        print(f"Error: Failed to check idempotency key - {idempotency_key, consumer}.")
+        print(e)
     if len(idempotency_response) > 0:
-        update_idempotency_table(idempotency_key, consumer, time)
+        try:
+            update_idempotency_table(idempotency_key, consumer, time)
+        except Exception as e:
+            print(f"Error: Failed to update idempotency key - {idempotency_key, consumer}.")
+            print(e)
         try:
             post_tweet(event)
         except Exception as e:
+            print(f"Error: Failed to post tweet - {idempotency_key, consumer}.")
             print(e)
+        print('Tweet sent successfully.')
+    print(f'Tweet already sent for event: {idempotency_key}')
     return
 
 def check_idempotency_key(idempotency_key, consumer):
