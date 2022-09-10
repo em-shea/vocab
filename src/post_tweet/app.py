@@ -1,6 +1,7 @@
 import os
 import boto3
 import tweepy
+from random import randint
 from boto3.dynamodb.conditions import Key
 
 import review_word_service
@@ -27,8 +28,8 @@ def lambda_handler(event, context):
             print(f"Error: Failed to update idempotency key - {idempotency_key, consumer}.")
             print(e)
         try:
-            select_word()
-            post_tweet(event)
+            word = select_word()
+            post_tweet(word)
         except Exception as e:
             print(f"Error: Failed to post tweet - {idempotency_key, consumer}.")
             print(e)
@@ -59,12 +60,21 @@ def update_idempotency_table(idempotency_key, consumer, time):
     return response
 
 def select_word():
-    todays_words = review_word_service.get_review_words(list_id=None, date_range=1)
+    todays_words = review_word_service.get_review_words(list_id=None, date_range=0)
     print("words: ", todays_words)
+    word_list = []
+    for list_id in todays_words:
+        for word in list_id:
+            word_list.append(word)
+    print(word_list)
+    random_number = randint(0,len(word_list)-1)
+    random_word = word_list[random_number]
+    print(random_word)
+    return random_word
 
-def post_tweet(event):
+def post_tweet(word):
 
-    tweet = "Lambda 👋"
+    tweet = f"Here's a word: {word['word']['simplified']}"
 
     print("Get credentials")
     client = tweepy.Client(

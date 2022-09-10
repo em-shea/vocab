@@ -43,7 +43,7 @@ def lambda_handler(event, context):
         print(f"Error: Failed to check idempotency key - {idempotency_key, consumer}.")
         print(e)
         return e
-        print("length:", len(idempotency_response))
+    print("length:", len(idempotency_response))
     if len(idempotency_response) == 0:
         try:
             update_idempotency_table(idempotency_key, consumer, time)
