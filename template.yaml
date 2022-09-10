@@ -652,7 +652,8 @@ Resources:
     Properties:
       EventBusName: !Ref EventBus
       EventPattern:
-        account: AWS::AccountId
+        account: 
+          - AWS::AccountId
       Targets:
         - Arn: !GetAtt CloudWatchLogsGroup.Arn
           Id: CloudWatchLogsGroup
