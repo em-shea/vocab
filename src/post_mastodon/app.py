@@ -1,10 +1,15 @@
 import os
 import boto3
-import tweepy
 from random import randint
+from mastodon import Mastodon
 from boto3.dynamodb.conditions import Key
 
 import review_word_service
+
+mastodon = Mastodon(
+    access_token = os.environ['MASTODON_SECRET'],
+    api_base_url = 'https://botsin.space/'
+)
 
 idempotency_table = boto3.resource('dynamodb', region_name=os.environ['AWS_REGION']).Table(os.environ['IDEMPOTENCY_TABLE'])
 
@@ -34,14 +39,14 @@ def lambda_handler(event, context):
             print(e)
             return e
         try:    
-            post_tweet(word)
+            post_mastodon(word)
         except Exception as e:
-            print(f"Error: Failed to post tweet - {idempotency_key, consumer}.")
+            print(f"Error: Failed to post to Mastodon - {idempotency_key, consumer}.")
             print(e)
             return e
-        print('Tweet sent successfully.')
+        print('Mastodon post sent successfully.')
     else:
-        print(f'Tweet already sent for event with idempotency key: {idempotency_key}')
+        print(f'Mastodon post already sent for event with idempotency key: {idempotency_key}')
     return
 
 def check_idempotency_key(idempotency_key, consumer):
@@ -77,22 +82,30 @@ def select_word():
     print('selected word: ', random_word)
     return random_word
 
-def post_tweet(word):
-    word_dict = word['word']
-    print('word dict ', word_dict)
-    review_url = f"{os.environ['URL']}/review?list_id={word['list_id']}&date_range=30&char=simplified"
-    print('url: ', 'review_url')
-    tweet = f"Today's word 📙 HSK Level {word_dict['hsk_level']}\n\n{word_dict['simplified']}\n{word_dict['pinyin']}\n{word_dict['definition']}\n\n{review_url}"
 
-    print("Get credentials")
-    client = tweepy.Client(
-        consumer_key=os.environ['CONSUMER_KEY'],
-        consumer_secret=os.environ['CONSUMER_SECRET'],
-        access_token=os.environ['ACCESS_TOKEN'],
-        access_token_secret=os.environ['ACCESS_TOKEN_SECRET']
-    )
+def post_mastodon():
+
+    response = mastodon.status_post("Hello world!")
+    print('Mastodon response: ', response)
+
+    return
+
+# def post_tweet(word):
+#     word_dict = word['word']
+#     print('word dict ', word_dict)
+#     review_url = f"{os.environ['URL']}/review?list_id={word['list_id']}&date_range=30&char=simplified"
+#     print('url: ', 'review_url')
+#     tweet = f"Today's word 📙 HSK Level {word_dict['hsk_level']}\n\n{word_dict['simplified']}\n{word_dict['pinyin']}\n{word_dict['definition']}\n\n{review_url}"
+
+#     print("Get credentials")
+#     client = tweepy.Client(
+#         consumer_key=os.environ['CONSUMER_KEY'],
+#         consumer_secret=os.environ['CONSUMER_SECRET'],
+#         access_token=os.environ['ACCESS_TOKEN'],
+#         access_token_secret=os.environ['ACCESS_TOKEN_SECRET']
+#     )
     
-    response = client.create_tweet(text=tweet)
-    print("Twitter response: ", response)
+#     response = client.create_tweet(text=tweet)
+#     print("Twitter response: ", response)
 
-    return {"statusCode": 200, "tweet": tweet}
+#     return {"statusCode": 200, "tweet": tweet}

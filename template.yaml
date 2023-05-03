@@ -20,6 +20,8 @@ Parameters:
     Type: String
   TwitterAccessTokenSecret:
     Type: String
+  MastodonSecret:
+    Type: String
   DomainName:
     Type: String
   Stage:
@@ -444,6 +446,30 @@ Resources:
           CONSUMER_SECRET: !Ref TwitterConsumerSecret
           ACCESS_TOKEN: !Ref TwitterAccessToken
           ACCESS_TOKEN_SECRET: !Ref TwitterAccessTokenSecret
+          URL: !Ref DomainName
+      Layers:
+      - !Ref Layer
+  
+  PostMastodon:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      FunctionName: !Sub PostVocabMastodon-${Stage}
+      Handler: app.lambda_handler
+      Runtime: python3.7
+      CodeUri: src/post_mastodon
+      Description: Posts to Mastodon with daily vocab word
+      MemorySize: 128
+      Timeout: 120
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref DynamoDBTable
+        - DynamoDBCrudPolicy:
+            TableName: !Ref IdempotencyTable
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref DynamoDBTable
+          IDEMPOTENCY_TABLE: !Ref IdempotencyTable
+          MASTODON_SECRET: !Ref MastodonSecret
           URL: !Ref DomainName
       Layers:
       - !Ref Layer

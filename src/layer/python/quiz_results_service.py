@@ -3,6 +3,7 @@ import json
 import boto3
 import datetime
 from models import QuizResults
+from boto3.dynamodb.conditions import Key
 
 import sys
 sys.path.append('../tests/')
