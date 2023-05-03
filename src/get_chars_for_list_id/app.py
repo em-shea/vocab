@@ -33,7 +33,7 @@ def format_and_filter_word_list(detailed_word_list):
     word_list = []
 
     for item in detailed_word_list:
-        # Only retrieve words without audio files (turning off for testing)
+        # Only retrieve words without audio files (turning off for testing purposes)
         # if item['word']['Audio file key'] == "":
         word_list.append(
             {
