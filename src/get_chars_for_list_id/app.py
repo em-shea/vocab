@@ -7,7 +7,7 @@ import list_word_service
 def lambda_handler(event, context):
     print('event ', event)
     list_id = event['list_id']
-    last_word_token = event['last_word_token']
+    last_word_token = event.get('last_word_token')
 
     detailed_word_list = list_word_service.get_words_in_list(list_id, limit=200, last_word_token=last_word_token, audio_file_key_check=False)
     print('detailed word list: ', detailed_word_list)
@@ -33,13 +33,13 @@ def format_and_filter_word_list(detailed_word_list):
     word_list = []
 
     for item in detailed_word_list:
-        if item['word']['Audio file key'] == "":
-            word_list.append(
-                {
-                    'list_id': item['list_id'],
-                    'word_id': item['word_id'],
-                    'text': item['word']['Simplified']
-                }
-            )
+        # if item['word']['Audio file key'] == "":
+        word_list.append(
+            {
+                'list_id': item['list_id'],
+                'word_id': item['word_id'],
+                'text': item['word']['Simplified']
+            }
+        )
 
     return word_list
