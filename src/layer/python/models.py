@@ -48,7 +48,7 @@ class ReviewWord:
 class QuizResultsQuestionData:
     answer_submitted: ReviewWord
     correct_answer: ReviewWord
-    test_set: Dict[str]
+    test_set: Dict[str, str]
     was_answer_correct: bool
 
 @dataclass
