@@ -314,7 +314,7 @@ Resources:
           Type: Api
           Properties:
             RestApiId: !Ref VocabAppApi
-            Path: /quiz
+            Path: /quizzes
             Method: POST
             Auth:
               Authorizer: CognitoAuthorizer
@@ -342,7 +342,7 @@ Resources:
           Type: Api
           Properties:
             RestApiId: !Ref VocabAppApi
-            Path: /quiz
+            Path: /quizzes
             Method: GET
             Auth:
               Authorizer: CognitoAuthorizer
@@ -370,7 +370,7 @@ Resources:
           Type: Api
           Properties:
             RestApiId: !Ref VocabAppApi
-            Path: /sentence
+            Path: /sentences
             Method: POST
             Auth:
               Authorizer: CognitoAuthorizer
@@ -399,7 +399,7 @@ Resources:
           Properties:
             RestApiId: !Ref VocabAppApi
             # Will this work to have different functions on different methods of the same API path?
-            Path: /sentence
+            Path: /sentences
             Method: GET
             Auth:
               Authorizer: CognitoAuthorizer
