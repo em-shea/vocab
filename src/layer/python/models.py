@@ -45,12 +45,18 @@ class ReviewWord:
     word: Dict[str, Word]
 
 @dataclass
+class QuizResultsQuestionData:
+    answer_submitted: ReviewWord
+    correct_answer: ReviewWord
+    test_set: Dict[str]
+    was_answer_correct: bool
+
+@dataclass
 class QuizResults:
     quiz_id: str
     date_created: datetime.datetime
     list_id: str
     character_set: str
-    question_set_type: str
-    quiz_data: Dict[str, str] #?
+    quiz_data: List[QuizResultsQuestionData]
     question_quantity: int
     percentage_correct: int
