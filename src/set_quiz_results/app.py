@@ -2,6 +2,7 @@ import os
 import json
 import boto3
 import datetime
+from decimal import Decimal
 from boto3.dynamodb.conditions import Key
 
 import api_response
@@ -35,8 +36,8 @@ def generate_quiz_id():
 
 def put_quiz_result(cognito_id, body, date):
 
-    response = table.put_item(
-        Item = {
+    # Convert percentage floats to decimals
+    data = {
                 'PK': "USER#" + cognito_id,
                 'SK': "QUIZ#" + body['quiz_id'],
                 'Quiz data': body['quiz_data'],
@@ -48,5 +49,7 @@ def put_quiz_result(cognito_id, body, date):
                 'GSI1PK': "DATE#" + date,
                 'GSI1SK': "QUIZ#" + body['quiz_id']
             }
-        )
+    converted_data = json.loads(json.dumps(data), parse_float=Decimal)
+
+    response = table.put_item(Item = converted_data)
     return response
