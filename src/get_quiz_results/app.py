@@ -13,9 +13,14 @@ def lambda_handler(event, context):
     print(event)
     cognito_id = event['requestContext']['authorizer']['claims']['sub']
 
-    event_body = json.loads(event["body"])
-    if event_body['date_range'] == 7 or event_body['date_range'] == 30:
-        date_range = event_body['date_range']
+    print('date_range: ', event["body"]["date_range"])
+
+    if event["body"] != None:
+        event_body = json.loads(event["body"])
+        if event_body['date_range'] == 7 or event_body['date_range'] == 30:
+            date_range = event_body['date_range']
+        else:
+            date_range = 7 
     else:
         date_range = 7
     
