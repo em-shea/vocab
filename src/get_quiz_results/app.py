@@ -1,7 +1,7 @@
 import json
-
 import api_response
 import quiz_results_service
+from dataclasses import asdict
 
 # validate query params
 # query for users quiz results
@@ -28,4 +28,4 @@ def lambda_handler(event, context):
         print(e)
         return api_response.response(502, "Failed to retrieve quiz results")
 
-    return api_response.response(200, "Successfully retrieved quiz results", json.dumps(quiz_results))
+    return api_response.response(200, "Successfully retrieved quiz results", json.dumps(asdict(quiz_results)))
