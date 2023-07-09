@@ -48,8 +48,8 @@ def _format_quiz_results(quiz_results_item):
         date_created = quiz_results_item['Date created'],
         list_id = quiz_results_item['List id'], 
         character_set = quiz_results_item['Character set'], 
-        question_quantity = quiz_results_item['Question quantity'], 
-        correct_answers = quiz_results_item['Correct answers'],
+        question_quantity = int(quiz_results_item['Question quantity']), 
+        correct_answers = int(quiz_results_item['Correct answers']),
         quiz_data = quiz_results_item['Quiz data']
     )
 
