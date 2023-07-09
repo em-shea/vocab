@@ -2,7 +2,6 @@ import os
 import json
 import boto3
 import datetime
-from decimal import Decimal
 from boto3.dynamodb.conditions import Key
 
 import api_response
@@ -49,7 +48,6 @@ def put_quiz_result(cognito_id, body, date):
                 'GSI1PK': "DATE#" + date,
                 'GSI1SK': "QUIZ#" + body['quiz_id']
             }
-    converted_data = json.loads(json.dumps(data), parse_float=Decimal)
 
-    response = table.put_item(Item = converted_data)
+    response = table.put_item(Item = data)
     return response
