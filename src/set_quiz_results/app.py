@@ -45,7 +45,7 @@ def put_quiz_result(cognito_id, body, date):
                 'List id': body['list_id'],
                 'Character set': body['character_set'],
                 'Question quantity': body['question_quantity'],
-                'Percentage correct': body['percentage_correct'],
+                'Correct answers': body['correct_answers'],
                 'GSI1PK': "DATE#" + date,
                 'GSI1SK': "QUIZ#" + body['quiz_id']
             }

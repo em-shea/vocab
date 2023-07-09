@@ -59,4 +59,4 @@ class QuizResults:
     character_set: str
     quiz_data: List[QuizResultsQuestionData]
     question_quantity: int
-    percentage_correct: int
+    correct_answers: int
