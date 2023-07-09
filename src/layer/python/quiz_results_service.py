@@ -49,7 +49,7 @@ def _format_quiz_results(quiz_results_item):
         list_id = quiz_results_item['List id'], 
         character_set = quiz_results_item['Character set'], 
         question_quantity = quiz_results_item['Question quantity'], 
-        percentage_correct = quiz_results_item['Percentage correct'], 
+        percentage_correct = float(quiz_results_item['Percentage correct']), 
         quiz_data = quiz_results_item['Quiz data']
     )
 
