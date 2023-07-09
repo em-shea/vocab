@@ -14,9 +14,9 @@ def retrieve_quiz_results(cognito_id, date_range):
     query_response = query_dynamodb(cognito_id, date_range)
     print(query_response)
 
-    quiz_results = {}
+    quiz_results = []
     for item in query_response:
-        _format_quiz_results(item).append(quiz_results)
+        quiz_results.append(_format_quiz_results(item))
     
     return quiz_results
 
