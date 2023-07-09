@@ -18,7 +18,7 @@ def retrieve_quiz_results(cognito_id, date_range):
 
     quiz_results = []
     for item in query_response:
-        quiz_results.append(json.dumps(asdict(_format_quiz_results(item))))
+        quiz_results.append(asdict(_format_quiz_results(item)))
     
     return quiz_results
 

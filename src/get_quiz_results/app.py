@@ -27,5 +27,4 @@ def lambda_handler(event, context):
         print(e)
         return api_response.response(502, "Failed to retrieve quiz results")
 
-    # 
     return api_response.response(200, "Successfully retrieved quiz results", quiz_results)
