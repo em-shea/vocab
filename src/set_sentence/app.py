@@ -41,7 +41,7 @@ def update_sentence(cognito_id, body, date):
                 'List id': body['list_id'],
                 'Character set': body['character_set'],
                 'GSI1PK': "DATE#" + date,
-                'GSI1SK': "USER#" + "SENTENCE#" + body['sentence_id']
+                'GSI1SK': "SENTENCE#" + body['sentence_id']
             }
         )
     return response

@@ -9,10 +9,10 @@ def lambda_handler(event, context):
     list_id = event['list_id']
     last_word_token = event['last_word_token']
 
-    detailed_word_list = list_word_service.get_words_in_list(list_id, limit=20, last_word_token=last_word_token, audio_file_key_check=False)
-    # print('detailed word list: ', detailed_word_list)
+    detailed_word_list = list_word_service.get_words_in_list(list_id, limit=200, last_word_token=last_word_token, audio_file_key_check=False)
+    print('detailed word list: ', detailed_word_list)
 
-    if len(detailed_word_list) == 20:
+    if len(detailed_word_list) == 200:
         updated_last_word_token = detailed_word_list[-1]['word_id']
     else:
         updated_last_word_token = None

@@ -35,19 +35,19 @@ def generate_quiz_id():
 
 def put_quiz_result(cognito_id, body, date):
 
-    response = table.put_item(
-        Item = {
+    # Convert percentage floats to decimals
+    data = {
                 'PK': "USER#" + cognito_id,
                 'SK': "QUIZ#" + body['quiz_id'],
-                'Quiz data': body['quiz-data'],
+                'Quiz data': body['quiz_data'],
                 'Date created': date,
                 'List id': body['list_id'],
                 'Character set': body['character_set'],
-                'Question set type': body['question_set_type'],
                 'Question quantity': body['question_quantity'],
-                'Percentage correct': body['percentage_correct'],
+                'Correct answers': body['correct_answers'],
                 'GSI1PK': "DATE#" + date,
-                'GSI1SK': "USER#" + "QUIZ#" + body['quiz_id']
+                'GSI1SK': "QUIZ#" + body['quiz_id']
             }
-        )
+
+    response = table.put_item(Item = data)
     return response

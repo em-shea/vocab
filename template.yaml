@@ -20,6 +20,8 @@ Parameters:
     Type: String
   TwitterAccessTokenSecret:
     Type: String
+  MastodonSecret:
+    Type: String
   DomainName:
     Type: String
   Stage:
@@ -101,11 +103,6 @@ Resources:
           TABLE_NAME: !Ref DynamoDBTable
           IDEMPOTENCY_TABLE: !Ref IdempotencyTable
           URL: !Ref DomainName
-      # Events:
-      #   DailySchedule:
-      #     Type: Schedule
-      #     Properties:
-      #       Schedule: cron(0 20 * * ? *)
       Layers:
       - !Ref Layer
 
@@ -317,7 +314,7 @@ Resources:
           Type: Api
           Properties:
             RestApiId: !Ref VocabAppApi
-            Path: /quiz
+            Path: /quizzes
             Method: POST
             Auth:
               Authorizer: CognitoAuthorizer
@@ -345,7 +342,7 @@ Resources:
           Type: Api
           Properties:
             RestApiId: !Ref VocabAppApi
-            Path: /quiz
+            Path: /quizzes
             Method: GET
             Auth:
               Authorizer: CognitoAuthorizer
@@ -373,7 +370,7 @@ Resources:
           Type: Api
           Properties:
             RestApiId: !Ref VocabAppApi
-            Path: /sentence
+            Path: /sentences
             Method: POST
             Auth:
               Authorizer: CognitoAuthorizer
@@ -402,7 +399,7 @@ Resources:
           Properties:
             RestApiId: !Ref VocabAppApi
             # Will this work to have different functions on different methods of the same API path?
-            Path: /sentence
+            Path: /sentences
             Method: GET
             Auth:
               Authorizer: CognitoAuthorizer
@@ -449,6 +446,30 @@ Resources:
           CONSUMER_SECRET: !Ref TwitterConsumerSecret
           ACCESS_TOKEN: !Ref TwitterAccessToken
           ACCESS_TOKEN_SECRET: !Ref TwitterAccessTokenSecret
+          URL: !Ref DomainName
+      Layers:
+      - !Ref Layer
+  
+  PostMastodon:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      FunctionName: !Sub PostVocabMastodon-${Stage}
+      Handler: app.lambda_handler
+      Runtime: python3.7
+      CodeUri: src/post_mastodon
+      Description: Posts to Mastodon with daily vocab word
+      MemorySize: 128
+      Timeout: 120
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref DynamoDBTable
+        - DynamoDBCrudPolicy:
+            TableName: !Ref IdempotencyTable
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref DynamoDBTable
+          IDEMPOTENCY_TABLE: !Ref IdempotencyTable
+          MASTODON_SECRET: !Ref MastodonSecret
           URL: !Ref DomainName
       Layers:
       - !Ref Layer
@@ -598,6 +619,7 @@ Resources:
           Id: SendDailyEmailFunction
         - Arn: !GetAtt PostTweet.Arn
           Id: PostTweetFunction
+        # TODO: Mastodon
   
   EventsToInvokeLambdaPolicyEmail: 
     Type: AWS::Lambda::Permission
