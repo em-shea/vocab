@@ -619,6 +619,7 @@ Resources:
           Id: SendDailyEmailFunction
         - Arn: !GetAtt PostTweet.Arn
           Id: PostTweetFunction
+        # TODO: Mastodon
   
   EventsToInvokeLambdaPolicyEmail: 
     Type: AWS::Lambda::Permission
