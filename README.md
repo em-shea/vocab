@@ -19,6 +19,7 @@ And in this blog post series:
 - [Developing a daily Chinese vocab app](https://emshea.com/post/chinese-vocab-app)
 - [Integrating DynamoDB in my Chinese vocab app](https://emshea.com/post/vocab-app-database)
 - [Migrating to a serverless contact management backend](https://emshea.com/post/vocab-subscriber-backend)
+- [Designing a DynamoDB data model](https://emshea.com/post/part-1-dynamodb-single-table-design)
 - [Generating audio files for text with Step Functions, DynamoDB, S3, and Polly](https://emshea.com/post/generate-audio-from-text-with-step-functions-polly)
 
 [Front end repo](https://github.com/em-shea/vocab-frontend-vue)
