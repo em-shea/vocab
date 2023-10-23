@@ -19,19 +19,21 @@ And in this blog post series:
 - [Developing a daily Chinese vocab app](https://emshea.com/post/chinese-vocab-app)
 - [Integrating DynamoDB in my Chinese vocab app](https://emshea.com/post/vocab-app-database)
 - [Migrating to a serverless contact management backend](https://emshea.com/post/vocab-subscriber-backend)
+- [Generating audio files for text with Step Functions, DynamoDB, S3, and Polly](https://emshea.com/post/generate-audio-from-text-with-step-functions-polly)
 
 [Front end repo](https://github.com/em-shea/vocab-frontend-vue)
 
-![Architectural diagram](https://hsk-vocab.s3.amazonaws.com/vocab-app-v7-profiles1.png)
+![Architectural diagram](https://hhtt-static.s3.amazonaws.com/vocab-app-oct-2023.drawio+(1).png)
 
 ## Roadmap
 
 | Roadmap item | Status |
 | ------------- | :-------------: |
-| Store user quiz results | |
+| Store user quiz results - weekly | |
 | User practice sentences | |
 | User created vocab lists | |
 | 成语 vocab list | |
+| Store user quiz results - daily | :heavy_check_mark: |
 | Add pronunciation audio | :heavy_check_mark: |
 | Add user profiles | :heavy_check_mark: |
 | Auto-generated quizzes | :heavy_check_mark: |
