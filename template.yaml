@@ -41,6 +41,7 @@ Resources:
         AllowMethods: "'OPTIONS,POST,GET'"
         AllowHeaders: "'*'"
         AllowOrigin: "'*'"
+        MaxAge: "'86400'"
       Auth:
         Authorizers:
           CognitoAuthorizer:
