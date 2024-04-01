@@ -450,30 +450,6 @@ Resources:
           URL: !Ref DomainName
       Layers:
       - !Ref Layer
-  
-  PostMastodon:
-    Type: 'AWS::Serverless::Function'
-    Properties:
-      FunctionName: !Sub PostVocabMastodon-${Stage}
-      Handler: app.lambda_handler
-      Runtime: python3.7
-      CodeUri: src/post_mastodon
-      Description: Posts to Mastodon with daily vocab word
-      MemorySize: 128
-      Timeout: 120
-      Policies:
-        - DynamoDBCrudPolicy:
-            TableName: !Ref DynamoDBTable
-        - DynamoDBCrudPolicy:
-            TableName: !Ref IdempotencyTable
-      Environment:
-        Variables:
-          TABLE_NAME: !Ref DynamoDBTable
-          IDEMPOTENCY_TABLE: !Ref IdempotencyTable
-          MASTODON_SECRET: !Ref MastodonSecret
-          URL: !Ref DomainName
-      Layers:
-      - !Ref Layer
 
   BackupDynamoDBToS3:
     Type: 'AWS::Serverless::Function'
