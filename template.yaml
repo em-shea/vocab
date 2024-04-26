@@ -20,8 +20,6 @@ Parameters:
     Type: String
   TwitterAccessTokenSecret:
     Type: String
-  MastodonSecret:
-    Type: String
   DomainName:
     Type: String
   Stage:
@@ -596,7 +594,6 @@ Resources:
           Id: SendDailyEmailFunction
         - Arn: !GetAtt PostTweet.Arn
           Id: PostTweetFunction
-        # TODO: Mastodon
   
   EventsToInvokeLambdaPolicyEmail: 
     Type: AWS::Lambda::Permission
