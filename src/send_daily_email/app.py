@@ -77,7 +77,7 @@ def lambda_handler(event, context):
                     response = send_email(user, email_content)
                     email_counter += 1
                 except Exception as e:
-                    print(f"Error: Failed to send email - {user['user_data']['PK']}.")
+                    print(f"Error: Failed to send email - {user.user_id}.")
                     print(e)
         
         print(f"{email_counter} emails sent.")
