@@ -402,6 +402,8 @@ Resources:
             Method: GET
             Auth:
               Authorizer: CognitoAuthorizer
+      Layers:
+      - !Ref Layer
   
   GetCharsForListId:
     Type: 'AWS::Serverless::Function'
