@@ -6,19 +6,24 @@ import datetime
 import api_response
 import ksuid_service
 
+# Add sentence_service
+
 table = boto3.resource('dynamodb', region_name=os.environ['AWS_REGION']).Table(os.environ['TABLE_NAME'])
 
 # Create or update daily practice sentences
 def lambda_handler(event, context):
-    print(event)
+    print('event: ', event)
     cognito_id = event['requestContext']['authorizer']['claims']['sub']
     body = json.loads(event["body"])
     date = str(datetime.datetime.now().isoformat())
 
     if "sentence_id" == "":
+        print('sentence ID empty, generating ID')
         body["sentence_id"] = generate_sentence_id()
+        print('sentence_id generated: ', body["sentence_id"])
 
     try:
+        print("updating sentence... body: ", body)
         response = update_sentence(cognito_id, body, date)
     except Exception as e:
         print(f"Error: Failed to update sentence - {body}")
