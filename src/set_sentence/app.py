@@ -17,7 +17,7 @@ def lambda_handler(event, context):
     body = json.loads(event["body"])
     date = str(datetime.datetime.now().isoformat())
 
-    if "sentence_id" == "":
+    if "sentence_id" == "" or "sentence_id" == None:
         print('sentence ID empty, generating ID')
         body["sentence_id"] = generate_sentence_id()
         print('sentence_id generated: ', body["sentence_id"])
