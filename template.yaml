@@ -397,7 +397,6 @@ Resources:
           Type: Api
           Properties:
             RestApiId: !Ref VocabAppApi
-            # Will this work to have different functions on different methods of the same API path?
             Path: /sentences
             Method: GET
             Auth:
