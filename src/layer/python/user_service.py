@@ -90,18 +90,18 @@ def _format_user_data(user_data):
         character_set_preference = '',
         user_alias = '', 
         user_alias_pinyin = '', 
-        user_alias_emoji = ''
+        user_alias_emoji = '',
+        subscriptions = [],
+        quizzes = [],
+        sentences = []
     )
-    subscription_list = []
-    quiz_list = []
-    sentence_list = []
 
     #  Loop through all users and subs
     for item in user_data:
         # print(item)
 
         # If Dynamo item is user metadata, create User class
-        if 'Email address' in item:
+        if 'USER' in item['SK']:
             print('user', item['Email address'])
             user.email_address = item['Email address']
             user.user_id = item['PK'][5:]
@@ -113,7 +113,7 @@ def _format_user_data(user_data):
 
         # If Dynamo item is a list subscription, add the list to the user's lists dict
         # Add filter for only subscribed (currently done outside of service)
-        if 'List name' in item:
+        elif 'LIST' in item['SK']:
             print('list', item['List name'])
             # Shortening list id from unique id (ex, LIST#1ebcad40-bb9e-6ece-a366-acde48001122#SIMPLIFIED)
             if 'SIMPLIFIED' in item['SK']:
@@ -129,19 +129,16 @@ def _format_user_data(user_data):
                 status = item['Status'], 
                 date_subscribed = item['Date subscribed']
             )
-            subscription_list.append(sub)
-
-        # Sort lists by list id to appear in order (Level 1, Level 2, etc.)
-        subscription_list = sorted(subscription_list, key=lambda k: k.list_id, reverse=False)
+            user.subscriptions.append(sub)
         
         # If Dynamo item is a quiz, add to the user's quiz dict
-        if 'QUIZ' in item:
+        elif 'QUIZ' in item['SK']:
             print('quiz item: ', item)
             quiz = format_quiz_results(item)
-            quiz_list.append(quiz)
+            user.quizzes.append(quiz)
 
         # If Dynamo item is a sentence, add to the user's sentence dict
-        if 'SENTENCE' in item:
+        elif 'SENTENCE' in item['SK']:
             print('sentence item: ', item)
             sentence = Sentence(
                 sentence_id = item['Sentence id'],
@@ -151,11 +148,13 @@ def _format_user_data(user_data):
                 character_set = item['Character set'],
                 word = format_review_word(item['Word'])
             )
-            sentence_list.append(sentence)
-
-    user.subscriptions = subscription_list
-    user.quizzes = quiz_list
-    user.sentences = sentence_list
+            user.sentences.append(sentence)
+        
+        else:
+            print('Item does not match expected type - user, list, quiz, sentences. Item: ', item)
+    
+    # Sort lists by list id to appear in order (Level 1, Level 2, etc.)
+    user.subscriptions = sorted(user.subscriptions, key=lambda k: k.list_id, reverse=False)
 
     print('formatted user ', user)
     return user
