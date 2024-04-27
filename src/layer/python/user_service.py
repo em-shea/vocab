@@ -84,7 +84,14 @@ def group_users_and_subs(dynamo_response):
 
 def _format_user_data(user_data):
 
-    user = None
+    user = User(
+        email_address = '',
+        user_id = '', 
+        character_set_preference = '',
+        user_alias = '', 
+        user_alias_pinyin = '', 
+        user_alias_emoji = ''
+    )
     subscription_list = []
     quiz_list = []
     sentence_list = []
@@ -96,18 +103,13 @@ def _format_user_data(user_data):
         # If Dynamo item is user metadata, create User class
         if 'Email address' in item:
             print('user', item['Email address'])
-            user = User(
-                email_address = item['Email address'],
-                user_id = item['PK'][5:], 
-                character_set_preference = item['Character set preference'], 
-                date_created = item['Date created'], 
-                user_alias = item['User alias'], 
-                user_alias_pinyin = item['User alias pinyin'], 
-                user_alias_emoji = item['User alias emoji'],
-                subscriptions = [],
-                quizzes=[],
-                sentences=[]
-            )
+            user.email_address = item['Email address']
+            user.user_id = item['PK'][5:]
+            user.character_set_preference = item['Character set preference']
+            user.date_created = item['Date created']
+            user.user_alias = item['User alias']
+            user.user_alias_pinyin = item['User alias pinyin']
+            user.user_alias_emoji = item['User alias emoji']
 
         # If Dynamo item is a list subscription, add the list to the user's lists dict
         # Add filter for only subscribed (currently done outside of service)
@@ -132,7 +134,6 @@ def _format_user_data(user_data):
         # Sort lists by list id to appear in order (Level 1, Level 2, etc.)
         subscription_list = sorted(subscription_list, key=lambda k: k.list_id, reverse=False)
         
-        # TODO:
         # If Dynamo item is a quiz, add to the user's quiz dict
         if 'QUIZ' in item:
             print('quiz item: ', item)

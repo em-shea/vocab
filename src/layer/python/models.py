@@ -64,10 +64,10 @@ class User:
     email_address: str
     user_id: str
     character_set_preference: str
-    date_created: datetime.datetime
+    date_created: Optional [datetime.datetime] = None
     user_alias: str
     user_alias_pinyin: str
     user_alias_emoji: str
-    subscriptions: List[Subscription]
+    subscriptions: Optional [List[Subscription]] = None
     quizzes: Optional [List[Quiz]] = None
     sentences: Optional [List[Sentence]] = None
