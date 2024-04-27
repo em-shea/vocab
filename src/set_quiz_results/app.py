@@ -14,11 +14,13 @@ def lambda_handler(event, context):
     print(event)
     cognito_id = event['requestContext']['authorizer']['claims']['sub']
     body = json.loads(event["body"])
-    date = str(datetime.datetime.now().isoformat())
+
+    # Simple date format so that only one quiz result is saved per day
+    # date = str(datetime.datetime.now().isoformat())
+    date = datetime.datetime.now().strftime('%Y-%m-%d')
 
     body["quiz_id"] = generate_quiz_id()
 
-    # Add max quiz results records a user can save for a given day?
     try:
         response = put_quiz_result(cognito_id, body, date)
         print(response)
@@ -38,7 +40,7 @@ def put_quiz_result(cognito_id, body, date):
     # Convert percentage floats to decimals
     data = {
                 'PK': "USER#" + cognito_id,
-                'SK': "QUIZ#" + body['quiz_id'],
+                'SK': "DATE#" + date + "QUIZ#" + body['quiz_id'],
                 'Quiz data': body['quiz_data'],
                 'Date created': date,
                 'List id': body['list_id'],

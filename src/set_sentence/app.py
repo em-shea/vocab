@@ -15,7 +15,10 @@ def lambda_handler(event, context):
     print('event: ', event)
     cognito_id = event['requestContext']['authorizer']['claims']['sub']
     body = json.loads(event["body"])
-    date = str(datetime.datetime.now().isoformat())
+
+    # Simple date format so that only one sentence is saved per day
+    # date = str(datetime.datetime.now().isoformat())
+    date = datetime.datetime.now().strftime('%Y-%m-%d')
 
     if "sentence_id" == "" or "sentence_id" == None:
         print('sentence ID empty, generating ID')
@@ -40,11 +43,12 @@ def update_sentence(cognito_id, body, date):
     response = table.put_item(
         Item = {
                 'PK': "USER#" + cognito_id,
-                'SK': "SENTENCE#" + body['sentence_id'],
+                'SK': "DATE#" + date + "SENTENCE#" + body['sentence_id'],
                 'Sentence': body['sentence'],
                 'Date created': date,
                 'List id': body['list_id'],
                 'Character set': body['character_set'],
+                'Word': body['word'],
                 'GSI1PK': "DATE#" + date,
                 'GSI1SK': "SENTENCE#" + body['sentence_id']
             }
