@@ -50,7 +50,7 @@ def query_dynamodb(list_id, todays_date, from_date):
     return response['Items']
 
 def format_review_word(word_item):
-    print('word item: ', word_item)
+    # print('word item: ', word_item)
 
     word = format_word_body(word_item['Word'])
 
@@ -62,7 +62,7 @@ def format_review_word(word_item):
     return review_word
 
 def format_word_body(word):
-    print('word: ', word)
+    # print('word: ', word)
 
     word = Word(
         word_id = word['Word id'],

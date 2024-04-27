@@ -10,11 +10,11 @@ from datetime import datetime, timedelta
 def lambda_handler(event, context):
     # print('event', event)
     cognito_id = event['requestContext']['authorizer']['claims']['sub']
-    print('user id',cognito_id)
+    # print('user id',cognito_id)
     date_range = 10
     
     user_data = user_service.get_single_user_with_activity(cognito_id, date_range)
-    print('user activity: ', user_data)
+    # print('user activity: ', user_data)
 
     # Create array of dates since date_range
     dates = []
@@ -26,10 +26,10 @@ def lambda_handler(event, context):
     user_recent_words = []
     for list in user_data.subscriptions:
        recent_words_for_list = review_word_service.get_review_words(list.list_id, date_range)
-       print('recent words for list: ', recent_words_for_list)
+    #    print('recent words for list: ', recent_words_for_list)
        for word in recent_words_for_list[list.list_id]:
            user_recent_words.append(word)
-    print('user recent words: ', user_recent_words)
+    # print('user recent words: ', user_recent_words)
 
     # Loop through dates, then loop through words, sentences, quizzes
     # Add words and sentence
@@ -55,12 +55,12 @@ def lambda_handler(event, context):
     user_data_dict.pop('sentences')
     print('user data dict without quiz, sentences: ', user_data_dict)
 
-    print('user: ', user_data)
+    print('user: ', user_data_dict)
     return {
         'statusCode': 200,
         'headers': {
             'Access-Control-Allow-Methods': 'GET,OPTIONS',
             'Access-Control-Allow-Origin': '*',
         },
-        'body': json.dumps(asdict(user_data))
+        'body': json.dumps(user_data_dict)
     }
