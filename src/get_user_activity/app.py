@@ -40,10 +40,10 @@ def lambda_handler(event, context):
             if word['date_sent'] == date.strftime('%Y-%m-%d'):
                 user_activity[date.strftime('%Y-%m-%d')]['word'] = word
         for sentence in user_data.sentences:
-            if sentence['date_created'] == date.strftime('%Y-%m-%d'):
+            if sentence.date_created == date.strftime('%Y-%m-%d'):
                 user_activity[date.strftime('%Y-%m-%d')]['sentence'] = sentence
         for quiz in user_data.quizzes:
-            if quiz['date_created'] == date.strftime('%Y-%m-%d'):
+            if quiz.date_created == date.strftime('%Y-%m-%d'):
                 user_activity[date.strftime('%Y-%m-%d')]['quiz'] = quiz
     print('user activity: ', user_activity)
     
