@@ -43,8 +43,9 @@ def update_sentence(cognito_id, body, date):
     response = table.put_item(
         Item = {
                 'PK': "USER#" + cognito_id,
-                'SK': "DATE#" + date + "SENTENCE#" + body['sentence_id'],
+                'SK': "DATE#" + date + "#SENTENCE#" + body['sentence_id'],
                 'Sentence': body['sentence'],
+                'Sentence id': body['sentence_id'],
                 'Date created': date,
                 'List id': body['list_id'],
                 'Character set': body['character_set'],

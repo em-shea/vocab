@@ -1,5 +1,5 @@
 import datetime
-from typing import List, Dict
+from typing import List, Dict, Optional
 from dataclasses import dataclass
 
 @dataclass
@@ -10,17 +10,6 @@ class Subscription:
     character_set: str
     status: str
     date_subscribed: str
-
-@dataclass
-class User:
-    email_address: str
-    user_id: str
-    character_set_preference: str
-    date_created: datetime.datetime
-    user_alias: str
-    user_alias_pinyin: str
-    user_alias_emoji: str
-    subscriptions: List[Subscription]
 
 @dataclass
 class Word:
@@ -69,3 +58,16 @@ class Sentence:
     list_id: str
     character_set: str
     word: Dict[str, Word]
+
+@dataclass
+class User:
+    email_address: str
+    user_id: str
+    character_set_preference: str
+    date_created: datetime.datetime
+    user_alias: str
+    user_alias_pinyin: str
+    user_alias_emoji: str
+    subscriptions: List[Subscription]
+    quizzes: Optional [List[Quiz]] = None
+    sentences: Optional [List[Sentence]] = None

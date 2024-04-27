@@ -40,7 +40,8 @@ def put_quiz_result(cognito_id, body, date):
     # Convert percentage floats to decimals
     data = {
                 'PK': "USER#" + cognito_id,
-                'SK': "DATE#" + date + "QUIZ#" + body['quiz_id'],
+                'SK': "DATE#" + date + "#QUIZ#" + body['quiz_id'],
+                'Quiz id': body['quiz_id'],
                 'Quiz data': body['quiz_data'],
                 'Date created': date,
                 'List id': body['list_id'],

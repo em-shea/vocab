@@ -2,7 +2,7 @@ import os
 import json
 import boto3
 from dataclasses import asdict
-from models import QuizResults
+from models import Quiz
 from boto3.dynamodb.conditions import Key
 from datetime import datetime, timedelta
 
@@ -18,7 +18,7 @@ def retrieve_quiz_results(cognito_id, date_range):
 
     quiz_results = []
     for item in query_response:
-        quiz_results.append(asdict(_format_quiz_results(item)))
+        quiz_results.append(asdict(format_quiz_results(item)))
     
     return quiz_results
 
@@ -41,9 +41,9 @@ def query_dynamodb(cognito_id, date_range):
 
     return response['Items']
 
-def _format_quiz_results(quiz_results_item):
+def format_quiz_results(quiz_results_item):
 
-    formatted_quiz_results_item = QuizResults(
+    formatted_quiz_results_item = Quiz(
         quiz_id = quiz_results_item['SK'][5:],
         date_created = quiz_results_item['Date created'],
         list_id = quiz_results_item['List id'], 
