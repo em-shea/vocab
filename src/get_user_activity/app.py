@@ -41,10 +41,10 @@ def lambda_handler(event, context):
                 user_activity[date.strftime('%Y-%m-%d')]['word'] = word
         for sentence in user_data.sentences:
             if sentence.date_created == date.strftime('%Y-%m-%d'):
-                user_activity[date.strftime('%Y-%m-%d')]['sentence'] = sentence
+                user_activity[date.strftime('%Y-%m-%d')]['sentence'] = asdict(sentence)
         for quiz in user_data.quizzes:
             if quiz.date_created == date.strftime('%Y-%m-%d'):
-                user_activity[date.strftime('%Y-%m-%d')]['quiz'] = quiz
+                user_activity[date.strftime('%Y-%m-%d')]['quiz'] = asdict(quiz)
     print('user activity: ', user_activity)
     
     user_data_dict = asdict(user_data)
