@@ -51,15 +51,18 @@ def query_dynamodb(list_id, todays_date, from_date):
 
 def format_review_word(query_response_word):
     print('query response word', query_response_word)
+
+    query_response_word_body = query_response_word['Word']
+
     word_body = Word(
-        word_id = query_response_word['Word']['Word id'],
-        simplified = query_response_word['Word']['Simplified'],
-        traditional = query_response_word['Word']['Traditional'],
-        pinyin = query_response_word['Word']['Pinyin'],
-        definition = query_response_word['Word']['Definition'],
-        audio_file_key = query_response_word['Word']['Audio file key'],
-        difficulty_level = query_response_word['Word']['Difficulty level'],
-        hsk_level = query_response_word['Word']['HSK Level']
+        word_id = query_response_word_body['Word id'],
+        simplified = query_response_word_body['Simplified'],
+        traditional = query_response_word_body['Traditional'],
+        pinyin = query_response_word_body['Pinyin'],
+        definition = query_response_word_body['Definition'],
+        audio_file_key = query_response_word_body['Audio file key'],
+        difficulty_level = query_response_word_body['Difficulty level'],
+        hsk_level = query_response_word_body['HSK Level']
     )
 
     review_word = ReviewWord(
