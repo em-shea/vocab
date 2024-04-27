@@ -20,7 +20,7 @@ def lambda_handler(event, context):
     # date = str(datetime.datetime.now().isoformat())
     date = datetime.datetime.now().strftime('%Y-%m-%d')
 
-    if "sentence_id" == "" or "sentence_id" == None:
+    if body["sentence_id"] == "":
         print('sentence ID empty, generating ID')
         body["sentence_id"] = generate_sentence_id()
         print('sentence_id generated: ', body["sentence_id"])
