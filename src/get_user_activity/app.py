@@ -20,7 +20,7 @@ def lambda_handler(event, context):
     dates = []
     for i in range(date_range):
         dates.append(datetime.today() - timedelta(days=i))
-    print('dates: ', dates)
+    # print('dates: ', dates)
 
     # Query for recent words for each list the user is subscribed to
     user_recent_words = []
@@ -38,22 +38,21 @@ def lambda_handler(event, context):
         user_activity[date.strftime('%Y-%m-%d')] = {}
         for word in user_recent_words:
             if word['date_sent'] == date.strftime('%Y-%m-%d'):
-                user_activity[date.strftime('%Y-%m-%d')]['word'] = word
+                user_activity[date.strftime('%Y-%m-%d')]['review_word'] = word
         for sentence in user_data.sentences:
             if sentence.date_created == date.strftime('%Y-%m-%d'):
                 user_activity[date.strftime('%Y-%m-%d')]['sentence'] = asdict(sentence)
         for quiz in user_data.quizzes:
             if quiz.date_created == date.strftime('%Y-%m-%d'):
                 user_activity[date.strftime('%Y-%m-%d')]['quiz'] = asdict(quiz)
-    print('user activity: ', user_activity)
+    # print('user activity: ', user_activity)
     
     user_data_dict = asdict(user_data)
-    print('user data dict: ', user_data_dict)
+    # print('user data dict: ', user_data_dict)
     user_data_dict['activity'] = user_activity
     # Remove quizzes and sentences from user_data_dict
     user_data_dict.pop('quizzes')
     user_data_dict.pop('sentences')
-    print('user data dict without quiz, sentences: ', user_data_dict)
 
     print('user: ', user_data_dict)
     return {
