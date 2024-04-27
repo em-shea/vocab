@@ -29,8 +29,8 @@ def get_review_words(list_id, date_range):
         word_list_response = query_dynamodb(vocab_list['list_id'], todays_date, from_date)
         # print('word list response', word_list_response)
 
-        for word in word_list_response:
-            formatted_word=format_review_word(word)
+        for word_item in word_list_response:
+            formatted_word=format_review_word(word_item)
             review_words[vocab_list['list_id']].append(asdict(formatted_word))
 
     return review_words
@@ -49,29 +49,32 @@ def query_dynamodb(list_id, todays_date, from_date):
     
     return response['Items']
 
-def format_review_word(query_response_word):
-    print('query response word', query_response_word)
+def format_review_word(word_item):
+    print('word item: ', word_item)
 
-    query_response_word_body = query_response_word['Word']
-
-    word_body = Word(
-        word_id = query_response_word_body['Word id'],
-        simplified = query_response_word_body['Simplified'],
-        traditional = query_response_word_body['Traditional'],
-        pinyin = query_response_word_body['Pinyin'],
-        definition = query_response_word_body['Definition'],
-        audio_file_key = query_response_word_body['Audio file key'],
-        difficulty_level = query_response_word_body['Difficulty level'],
-        hsk_level = query_response_word_body['HSK Level']
-    )
+    word = format_word_body(word_item['Word'])
 
     review_word = ReviewWord(
-        list_id = query_response_word['PK'].split('#')[1],
-        date_sent = query_response_word['SK'].split('#')[1],
-        word = word_body
+        list_id = word_item['PK'].split('#')[1],
+        date_sent = word_item['SK'].split('#')[1],
+        word = word
     )
-
     return review_word
+
+def format_word_body(word):
+    print('word: ', word)
+
+    word = Word(
+        word_id = word['Word id'],
+        simplified = word['Simplified'],
+        traditional = word['Traditional'],
+        pinyin = word['Pinyin'],
+        definition = word['Definition'],
+        audio_file_key = word['Audio file key'],
+        difficulty_level = word['Difficulty level'],
+        hsk_level = word['HSK Level']
+    )
+    return word
 
 def format_date(date_object):
 

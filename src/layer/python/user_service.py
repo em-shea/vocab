@@ -3,7 +3,7 @@ import boto3
 from datetime import datetime, timedelta
 from boto3.dynamodb.conditions import Key
 from models import User, Subscription, Quiz, Sentence
-from review_word_service import format_review_word
+from review_word_service import format_word_body
 from quiz_results_service import format_quiz_results
 
 import sys
@@ -146,7 +146,7 @@ def _format_user_data(user_data):
                 date_created = item['Date created'],
                 list_id = item['List id'],
                 character_set = item['Character set'],
-                word = format_review_word(item['Word'])
+                word = format_word_body(item['Word'])
             )
             user.sentences.append(sentence)
         
