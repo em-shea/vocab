@@ -4,7 +4,7 @@ import user_service
 import review_word_service
 from dataclasses import asdict
 from models import User, Subscription, Quiz, Sentence
-from datetime import timedelta
+from datetime import datetime, timedelta
 
 # For a given user (requires sign-in), return their metadata, subscribed lists, and the past two weeks of quizzes and sentences
 def lambda_handler(event, context):
