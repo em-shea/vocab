@@ -10,9 +10,9 @@ jobs:
       - run:
           name: Install dependencies
           command: |
-            sudo pip install awscli
-            sudo pip install aws-sam-cli
-            sudo pip install coverage
+            pip install awscli
+            pip install aws-sam-cli
+            pip install coverage
 
       - run:
           name: Run tests
