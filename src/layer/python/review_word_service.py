@@ -45,12 +45,12 @@ def query_dynamodb(list_id, todays_date, from_date):
         print(e.response['Error']['Message'])
         raise e
     # else:
-        # print("dynamo query response: ", json.dumps(response['Items'], indent=4))
+        print("dynamo query response: ", json.dumps(response['Items'], indent=4))
     
     return response['Items']
 
 def format_review_word(query_response_word):
-    # print('query response word', query_response_word)
+    print('query response word', query_response_word)
     word_body = Word(
         word_id = query_response_word['Word']['Word id'],
         simplified = query_response_word['Word']['Simplified'],
