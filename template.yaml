@@ -320,33 +320,33 @@ Resources:
       Layers:
       - !Ref Layer
 
-  GetQuizResults:
-    Type: 'AWS::Serverless::Function'
-    Properties:
-      FunctionName: !Sub GetQuizResults-${Stage}
-      Handler: app.lambda_handler
-      Runtime: python3.7
-      CodeUri: src/get_quiz_results
-      Description: A function that retrievess quiz result records
-      MemorySize: 128
-      Timeout: 120
-      Policies:
-        - DynamoDBCrudPolicy:
-           TableName: !Ref DynamoDBTable
-      Environment:
-        Variables:
-          TABLE_NAME: !Ref DynamoDBTable
-      Events:
-        SetQuizResultsApi:
-          Type: Api
-          Properties:
-            RestApiId: !Ref VocabAppApi
-            Path: /quizzes
-            Method: GET
-            Auth:
-              Authorizer: CognitoAuthorizer
-      Layers:
-      - !Ref Layer
+  # GetQuizResults:
+  #   Type: 'AWS::Serverless::Function'
+  #   Properties:
+  #     FunctionName: !Sub GetQuizResults-${Stage}
+  #     Handler: app.lambda_handler
+  #     Runtime: python3.7
+  #     CodeUri: src/get_quiz_results
+  #     Description: A function that retrievess quiz result records
+  #     MemorySize: 128
+  #     Timeout: 120
+  #     Policies:
+  #       - DynamoDBCrudPolicy:
+  #          TableName: !Ref DynamoDBTable
+  #     Environment:
+  #       Variables:
+  #         TABLE_NAME: !Ref DynamoDBTable
+  #     Events:
+  #       SetQuizResultsApi:
+  #         Type: Api
+  #         Properties:
+  #           RestApiId: !Ref VocabAppApi
+  #           Path: /quizzes
+  #           Method: GET
+  #           Auth:
+  #             Authorizer: CognitoAuthorizer
+  #     Layers:
+  #     - !Ref Layer
 
   SetSentence:
     Type: 'AWS::Serverless::Function'
@@ -375,15 +375,43 @@ Resources:
               Authorizer: CognitoAuthorizer
       Layers:
       - !Ref Layer
+
+  # GetSentences:
+  #   Type: 'AWS::Serverless::Function'
+  #   Properties:
+  #     FunctionName: !Sub GetSentences-${Stage}
+  #     Handler: app.lambda_handler
+  #     Runtime: python3.7
+  #     CodeUri: src/get_sentences
+  #     Description: A function that retrieves a user's daily sentences
+  #     MemorySize: 128
+  #     Timeout: 120
+  #     Policies:
+  #       - DynamoDBCrudPolicy:
+  #          TableName: !Ref DynamoDBTable
+  #     Environment:
+  #       Variables:
+  #         TABLE_NAME: !Ref DynamoDBTable
+  #     Events:
+  #       GetSentencesApi:
+  #         Type: Api
+  #         Properties:
+  #           RestApiId: !Ref VocabAppApi
+  #           Path: /sentences
+  #           Method: GET
+  #           Auth:
+  #             Authorizer: CognitoAuthorizer
+  #     Layers:
+  #     - !Ref Layer
               
-  GetSentences:
+  GetUserActivity:
     Type: 'AWS::Serverless::Function'
     Properties:
-      FunctionName: !Sub GetSentences-${Stage}
+      FunctionName: !Sub GetUserActivity-${Stage}
       Handler: app.lambda_handler
       Runtime: python3.7
-      CodeUri: src/get_sentences
-      Description: A function that retrieves a user's daily sentences
+      CodeUri: src/get_user_activity
+      Description: A function that retrieves a user's recent activity (quizzes and practice sentences)
       MemorySize: 128
       Timeout: 120
       Policies:
@@ -397,7 +425,7 @@ Resources:
           Type: Api
           Properties:
             RestApiId: !Ref VocabAppApi
-            Path: /sentences
+            Path: /user_activity
             Method: GET
             Auth:
               Authorizer: CognitoAuthorizer

@@ -11,6 +11,7 @@ sys.path.append('../tests/')
 
 table = boto3.resource('dynamodb', region_name=os.environ['AWS_REGION']).Table(os.environ['TABLE_NAME'])
 
+# Retrieves user metadata and lists
 def get_single_user(cognito_id):
 
     user_data = query_single_user(cognito_id)
@@ -28,14 +29,15 @@ def query_single_user(cognito_id):
     # print('query_single_user dynamo response ', response['Items'])
     return response['Items']
 
-def get_single_user_with_quiz_sentence_history(cognito_id, date_range=10):
+# Retrieve user metadata, lists, and activity (quizzes, sentences)
+def get_single_user_with_activity(cognito_id, date_range=10):
 
-    user_data = query_single_user_with_quiz_sentence_history(cognito_id, date_range)
+    user_data = query_single_user_with_activity(cognito_id, date_range)
     response = _format_user_data(user_data)
 
     return response
 
-def query_single_user_with_quiz_sentence_history(cognito_id, date_range):
+def query_single_user_with_activity(cognito_id, date_range):
 
     user_key = "USER#" + cognito_id
 
@@ -108,6 +110,7 @@ def _format_user_data(user_data):
             )
 
         # If Dynamo item is a list subscription, add the list to the user's lists dict
+        # Add filter for only subscribed (currently done outside of service)
         if 'List name' in item:
             print('list', item['List name'])
             # Shortening list id from unique id (ex, LIST#1ebcad40-bb9e-6ece-a366-acde48001122#SIMPLIFIED)
