@@ -26,6 +26,7 @@ def lambda_handler(event, context):
     user_recent_words = []
     for list in user_data.subscriptions:
        recent_words_for_list = review_word_service.get_review_words(list.list_id, date_range)
+       print('recent words for list: ', recent_words_for_list)
        user_recent_words.extend(recent_words_for_list)
     print('user recent words: ', user_recent_words)
 
