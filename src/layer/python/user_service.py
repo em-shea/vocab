@@ -19,10 +19,11 @@ def query_single_user(cognito_id):
 
     user_key = "USER#" + cognito_id
 
+    # TODO: Limit query to just user metadata and lists (not quizzes and sentences)
     response = table.query(
-        KeyConditionExpression=Key('PK').eq(user_key)
+        KeyConditionExpression=Key('PK').eq(user_key) & Key('SK').gt('LIST')
     )
-    print('dynamo response ', response['Items'])
+    print('query_single_user dynamo response ', response['Items'])
     return response['Items']
 
 def get_all_users():
@@ -37,6 +38,7 @@ def get_all_users():
 
 def query_all_users():
 
+    # Note that this query uses GSI1 which is already limited to metadata and lists (does not pull quizzes and sentences)
     response = table.query(
         IndexName='GSI1',
         KeyConditionExpression=Key('GSI1PK').eq('USER')
