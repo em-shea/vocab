@@ -36,16 +36,17 @@ def lambda_handler(event, context):
     user_activity = {}
     for date in dates:
         user_activity[date.strftime('%Y-%m-%d')] = {}
+        user_activity[date.strftime('%Y-%m-%d')]['review_words'] = []
         for word in user_recent_words:
             if word['date_sent'] == date.strftime('%Y-%m-%d'):
-                user_activity[date.strftime('%Y-%m-%d')]['review_word'] = word
-        for sentence in user_data.sentences:
-            if sentence.date_created == date.strftime('%Y-%m-%d'):
-                user_activity[date.strftime('%Y-%m-%d')]['sentence'] = asdict(sentence)
+                user_activity[date.strftime('%Y-%m-%d')]['review_words'].append(word)
+            for sentence in user_data.sentences:
+                if sentence.date_created == date.strftime('%Y-%m-%d') and sentence.word.word_id == word['word']['word_id']:
+                    user_activity[date.strftime('%Y-%m-%d')]['review_words']['sentence'] = asdict(sentence)
         for quiz in user_data.quizzes:
             if quiz.date_created == date.strftime('%Y-%m-%d'):
                 user_activity[date.strftime('%Y-%m-%d')]['quiz'] = asdict(quiz)
-    # print('user activity: ', user_activity)
+    print('user activity: ', user_activity)
     
     user_data_dict = asdict(user_data)
     # print('user data dict: ', user_data_dict)
