@@ -409,7 +409,7 @@ Resources:
     Properties:
       FunctionName: !Sub GetUserActivity-${Stage}
       Handler: app.lambda_handler
-      Runtime: python3.12
+      Runtime: python3.11
       CodeUri: src/get_user_activity
       Description: A function that retrieves a user's recent activity (quizzes and practice sentences)
       MemorySize: 128
