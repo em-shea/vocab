@@ -54,7 +54,7 @@ Resources:
     Properties:
       FunctionName: !Sub SetTodaysWords-${Stage}
       Handler: app.lambda_handler
-      Runtime: python3.7
+      Runtime: python3.11
       CodeUri: src/set_todays_words
       Description: Sets daily word for each vocab list
       MemorySize: 128
@@ -81,7 +81,7 @@ Resources:
     Properties:
       FunctionName: !Sub SendDailyEmail-${Stage}
       Handler: app.lambda_handler
-      Runtime: python3.7
+      Runtime: python3.11
       CodeUri: src/send_daily_email
       Description: A function that sends a daily email to subscribers with a vocab word for each HSK level
       Timeout: 120
@@ -110,7 +110,7 @@ Resources:
     Properties:
       FunctionName: !Sub SampleVocab-${Stage}
       Handler: app.lambda_handler
-      Runtime: python3.7
+      Runtime: python3.11
       CodeUri: src/sample_vocab
       Description: A function that returns five random words for each HSK level
       MemorySize: 128
@@ -136,7 +136,7 @@ Resources:
     Properties:
       FunctionName: !Sub GetReviewWords-${Stage}
       Handler: app.lambda_handler
-      Runtime: python3.7
+      Runtime: python3.11
       CodeUri: src/get_review_words
       Description: A function that returns a list of previous daily words.
       MemorySize: 128
@@ -162,7 +162,7 @@ Resources:
     Properties:
       FunctionName: !Sub SetSubscriptions-${Stage}
       Handler: app.lambda_handler
-      Runtime: python3.7
+      Runtime: python3.11
       CodeUri: src/set_subscriptions
       Description: A function that creates, updates, or deletes users' list subscription
       Timeout: 120
@@ -187,7 +187,7 @@ Resources:
     Properties:
       FunctionName: !Sub Unsubscribe-${Stage}
       Handler: app.lambda_handler
-      Runtime: python3.7
+      Runtime: python3.11
       CodeUri: src/unsubscribe
       Description: A function that unsubscribes users that are not signed in.
       MemorySize: 128
@@ -219,7 +219,7 @@ Resources:
     Properties:
       FunctionName: !Sub GetUserData-${Stage}
       Handler: app.lambda_handler
-      Runtime: python3.7
+      Runtime: python3.11
       CodeUri: src/get_user_data
       Description: A function that returns details for a specific user.
       MemorySize: 128
@@ -247,7 +247,7 @@ Resources:
     Properties:
       FunctionName: !Sub SetUserData-${Stage}
       Handler: app.lambda_handler
-      Runtime: python3.7
+      Runtime: python3.11
       CodeUri: src/set_user_data
       Description: A function that updates a signed in user's metadata
       Timeout: 120
@@ -272,7 +272,7 @@ Resources:
     Properties:
       FunctionName: !Sub SetLastLogin-${Stage}
       Handler: app.lambda_handler
-      Runtime: python3.7
+      Runtime: python3.11
       CodeUri: src/set_last_login
       Description: A function that updates metadata on when the user last logged in
       Timeout: 120
@@ -297,7 +297,7 @@ Resources:
     Properties:
       FunctionName: !Sub SetQuizResults-${Stage}
       Handler: app.lambda_handler
-      Runtime: python3.7
+      Runtime: python3.11
       CodeUri: src/set_quiz_results
       Description: A function that saves quiz result records
       MemorySize: 128
@@ -325,7 +325,7 @@ Resources:
   #   Properties:
   #     FunctionName: !Sub GetQuizResults-${Stage}
   #     Handler: app.lambda_handler
-  #     Runtime: python3.7
+  #     Runtime: python3.11
   #     CodeUri: src/get_quiz_results
   #     Description: A function that retrievess quiz result records
   #     MemorySize: 128
@@ -353,7 +353,7 @@ Resources:
     Properties:
       FunctionName: !Sub SetSentence-${Stage}
       Handler: app.lambda_handler
-      Runtime: python3.7
+      Runtime: python3.11
       CodeUri: src/set_sentence
       Description: A function that creates or updates a user's daily sentence
       MemorySize: 128
@@ -381,7 +381,7 @@ Resources:
   #   Properties:
   #     FunctionName: !Sub GetSentences-${Stage}
   #     Handler: app.lambda_handler
-  #     Runtime: python3.7
+  #     Runtime: python3.11
   #     CodeUri: src/get_sentences
   #     Description: A function that retrieves a user's daily sentences
   #     MemorySize: 128
@@ -437,7 +437,7 @@ Resources:
     Properties:
       FunctionName: !Sub GetCharsForListId-${Stage}
       Handler: app.lambda_handler
-      Runtime: python3.7
+      Runtime: python3.11
       CodeUri: src/get_chars_for_list_id
       Description: Retrieves list of characters for a given list id
       MemorySize: 128
@@ -456,7 +456,7 @@ Resources:
     Properties:
       FunctionName: !Sub PostVocabTweet-${Stage}
       Handler: app.lambda_handler
-      Runtime: python3.7
+      Runtime: python3.11
       CodeUri: src/post_tweet
       Description: Posts a tweet with daily vocab word
       MemorySize: 128
@@ -483,7 +483,7 @@ Resources:
     Properties:
       FunctionName: !Sub BackupDynamoDBToS3-${Stage}
       Handler: app.lambda_handler
-      Runtime: python3.7
+      Runtime: python3.11
       CodeUri: src/backup_dynamodb_s3
       Description: A function that scans the contact list database in DynamoDB and saves a back-up to S3
       MemorySize: 128
@@ -508,7 +508,7 @@ Resources:
     Properties:
       ContentUri: src/layer
       CompatibleRuntimes:
-        - python3.7
+        - python3.11
 
 ####################################################################################################
 # DynamoDB table
@@ -752,21 +752,21 @@ Resources:
     Properties:
       CodeUri: src/user_pool_triggers/pre_sign_up/
       Handler: app.lambda_handler
-      Runtime: python3.7
+      Runtime: python3.11
 
   DefineAuthChallenge:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: src/user_pool_triggers/define_auth_challenge/
       Handler: app.lambda_handler
-      Runtime: python3.7
+      Runtime: python3.11
   
   CreateAuthChallenge:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: src/user_pool_triggers/create_auth_challenge/
       Handler: app.lambda_handler
-      Runtime: python3.7
+      Runtime: python3.11
       Environment:
         Variables:
           STAGE: !Ref Stage
@@ -784,7 +784,7 @@ Resources:
     Properties:
       CodeUri: src/user_pool_triggers/verify_auth_challenge_response/
       Handler: app.lambda_handler
-      Runtime: python3.7
+      Runtime: python3.11
       Role: !GetAtt VerifyAuthChallengeRole.Arn
   
   # Creatinging a role to attach SetUserAttributesPolicy to
