@@ -46,7 +46,7 @@ def query_single_user_with_activity(cognito_id, date_range):
 
     # Query captures quizzes and sentences for the given date range and lists
     response = table.query(
-        KeyConditionExpression=Key('PK').eq(user_key) & Key('SK').between(query_date, "USER")
+        KeyConditionExpression=Key('PK').eq(user_key) & Key('SK').gt(query_date)
     )
     print('query_single_user_with_quiz_sentence_history dynamo response ', response['Items'])
     return response['Items']

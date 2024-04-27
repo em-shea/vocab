@@ -1,0 +1,1 @@
+# Unit test for the 'get_user_activity' function
