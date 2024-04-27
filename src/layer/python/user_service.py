@@ -44,7 +44,7 @@ def query_single_user_with_activity(cognito_id, date_range):
     from_date = datetime.today() - timedelta(days=int(date_range))
     query_date = 'DATE#' + from_date.strftime('%Y-%m-%d')
 
-    # Query captures quizzes and sentences for the given date range and lists
+    # Query captures metadata, lists, and quizzes and sentences for the given date range
     response = table.query(
         KeyConditionExpression=Key('PK').eq(user_key) & Key('SK').gt(query_date)
     )
@@ -112,24 +112,25 @@ def _format_user_data(user_data):
             user.user_alias_emoji = item['User alias emoji']
 
         # If Dynamo item is a list subscription, add the list to the user's lists dict
-        # Add filter for only subscribed (currently done outside of service)
         elif 'LIST' in item['SK']:
-            print('list', item['List name'])
-            # Shortening list id from unique id (ex, LIST#1ebcad40-bb9e-6ece-a366-acde48001122#SIMPLIFIED)
-            if 'SIMPLIFIED' in item['SK']:
-                list_id = item['SK'][5:-11]
-            if 'TRADITIONAL' in item['SK']:
-                list_id = item['SK'][5:-12]
+            # Filter out lists that are not subscribed
+            if item['Status'] == 'subscribed':
+                print('list', item['List name'])
+                # Shortening list id from unique id (ex, LIST#1ebcad40-bb9e-6ece-a366-acde48001122#SIMPLIFIED)
+                if 'SIMPLIFIED' in item['SK']:
+                    list_id = item['SK'][5:-11]
+                if 'TRADITIONAL' in item['SK']:
+                    list_id = item['SK'][5:-12]
 
-            sub = Subscription(
-                list_name = item['List name'], 
-                unique_list_id = item['SK'][5:], 
-                list_id = list_id, 
-                character_set = item['Character set'], 
-                status = item['Status'], 
-                date_subscribed = item['Date subscribed']
-            )
-            user.subscriptions.append(sub)
+                sub = Subscription(
+                    list_name = item['List name'], 
+                    unique_list_id = item['SK'][5:], 
+                    list_id = list_id, 
+                    character_set = item['Character set'], 
+                    status = item['Status'], 
+                    date_subscribed = item['Date subscribed']
+                )
+                user.subscriptions.append(sub)
         
         # If Dynamo item is a quiz, add to the user's quiz dict
         elif 'QUIZ' in item['SK']:
