@@ -12,14 +12,14 @@ Parameters:
     Type: String
   AlarmEmail:
     Type: String
-  TwitterConsumerKey:
-    Type: String
-  TwitterConsumerSecret:
-    Type: String
-  TwitterAccessToken:
-    Type: String
-  TwitterAccessTokenSecret:
-    Type: String
+  # TwitterConsumerKey:
+  #   Type: String
+  # TwitterConsumerSecret:
+  #   Type: String
+  # TwitterAccessToken:
+  #   Type: String
+  # TwitterAccessTokenSecret:
+  #   Type: String
   DomainName:
     Type: String
   Stage:
@@ -451,6 +451,7 @@ Resources:
       Layers:
       - !Ref Layer
   
+<<<<<<< Updated upstream
   PostTweet:
     Type: 'AWS::Serverless::Function'
     Properties:
@@ -477,6 +478,34 @@ Resources:
           URL: !Ref DomainName
       Layers:
       - !Ref Layer
+=======
+  # PostTweet:
+  #   Type: 'AWS::Serverless::Function'
+  #   Properties:
+  #     FunctionName: !Sub PostVocabTweet-${Stage}
+  #     Handler: app.lambda_handler
+  #     Runtime: python3.7
+  #     CodeUri: src/post_tweet
+  #     Description: Posts a tweet with daily vocab word
+  #     MemorySize: 128
+  #     Timeout: 120
+  #     Policies:
+  #       - DynamoDBCrudPolicy:
+  #           TableName: !Ref DynamoDBTable
+  #       - DynamoDBCrudPolicy:
+  #           TableName: !Ref IdempotencyTable
+  #     Environment:
+  #       Variables:
+  #         TABLE_NAME: !Ref DynamoDBTable
+  #         IDEMPOTENCY_TABLE: !Ref IdempotencyTable
+  #         CONSUMER_KEY: !Ref TwitterConsumerKey
+  #         CONSUMER_SECRET: !Ref TwitterConsumerSecret
+  #         ACCESS_TOKEN: !Ref TwitterAccessToken
+  #         ACCESS_TOKEN_SECRET: !Ref TwitterAccessTokenSecret
+  #         URL: !Ref DomainName
+  #     Layers:
+  #     - !Ref Layer
+>>>>>>> Stashed changes
 
   BackupDynamoDBToS3:
     Type: 'AWS::Serverless::Function'
@@ -621,24 +650,24 @@ Resources:
       Targets:
         - Arn: !GetAtt SendDailyEmail.Arn
           Id: SendDailyEmailFunction
-        - Arn: !GetAtt PostTweet.Arn
-          Id: PostTweetFunction
-  
-  EventsToInvokeLambdaPolicyEmail: 
+        # - Arn: !GetAtt PostTweet.Arn
+        #   Id: PostTweetFunction
+
+  EventsToInvokeLambdaPolicyEmail:
     Type: AWS::Lambda::Permission
     Properties:
       FunctionName: !Ref SendDailyEmail
       Action: "lambda:InvokeFunction"
       Principal: "events.amazonaws.com"
       SourceArn: !GetAtt TodaysWordsSetEventRule.Arn
-  
-  EventsToInvokeLambdaPolicyTweet: 
-    Type: AWS::Lambda::Permission
-    Properties:
-      FunctionName: !Ref PostTweet
-      Action: "lambda:InvokeFunction"
-      Principal: "events.amazonaws.com"
-      SourceArn: !GetAtt TodaysWordsSetEventRule.Arn
+
+  # EventsToInvokeLambdaPolicyTweet:
+  #   Type: AWS::Lambda::Permission
+  #   Properties:
+  #     FunctionName: !Ref PostTweet
+  #     Action: "lambda:InvokeFunction"
+  #     Principal: "events.amazonaws.com"
+  #     SourceArn: !GetAtt TodaysWordsSetEventRule.Arn
   
   # Logs all events for debugging
   CloudWatchLogsGroup:

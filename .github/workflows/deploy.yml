@@ -1,0 +1,78 @@
+name: Test and Deploy
+
+on:
+  push:
+    branches:
+      - master
+      - staging
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip install awscli aws-sam-cli coverage
+
+      - name: Run tests
+        working-directory: src/tests/unit
+        run: coverage run -m unittest discover
+
+      - name: Run coverage report
+        working-directory: src/tests/unit
+        run: coverage report -m
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+
+      - name: Deploy with SAM (prod)
+        if: github.ref == 'refs/heads/master'
+        run: |
+          sam build && sam package --s3-bucket hsk-vocab --output-template-file packaged-template.yaml --region us-east-1
+          sam deploy --template-file ./packaged-template.yaml --stack-name vocab --region us-east-1 --capabilities CAPABILITY_IAM --parameter-overrides \
+            WordsBucketName=hsk-vocab \
+            WordsBucketKey=HSK_Level_6.csv \
+            ListsBucketName=hsk-vocab \
+            ListsBucketKey=Contact_Lists.csv \
+            DomainName=https://haohaotiantian.com \
+            OTPSecretKey=${{ secrets.OTPSecretKey }} \
+            DynamoBackupsS3BucketName=hhtt-backups \
+            AlarmEmail=${{ secrets.AlarmEmail }} \
+            # TwitterConsumerKey=${{ secrets.TwitterConsumerKeyProd }} \
+            # TwitterConsumerSecret=${{ secrets.TwitterConsumerSecretProd }} \
+            # TwitterAccessToken=${{ secrets.TwitterAccessTokenProd }} \
+            # TwitterAccessTokenSecret=${{ secrets.TwitterAccessTokenSecretProd }} \
+            # MastodonSecret=${{ secrets.MastodonSecret }} \
+            Stage=prod
+
+      - name: Deploy with SAM (staging)
+        if: github.ref == 'refs/heads/staging'
+        run: |
+          sam build && sam package --s3-bucket hsk-vocab --output-template-file packaged-template.yaml --region us-east-1
+          sam deploy --template-file ./packaged-template.yaml --stack-name vocab-staging --region us-east-1 --capabilities CAPABILITY_IAM --parameter-overrides \
+            WordsBucketName=hsk-vocab-staging \
+            WordsBucketKey=HSK_Level_6.csv \
+            ListsBucketName=hsk-vocab-staging \
+            ListsBucketKey=Contact_Lists.csv \
+            DomainName=https://staging.haohaotiantian.com \
+            OTPSecretKey=${{ secrets.OTPSecretKey }} \
+            DynamoBackupsS3BucketName=hhtt-backups-staging \
+            AlarmEmail=${{ secrets.AlarmEmail }} \
+            # TwitterConsumerKey=${{ secrets.TwitterConsumerKeyStaging }} \
+            # TwitterConsumerSecret=${{ secrets.TwitterConsumerSecretStaging }} \
+            # TwitterAccessToken=${{ secrets.TwitterAccessTokenStaging }} \
+            # TwitterAccessTokenSecret=${{ secrets.TwitterAccessTokenSecretStaging }} \
+            # MastodonSecret=${{ secrets.MastodonSecret }} \
+            Stage=staging
