@@ -6,6 +6,7 @@ Chinese learners can subscribe to daily vocab words to build their vocabulary. T
 
 To subscribe, visit https://haohaotiantian.com, where you can preview sample words for each level, see past daily words, and learn more.
 
+
 ## Example message
 
 ![Example message](https://hhtt-static.s3.amazonaws.com/email-screenshot-wide.png)
