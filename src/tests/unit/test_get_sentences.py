@@ -1,13 +1,9 @@
 import json
-import sys
-sys.path.append('../../')
-sys.path.append('../../layer/python')
 
 import unittest
 from unittest import mock
 
-with mock.patch.dict('os.environ', {'AWS_REGION': 'us-east-1', 'TABLE_NAME': 'mock-table'}):
-    from get_sentences.app import lambda_handler
+from get_sentences.app import lambda_handler
 
 def mocked_pull_user_sentences(cognito_id):
         example_response = [
@@ -40,9 +36,28 @@ class GetSentencesTest(unittest.TestCase):
     def test_build(self, pull_user_sentences_mock):
 
         response = lambda_handler(self.sub_apig_event(), "")
+        body = json.loads(response["body"])
 
-        # self.assertEqual(pull_user_sentences_mock.call_count, 1)
-    
+        self.assertEqual(pull_user_sentences_mock.call_count, 1)
+        self.assertEqual(response["statusCode"], 200)
+        self.assertTrue(body["success"])
+
+        sentences = body["data"]["sentences"]
+        self.assertEqual(len(sentences), 2)
+        self.assertEqual(sentences[0]["sentence"], "我喜欢韩语。")
+        self.assertEqual(sentences[0]["sentence_id"], "12345-3763-6260-bf4f-6a03d2d3da0b")
+        self.assertEqual(sentences[0]["character_set"], "simplified")
+
+    @mock.patch('get_sentences.app.pull_user_sentences', side_effect=Exception("DynamoDB unavailable"))
+    def test_query_failure_returns_502(self, pull_user_sentences_mock):
+
+        response = lambda_handler(self.sub_apig_event(), "")
+        body = json.loads(response["body"])
+
+        self.assertEqual(response["statusCode"], 502)
+        self.assertFalse(body["success"])
+
+
     def sub_apig_event(self):
         return {
             "resource":"/sentence",

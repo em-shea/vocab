@@ -1,0 +1,8 @@
+# Development / test dependencies (not deployed to Lambda).
+# Install with:  pip install -r requirements-dev.txt
+boto3>=1.34
+pytest>=7.4
+pytest-cov>=4.1
+moto[dynamodb,s3,ses,events,cognitoidp]>=5.0,<6
+# Imported at module load by the Cognito auth-trigger lambdas (src/user_pool_triggers/).
+PyJWT>=2.0

@@ -1,12 +1,9 @@
-import sys
-sys.path.append('../../')
-sys.path.append('../../layer/python')
 
+import json
 import unittest
 from unittest import mock
 
-with mock.patch.dict('os.environ', {'AWS_REGION': 'us-east-1', 'TABLE_NAME': 'mock-table'}):
-    from get_user_data.app import lambda_handler
+from get_user_data.app import lambda_handler
 
 def mocked_query_single_user(cognito_user_id):
   return  [
@@ -15,7 +12,7 @@ def mocked_query_single_user(cognito_user_id):
             "GSI1PK":"USER",
             "List name":"HSK Level 6",
             "SK":"LIST#1ebcad41-197a-123123#TRADITIONAL",
-            "Status":"SUBSCRIBED",
+            "Status":"subscribed",
             "GSI1SK":"USER#770e2827-7666-123123123#LIST#1ebcad41-197a-123123#TRADITIONAL",
             "PK":"USER#770e2827-7666-123123123",
             "Character set":"traditional",
@@ -25,7 +22,7 @@ def mocked_query_single_user(cognito_user_id):
             "GSI1PK":"USER",
             "List name":"HSK Level 2",
             "SK":"LIST#1ebcad41-197a-123123#SIMPLIFIED",
-            "Status":"UNSUBSCRIBED",
+            "Status":"unsubscribed",
             "GSI1SK":"USER#770e2827-7666-123123123#LIST#1ebcad41-197a-123123#TRADITIONAL",
             "PK":"USER#770e2827-7666-123123123",
             "Character set":"simplified",
@@ -50,8 +47,17 @@ class GetUserDataTest(unittest.TestCase):
   def test_build(self, query_single_user_mock):
     
     response = lambda_handler(self.apig_event(), "")
+    body = json.loads(response["body"])
 
     self.assertEqual(query_single_user_mock.call_count, 1)
+    self.assertEqual(response["statusCode"], 200)
+    self.assertEqual(body["email_address"], "test@email.com")
+    self.assertEqual(body["user_id"], "770e2827-7666-123123123")
+    self.assertEqual(body["character_set_preference"], "traditional")
+    # Only subscribed lists are returned; the unsubscribed HSK Level 2 is filtered out.
+    self.assertEqual(len(body["subscriptions"]), 1)
+    self.assertEqual(body["subscriptions"][0]["list_name"], "HSK Level 6")
+    self.assertEqual(body["subscriptions"][0]["status"], "subscribed")
 
   def apig_event(self):
     return {

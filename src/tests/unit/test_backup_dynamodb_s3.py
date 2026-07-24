@@ -1,13 +1,10 @@
-import sys
-sys.path.append('../../')
 
 import os
 import json
 import unittest
 from unittest import mock
 
-with mock.patch.dict('os.environ', {'AWS_REGION': 'us-east-1', 'BACKUPS_BUCKET_NAME': 'mock-bucket', 'TABLE_NAME': 'mock-table'}):
-  from backup_dynamodb_s3.app import lambda_handler
+from backup_dynamodb_s3.app import lambda_handler
 
 def mocked_dynamodb_scan():
   all_contacts = [

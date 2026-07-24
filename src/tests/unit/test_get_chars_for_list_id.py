@@ -1,13 +1,9 @@
-import sys
 import json
-sys.path.append('../../')
-sys.path.append('../../layer/python')
 
 import unittest
 from unittest import mock
 
-with mock.patch.dict('os.environ', {'AWS_REGION': 'us-east-1', 'TABLE_NAME': 'mock-table'}):
-    from get_chars_for_list_id.app import lambda_handler
+from get_chars_for_list_id.app import lambda_handler
 
 def mocked_query_dynamodb(list_id, limit=None, last_word_token=None, audio_file_key_check=False):
   return  { 
@@ -54,6 +50,13 @@ class GetCharsForListIdTest(unittest.TestCase):
     response = lambda_handler(self.apig_event(), "")
 
     self.assertEqual(query_dynamodb_mock.call_count, 1)
+    self.assertEqual(response["list_id"], "12345")
+    # Fewer than the 200-word page size, so there is no pagination token.
+    self.assertIsNone(response["last_word_token"])
+    # All three mocked words have an empty "Audio file key", so all are kept.
+    self.assertEqual(len(response["word_list"]), 3)
+    self.assertEqual(response["word_list"][0]["text"], "你好")
+    self.assertEqual(response["word_list"][0]["word_id"], "WORD#12345")
 
   def apig_event(self):
     return {

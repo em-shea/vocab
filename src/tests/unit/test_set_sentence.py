@@ -1,13 +1,9 @@
 import json
-import sys
-sys.path.append('../../')
-sys.path.append('../../layer/python')
 
 import unittest
 from unittest import mock
 
-with mock.patch.dict('os.environ', {'AWS_REGION': 'us-east-1', 'TABLE_NAME': 'mock-table'}):
-    from set_sentence.app import lambda_handler
+from set_sentence.app import lambda_handler
 
 def mocked_update_sentence(cognito_id, body, date):
     return
@@ -24,9 +20,15 @@ class SetSentenceTest(unittest.TestCase):
             "sentence_id":""
         }
         response = lambda_handler(self.sub_apig_event(json.dumps(event_body)), "")
+        body = json.loads(response["body"])
 
         self.assertEqual(update_sentence_mock.call_count, 1)
-    
+        self.assertEqual(response["statusCode"], 200)
+        self.assertTrue(body["success"])
+        # An empty sentence_id triggers server-side id generation.
+        saved_body = update_sentence_mock.call_args.args[1]
+        self.assertNotEqual(saved_body["sentence_id"], "")
+
     @mock.patch('set_sentence.app.update_sentence', side_effect=mocked_update_sentence)
     def test_update_existing_sentence(self, update_sentence_mock):
 
@@ -39,7 +41,12 @@ class SetSentenceTest(unittest.TestCase):
         response = lambda_handler(self.sub_apig_event(json.dumps(event_body)), "")
 
         self.assertEqual(update_sentence_mock.call_count, 1)
-    
+        self.assertEqual(response["statusCode"], 200)
+        # An existing sentence_id is preserved, not regenerated.
+        saved_body = update_sentence_mock.call_args.args[1]
+        self.assertEqual(saved_body["sentence_id"], "123")
+
+
     def sub_apig_event(self, event_body):
         return {
             "resource":"/sentence",

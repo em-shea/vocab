@@ -1,14 +1,10 @@
-import sys
-sys.path.append('../../')
-sys.path.append('../../layer/python')
 
 import os
 import json
 import unittest
 from unittest import mock
 
-with mock.patch.dict('os.environ', {'AWS_REGION': 'us-east-1', 'TABLE_NAME': 'mock-table-name'}):
-  from get_review_words.app import lambda_handler
+from get_review_words.app import lambda_handler
 
 def mocked_list_id_query(list_id, from_date, todays_date):
 
@@ -30,8 +26,16 @@ class GetReviewWordsTest(unittest.TestCase):
     params = {'list_id':'1ebcad3f-5dfd-6bfe-bda4-acde48001122'}
 
     response = lambda_handler(self.review_apig_event(params), "")
+    body = json.loads(response["body"])
 
+    self.assertEqual(response["statusCode"], 200)
     self.assertEqual(list_id_query_mock.call_count, 1)
+    # Only the requested list is queried and returned.
+    self.assertEqual(list(body.keys()), ['1ebcad3f-5dfd-6bfe-bda4-acde48001122'])
+    words = body['1ebcad3f-5dfd-6bfe-bda4-acde48001122']
+    self.assertEqual(len(words), 3)
+    self.assertEqual(words[0]["word"]["simplified"], "多少")
+    self.assertEqual(words[0]["list_id"], "1ebcad3f-5dfd-6bfe-bda4-acde48001122")
   
   @mock.patch('review_word_service.query_dynamodb', side_effect=mocked_list_id_date_range_query)
   def test_list_id_date_range(self, list_id_date_range_query_mock):
@@ -39,8 +43,11 @@ class GetReviewWordsTest(unittest.TestCase):
     params = {'list_id':'1ebcad3f-5dfd-6bfe-bda4-acde48001122', 'date_range': '10'}
 
     response = lambda_handler(self.review_apig_event(params), "")
+    body = json.loads(response["body"])
 
+    self.assertEqual(response["statusCode"], 200)
     self.assertEqual(list_id_date_range_query_mock.call_count, 1)
+    self.assertEqual(len(body['1ebcad3f-5dfd-6bfe-bda4-acde48001122']), 3)
   
   @mock.patch('review_word_service.query_dynamodb', side_effect=mocked_no_params_query)
   def test_no_params(self, no_params_query_mock):
@@ -48,8 +55,12 @@ class GetReviewWordsTest(unittest.TestCase):
     params = None
 
     response = lambda_handler(self.review_apig_event(params), "")
+    body = json.loads(response["body"])
 
+    self.assertEqual(response["statusCode"], 200)
+    # With no list_id, all six HSK lists are queried and returned.
     self.assertEqual(no_params_query_mock.call_count, 6)
+    self.assertEqual(len(body), 6)
 
   def review_apig_event(self, params):
     return {

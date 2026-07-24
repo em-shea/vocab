@@ -20,15 +20,11 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install awscli aws-sam-cli coverage
+          pip install awscli aws-sam-cli
+          pip install -r requirements-dev.txt
 
       - name: Run tests
-        working-directory: src/tests/unit
-        run: coverage run -m unittest discover
-
-      - name: Run coverage report
-        working-directory: src/tests/unit
-        run: coverage report -m
+        run: pytest --cov --cov-report=term-missing
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
