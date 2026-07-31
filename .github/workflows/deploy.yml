@@ -46,11 +46,6 @@ jobs:
             OTPSecretKey=${{ secrets.OTPSecretKey }} \
             DynamoBackupsS3BucketName=hhtt-backups \
             AlarmEmail=${{ secrets.AlarmEmail }} \
-            # TwitterConsumerKey=${{ secrets.TwitterConsumerKeyProd }} \
-            # TwitterConsumerSecret=${{ secrets.TwitterConsumerSecretProd }} \
-            # TwitterAccessToken=${{ secrets.TwitterAccessTokenProd }} \
-            # TwitterAccessTokenSecret=${{ secrets.TwitterAccessTokenSecretProd }} \
-            # MastodonSecret=${{ secrets.MastodonSecret }} \
             Stage=prod
 
       - name: Deploy with SAM (staging)
@@ -66,9 +61,4 @@ jobs:
             OTPSecretKey=${{ secrets.OTPSecretKey }} \
             DynamoBackupsS3BucketName=hhtt-backups-staging \
             AlarmEmail=${{ secrets.AlarmEmail }} \
-            # TwitterConsumerKey=${{ secrets.TwitterConsumerKeyStaging }} \
-            # TwitterConsumerSecret=${{ secrets.TwitterConsumerSecretStaging }} \
-            # TwitterAccessToken=${{ secrets.TwitterAccessTokenStaging }} \
-            # TwitterAccessTokenSecret=${{ secrets.TwitterAccessTokenSecretStaging }} \
-            # MastodonSecret=${{ secrets.MastodonSecret }} \
             Stage=staging
