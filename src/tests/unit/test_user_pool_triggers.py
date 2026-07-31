@@ -70,6 +70,10 @@ class CreateAuthChallengeTest(unittest.TestCase):
         self.assertTrue(answer)
         # The code the user must supply is echoed into the challenge metadata.
         self.assertEqual(response["challengeMetadata"], answer)
+        # Security: the secret code must NOT leak via publicChallengeParameters,
+        # which are returned to the unauthenticated client.
+        self.assertNotIn("answer", response["publicChallengeParameters"])
+        self.assertNotIn(answer, response["publicChallengeParameters"].values())
 
     @mock.patch('create_auth_challenge.app.send_notification_email')
     def test_repeat_attempt_reuses_existing_code(self, send_mock):
