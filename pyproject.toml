@@ -15,8 +15,6 @@ source = ["src"]
 omit = [
     "src/tests/*",
     "*/__init__.py",
-    # post_tweet is being removed (Twitter/Mastodon disabled); excluded from coverage.
-    "src/post_tweet/*",
 ]
 
 [tool.coverage.report]
