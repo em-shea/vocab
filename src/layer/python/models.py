@@ -1,5 +1,5 @@
 import datetime
-from typing import List, Dict
+from typing import List, Dict, Optional
 from dataclasses import dataclass
 
 @dataclass
@@ -10,17 +10,6 @@ class Subscription:
     character_set: str
     status: str
     date_subscribed: str
-
-@dataclass
-class User:
-    email_address: str
-    user_id: str
-    character_set_preference: str
-    date_created: datetime.datetime
-    user_alias: str
-    user_alias_pinyin: str
-    user_alias_emoji: str
-    subscriptions: List[Subscription]
 
 @dataclass
 class Word:
@@ -45,18 +34,40 @@ class ReviewWord:
     word: Dict[str, Word]
 
 @dataclass
-class QuizResultsQuestionData:
+class QuizQuestionData:
     answer_submitted: ReviewWord
     correct_answer: ReviewWord
     test_set: Dict[str, str]
     was_answer_correct: bool
 
 @dataclass
-class QuizResults:
+class Quiz:
     quiz_id: str
     date_created: datetime.datetime
     list_id: str
     character_set: str
-    quiz_data: List[QuizResultsQuestionData]
+    quiz_data: List[QuizQuestionData]
     question_quantity: int
     correct_answers: int
+
+@dataclass
+class Sentence:
+    sentence_id: str
+    sentence: str
+    date_created: str
+    list_id: str
+    character_set: str
+    word: Dict[str, Word]
+
+@dataclass
+class User:
+    email_address: str
+    user_id: str
+    character_set_preference: str
+    user_alias: str
+    user_alias_pinyin: str
+    user_alias_emoji: str
+    subscriptions: Optional [List[Subscription]] = None
+    quizzes: Optional [List[Quiz]] = None
+    sentences: Optional [List[Sentence]] = None
+    date_created: Optional [datetime.datetime] = None

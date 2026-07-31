@@ -1,12 +1,8 @@
-import sys
-sys.path.append('../../')
-sys.path.append('../../layer/python')
 
 import unittest
 from unittest import mock
 
-with mock.patch.dict('os.environ', {'AWS_REGION': 'us-east-1', 'DYNAMODB_TABLE_NAME': 'mock-table'}):
-    import user_service
+import user_service
 
 def mocked_query_single_user(user_id):
 
@@ -52,9 +48,14 @@ class UserServiceTest(unittest.TestCase):
 
     cognito_id = "1234"
     response = user_service.get_single_user(cognito_id)
-    print(response)
 
     self.assertEqual(query_single_user_mock.call_count, 1)
+    self.assertEqual(response.email_address, "test@mail.com")
+    self.assertEqual(response.user_id, "123")
+    self.assertEqual(response.character_set_preference, "simplified")
+    # Both mocked lists are subscribed, sorted by list_id.
+    self.assertEqual(len(response.subscriptions), 2)
+    self.assertEqual([s.list_id for s in response.subscriptions], ["123", "234"])
 
 if __name__ == '__main__':
     unittest.main()

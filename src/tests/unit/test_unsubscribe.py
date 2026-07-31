@@ -1,13 +1,9 @@
 import json
-import sys
-sys.path.append('../../')
-sys.path.append('../../layer/python')
 
 import unittest
 from unittest import mock
 
-with mock.patch.dict('os.environ', {'AWS_REGION': 'us-east-1', 'TABLE_NAME': 'mock-table', 'USER_POOL_ID': 'mock-id'}):
-    from unsubscribe.app import lambda_handler
+from unsubscribe.app import lambda_handler
 
 def mocked_unsubscribe_single_list(date, cognito_id, list_data):
     return
@@ -71,9 +67,12 @@ class UnsubscribeTest(unittest.TestCase):
         }
         response = lambda_handler(self.apig_event(json.dumps(event_body)), "")
 
+        # Empty cognito_id forces a Cognito lookup; a single list unsubscribes one item.
         self.assertEqual(query_single_user_mock.call_count, 0)
         self.assertEqual(look_up_cognito_id_mock.call_count, 1)
         self.assertEqual(unsubscribe_single_list_mock.call_count, 1)
+        self.assertEqual(response["statusCode"], 200)
+        self.assertEqual(json.loads(response["body"]), {"success": True})
     
     @mock.patch('unsubscribe.app.unsubscribe_single_list', side_effect=mocked_unsubscribe_single_list)
     @mock.patch('unsubscribe.app.look_up_cognito_id', side_effect=mocked_look_up_cognito_id)
@@ -88,9 +87,12 @@ class UnsubscribeTest(unittest.TestCase):
         }
         response = lambda_handler(self.apig_event(json.dumps(event_body)), "")
 
+        # Empty list means unsubscribe-all: both of the user's subscribed lists are removed.
         self.assertEqual(query_single_user_mock.call_count, 1)
         self.assertEqual(look_up_cognito_id_mock.call_count, 1)
         self.assertEqual(unsubscribe_single_list_mock.call_count, 2)
+        self.assertEqual(response["statusCode"], 200)
+        self.assertEqual(json.loads(response["body"]), {"success": True})
     
     def apig_event(self, event_body):
         return {

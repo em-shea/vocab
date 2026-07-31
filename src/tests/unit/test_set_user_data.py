@@ -1,29 +1,45 @@
 import json
-import sys
-sys.path.append('../../')
 
 import unittest
 from unittest import mock
 
-with mock.patch.dict('os.environ', {'AWS_REGION': 'us-east-1', 'TABLE_NAME': 'mock-table'}):
-    from set_user_data.app import lambda_handler
+from set_user_data.app import lambda_handler
 
 class SetUserDataTest(unittest.TestCase):
 
-    # @mock.patch('set_user_data.app.create_user', side_effect=mocked_create_user)
-    # @mock.patch('set_user_data.app.create_subscription', side_effect=mocked_create_subscription)
-    def test_build(self):
+    @mock.patch('set_user_data.app.update_user_data')
+    def test_build(self, update_user_data_mock):
 
         apig_event_body =  {
             'user_alias': '小王 📙',
             'user_alias_pinyin': 'xiǎo wáng',
+            'user_alias_emoji': '📙',
             'character_set_preference': 'traditional'
         }
         response = lambda_handler(self.sub_apig_event(json.dumps(apig_event_body)), "")
 
-        # self.assertEqual(create_user_mock.call_count, 1)
-        # self.assertEqual(create_sub_mock.call_count, 1)
-    
+        self.assertEqual(update_user_data_mock.call_count, 1)
+        self.assertEqual(response["statusCode"], 200)
+        self.assertEqual(json.loads(response["body"]), {"success": True})
+        # Handler forwards the cognito sub and the parsed request body to the writer.
+        called_id, called_body = update_user_data_mock.call_args.args
+        self.assertEqual(called_id, "123123123")
+        self.assertEqual(called_body["user_alias"], "小王 📙")
+        self.assertEqual(called_body["character_set_preference"], "traditional")
+
+    @mock.patch('set_user_data.app.update_user_data', side_effect=Exception("dynamo down"))
+    def test_update_failure_returns_502(self, update_user_data_mock):
+
+        apig_event_body = {
+            'user_alias': 'x', 'user_alias_pinyin': 'y',
+            'user_alias_emoji': 'z', 'character_set_preference': 'simplified'
+        }
+        response = lambda_handler(self.sub_apig_event(json.dumps(apig_event_body)), "")
+
+        self.assertEqual(response["statusCode"], 502)
+        self.assertEqual(json.loads(response["body"]), {"success": False})
+
+
     def sub_apig_event(self, event_body):
         return {
             "resource":"/set_subs",

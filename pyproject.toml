@@ -1,0 +1,25 @@
+# Test tooling config for the vocab app.
+# SAM (template.yaml + per-function requirements.txt) is unaffected by this file.
+
+[tool.pytest.ini_options]
+testpaths = ["src/tests"]
+# Put the function packages (src/) and the shared Lambda layer (src/layer/python)
+# on sys.path so tests import handlers and layer modules the same way the deployed
+# code does — no per-test sys.path.append hacks needed.
+pythonpath = ["src", "src/layer/python", "src/user_pool_triggers"]
+python_files = ["test_*.py"]
+addopts = "-q"
+
+[tool.coverage.run]
+source = ["src"]
+omit = [
+    "src/tests/*",
+    "*/__init__.py",
+    # post_tweet is being removed (Twitter/Mastodon disabled); excluded from coverage.
+    "src/post_tweet/*",
+]
+
+[tool.coverage.report]
+show_missing = true
+# Current coverage is ~75%; fail the build if it regresses below this floor.
+fail_under = 70

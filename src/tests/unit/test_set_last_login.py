@@ -1,12 +1,9 @@
 import json
-import sys
-sys.path.append('../../')
 
 import unittest
 from unittest import mock
 
-with mock.patch.dict('os.environ', {'AWS_REGION': 'us-east-1', 'TABLE_NAME': 'mock-table'}):
-    from set_last_login.app import lambda_handler
+from set_last_login.app import lambda_handler
 
 def mocked_update_last_login(cognito_user_id):
     return
@@ -19,7 +16,20 @@ class SetLastLoginTest(unittest.TestCase):
         response = lambda_handler(self.update_login_event(), "")
 
         self.assertEqual(update_last_login_mock.call_count, 1)
-    
+        self.assertEqual(response["statusCode"], 200)
+        self.assertEqual(json.loads(response["body"]), {"success": True})
+        # Writer is called with the cognito sub pulled from the event claims.
+        update_last_login_mock.assert_called_once_with("123123123")
+
+    @mock.patch('set_last_login.app.update_last_login', side_effect=Exception("dynamo down"))
+    def test_update_failure_returns_502(self, update_last_login_mock):
+
+        response = lambda_handler(self.update_login_event(), "")
+
+        self.assertEqual(response["statusCode"], 502)
+        self.assertEqual(json.loads(response["body"]), {"success": False})
+
+
     def update_login_event(self):
         return {
             "resource":"/update_login",

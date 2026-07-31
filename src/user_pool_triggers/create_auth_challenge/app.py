@@ -38,8 +38,12 @@ def lambda_handler(event, context):
     response.update({
         'privateChallengeParameters': {'answer': secret_login_code},
         'challengeMetadata': secret_login_code,
+        # publicChallengeParameters is returned to the (unauthenticated) client that
+        # started the auth flow, so it must NOT contain the secret login code — that
+        # code is delivered only via email. Exposing it here would let any caller
+        # obtain the code without access to the inbox, defeating passwordless auth.
         'publicChallengeParameters': {
-            'answer': secret_login_code
+            'email': user_email
         }
     })
 

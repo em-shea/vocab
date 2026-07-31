@@ -1,13 +1,17 @@
 import os
 import boto3
+from datetime import datetime, timedelta
 from boto3.dynamodb.conditions import Key
-from models import User, Subscription
+from models import User, Subscription, Quiz, Sentence
+from review_word_service import format_word_body
+from quiz_results_service import format_quiz_results
 
 import sys
 sys.path.append('../tests/')
 
 table = boto3.resource('dynamodb', region_name=os.environ['AWS_REGION']).Table(os.environ['TABLE_NAME'])
 
+# Retrieves user metadata and lists
 def get_single_user(cognito_id):
 
     user_data = query_single_user(cognito_id)
@@ -20,9 +24,31 @@ def query_single_user(cognito_id):
     user_key = "USER#" + cognito_id
 
     response = table.query(
-        KeyConditionExpression=Key('PK').eq(user_key)
+        KeyConditionExpression=Key('PK').eq(user_key) & Key('SK').gt('LIST')
     )
-    print('dynamo response ', response['Items'])
+    # print('query_single_user dynamo response ', response['Items'])
+    return response['Items']
+
+# Retrieve user metadata, lists, and activity (quizzes, sentences)
+def get_single_user_with_activity(cognito_id, date_range=10):
+
+    user_data = query_single_user_with_activity(cognito_id, date_range)
+    response = _format_user_data(user_data)
+
+    return response
+
+def query_single_user_with_activity(cognito_id, date_range):
+
+    user_key = "USER#" + cognito_id
+
+    from_date = datetime.today() - timedelta(days=int(date_range))
+    query_date = 'DATE#' + from_date.strftime('%Y-%m-%d')
+
+    # Query captures metadata, lists, and quizzes and sentences for the given date range
+    response = table.query(
+        KeyConditionExpression=Key('PK').eq(user_key) & Key('SK').gt(query_date)
+    )
+    print('query_single_user_with_quiz_sentence_history dynamo response ', response['Items'])
     return response['Items']
 
 def get_all_users():
@@ -37,6 +63,7 @@ def get_all_users():
 
 def query_all_users():
 
+    # Note that this query uses GSI1 which is already limited to metadata and lists (does not pull quizzes and sentences)
     response = table.query(
         IndexName='GSI1',
         KeyConditionExpression=Key('GSI1PK').eq('USER')
@@ -57,50 +84,78 @@ def group_users_and_subs(dynamo_response):
 
 def _format_user_data(user_data):
 
-    user = None
-    subscription_list = []
+    user = User(
+        email_address = '',
+        user_id = '', 
+        character_set_preference = '',
+        user_alias = '', 
+        user_alias_pinyin = '', 
+        user_alias_emoji = '',
+        subscriptions = [],
+        quizzes = [],
+        sentences = []
+    )
 
     #  Loop through all users and subs
     for item in user_data:
         # print(item)
 
         # If Dynamo item is user metadata, create User class
-        if 'Email address' in item:
+        if 'USER' in item['SK']:
             print('user', item['Email address'])
-            user = User(
-                email_address = item['Email address'],
-                user_id = item['PK'][5:], 
-                character_set_preference = item['Character set preference'], 
-                date_created = item['Date created'], 
-                user_alias = item['User alias'], 
-                user_alias_pinyin = item['User alias pinyin'], 
-                user_alias_emoji = item['User alias emoji'],
-                subscriptions = []
-            )
+            user.email_address = item['Email address']
+            user.user_id = item['PK'][5:]
+            user.character_set_preference = item['Character set preference']
+            user.date_created = item['Date created']
+            user.user_alias = item['User alias']
+            user.user_alias_pinyin = item['User alias pinyin']
+            user.user_alias_emoji = item['User alias emoji']
 
         # If Dynamo item is a list subscription, add the list to the user's lists dict
-        if 'List name' in item:
-            print('list', item['List name'])
-            # Shortening list id from unique id (ex, LIST#1ebcad40-bb9e-6ece-a366-acde48001122#SIMPLIFIED)
-            if 'SIMPLIFIED' in item['SK']:
-                list_id = item['SK'][5:-11]
-            if 'TRADITIONAL' in item['SK']:
-                list_id = item['SK'][5:-12]
+        elif 'LIST' in item['SK']:
+            # Filter out lists that are not subscribed
+            if item['Status'] == 'subscribed':
+                print('list', item['List name'])
+                # Shortening list id from unique id (ex, LIST#1ebcad40-bb9e-6ece-a366-acde48001122#SIMPLIFIED)
+                if 'SIMPLIFIED' in item['SK']:
+                    list_id = item['SK'][5:-11]
+                if 'TRADITIONAL' in item['SK']:
+                    list_id = item['SK'][5:-12]
 
-            sub = Subscription(
-                list_name = item['List name'], 
-                unique_list_id = item['SK'][5:], 
-                list_id = list_id, 
-                character_set = item['Character set'], 
-                status = item['Status'], 
-                date_subscribed = item['Date subscribed']
+                sub = Subscription(
+                    list_name = item['List name'], 
+                    unique_list_id = item['SK'][5:], 
+                    list_id = list_id, 
+                    character_set = item['Character set'], 
+                    status = item['Status'], 
+                    date_subscribed = item['Date subscribed']
+                )
+                user.subscriptions.append(sub)
+        
+        # If Dynamo item is a quiz, add to the user's quiz dict
+        elif 'QUIZ' in item['SK']:
+            print('quiz item: ', item)
+            quiz = format_quiz_results(item)
+            user.quizzes.append(quiz)
+
+        # If Dynamo item is a sentence, add to the user's sentence dict
+        elif 'SENTENCE' in item['SK']:
+            print('sentence item: ', item)
+            sentence = Sentence(
+                sentence_id = item['Sentence id'],
+                sentence = item['Sentence'],
+                date_created = item['Date created'],
+                list_id = item['List id'],
+                character_set = item['Character set'],
+                word = format_word_body(item['Word'])
             )
-            subscription_list.append(sub)
-
-        # Sort lists by list id to appear in order (Level 1, Level 2, etc.)
-        subscription_list = sorted(subscription_list, key=lambda k: k.list_id, reverse=False)
-
-    user.subscriptions = subscription_list
+            user.sentences.append(sentence)
+        
+        else:
+            print('Item does not match expected type - user, list, quiz, sentences. Item: ', item)
+    
+    # Sort lists by list id to appear in order (Level 1, Level 2, etc.)
+    user.subscriptions = sorted(user.subscriptions, key=lambda k: k.list_id, reverse=False)
 
     print('formatted user ', user)
     return user

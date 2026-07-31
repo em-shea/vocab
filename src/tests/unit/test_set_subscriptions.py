@@ -1,13 +1,9 @@
 import json
-import sys
-sys.path.append('../../')
-sys.path.append('../../layer/python')
 
 import unittest
 from unittest import mock
 
-with mock.patch.dict('os.environ', {'AWS_REGION': 'us-east-1', 'TABLE_NAME': 'mock-table', 'USER_POOL_ID': 'mock-id'}):
-    from set_subscriptions.app import lambda_handler
+from set_subscriptions.app import lambda_handler
 
 def mocked_create_user(date, cognito_id, email_address, char_set_preference): 
     return
@@ -74,7 +70,10 @@ class SetSubscriptionsTest(unittest.TestCase):
 
         self.assertEqual(create_user_mock.call_count, 1)
         self.assertEqual(query_single_user_mock.call_count, 1)
+        # One subscribe call per list in the request.
         self.assertEqual(subscribe_mock.call_count, 2)
+        self.assertEqual(response["statusCode"], 200)
+        self.assertEqual(json.loads(response["body"]), {"success": True})
     
     @mock.patch('set_subscriptions.app.create_user', side_effect=mocked_create_user)
     @mock.patch('set_subscriptions.app.subscribe', side_effect=mocked_subscribe)
@@ -92,7 +91,11 @@ class SetSubscriptionsTest(unittest.TestCase):
 
         self.assertEqual(create_user_mock.call_count, 1)
         self.assertEqual(query_single_user_mock.call_count, 1)
+        # The request sends no subscriptions, so the user's existing subscribed
+        # list is unsubscribed.
         self.assertEqual(unsubscribe_mock.call_count, 1)
+        self.assertEqual(response["statusCode"], 200)
+        self.assertEqual(json.loads(response["body"]), {"success": True})
 
     def sub_apig_event(self, event_body):
         return {

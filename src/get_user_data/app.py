@@ -8,7 +8,7 @@ import user_service
 
 table = boto3.resource('dynamodb', region_name=os.environ['AWS_REGION']).Table(os.environ['TABLE_NAME'])
 
-# For a given user (requires sign-in), return their metadata, subscribed lists, and the past two weeks of quizzes and sentences
+# For a given user (requires sign-in), return their metadata and subscribed lists
 def lambda_handler(event, context):
     # print('event', event)
     cognito_id = event['requestContext']['authorizer']['claims']['sub']

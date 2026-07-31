@@ -1,13 +1,9 @@
-import sys
-sys.path.append('../../')
-sys.path.append('../../layer/python')
 
 import json
 import unittest
 from unittest import mock
 
-with mock.patch.dict('os.environ', {'AWS_REGION': 'us-east-1', 'TABLE_NAME': 'mock-table'}):
-  from sample_vocab.app import lambda_handler
+from sample_vocab.app import lambda_handler
 
 def mocked_get_words_in_list(list_id):
 
