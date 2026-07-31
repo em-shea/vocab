@@ -1,1 +1,1 @@
-boto3==1.13.16
+# boto3/botocore are provided by the AWS Lambda Python runtime (kept patched by AWS).
