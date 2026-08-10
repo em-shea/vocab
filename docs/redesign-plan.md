@@ -11,7 +11,7 @@
 
 ## Context
 
-Haohaotiantian is a working daily-Chinese-vocab product: this serverless backend (Python 3.11 + AWS SAM) emails one HSK word per day and serves quiz/review APIs, plus a separate Vue frontend ([vocab-frontend-vue](https://github.com/em-shea/vocab-frontend-vue)).
+Haohaotiantian is a working daily-Chinese-vocab product: this serverless backend (Python 3.13 + AWS SAM) emails one HSK word per day and serves quiz/review APIs, plus a separate Vue frontend ([vocab-frontend-vue](https://github.com/em-shea/vocab-frontend-vue)).
 
 The redesign wraps this in a Water Margin frame — you climb Mount Liang and gather the 108 heroes by keeping up daily practice. That is three distinct pieces of work stacked on top of each other:
 
@@ -37,7 +37,7 @@ Fix live problems and unblock prerequisites before adding surface area. This pha
 
 > **Status:** implemented on branch `phase-0-backend-hygiene`. 99 tests green, coverage 86% (floor 70%). Not yet deployed to staging, and the vocab list seed has not been run against any environment.
 >
-> **Blocker discovered:** every function declares `Runtime: python3.11`, which AWS deprecated on 2026-06-30. Function *creation* was disabled 2026-07-31 and **function updates are disabled after 2026-08-31**. Nothing in this plan — Phase 0 included — can deploy after that date without a runtime bump. See [Runtime upgrade](#runtime-upgrade-blocking-all-deploys).
+> **Blocker found and cleared:** every function declared `Runtime: python3.11`, which AWS deprecated on 2026-06-30, with **function updates disabled after 2026-08-31** — nothing in this plan could have deployed after that date. Upgraded to python3.13; see [Runtime upgrade](#runtime-upgrade-blocking-all-deploys).
 >
 > **Two live bugs were found beyond the ones listed below**, both the same class as the `get_sentences` prefix bug and both in code the progression layer depends on: `quiz_results_service.query_dynamodb` queried `SK begins_with('QUIZ#')` against keys written as `DATE#<date>#QUIZ#<id>`, and its date filter compared a `%Y-%m-%d` string against an isoformat one, excluding the boundary day. `format_quiz_results` also sliced the quiz id out of the key with `SK[5:]`, returning `<date>#QUIZ#<id>` — visible in `get_user_activity` output today. All three are fixed; `GetQuizResults` would have returned nothing if deployed as it stood.
 
@@ -65,15 +65,21 @@ Fix live problems and unblock prerequisites before adding surface area. This pha
 
 ---
 
-## Runtime upgrade (blocking all deploys)
+## Runtime upgrade (blocking all deploys) — DONE
 
-`sam validate --lint` reports `E2531` against every function in `template.yaml`:
+`sam validate --lint` reported `E2531` against every function in `template.yaml`:
 
 > Runtime 'python3.11' was deprecated on '2026-06-30'. Creation was disabled on '2026-07-31' and update on '2026-08-31'.
 
-Nineteen functions declare `Runtime: python3.11`. This is not a lint nit — after **2026-08-31** AWS refuses to update the function code, so `sam deploy` fails and the entire plan is stuck behind it. It is unrelated to the redesign and predates it, but it is now the first thing that has to ship.
+This was not a lint nit — after **2026-08-31** AWS refuses to update the function code, so `sam deploy` fails and the entire plan is stuck behind it. Unrelated to the redesign, predating it, and the hardest deadline in the project.
 
-Scope: bump the runtime in `template.yaml`, confirm the pinned dependencies (`PyJWT`, `xlsx`-adjacent tooling, the layer's `requirements.txt`) install on the new runtime, and run the suite. The local `.venv` is Python 3.9, which is older than both the current and target runtimes — worth rebuilding it on the target version so tests exercise what actually runs in Lambda.
+**Upgraded to `python3.13`** across all 20 functions, the layer's `CompatibleRuntimes`, and the CI workflow's `python-version`.
+
+Why 3.13 rather than the 3.14 the linter suggests: per cfn-lint's runtime lifecycle data both deprecate on **2029-06-30**, so the newer version buys no extra runway, while 3.13 has broader wheel availability for the dev dependencies CI installs (`moto`, `pytest-cov`). If that changes, moving 3.13 → 3.14 is the same one-line-per-function edit.
+
+Verified: `sam validate --lint` no longer reports `E2531` (the remaining `E3638`/`E3045`/`W30xx` findings all pre-date this work and concern `ProvisionedThroughput` alongside `PAY_PER_REQUEST` and S3 `AccessControl`); `sam build` succeeds for all 20 functions with `PyJWT==2.10.1` resolving; and the full suite is green on a real 3.13 interpreter.
+
+> **The local `.venv` is still Python 3.9**, which is both EOL as a Lambda runtime and now two majors behind what deploys. Tests pass on it, but it is not what runs in production — rebuild it on 3.13 so the two match.
 
 ---
 
