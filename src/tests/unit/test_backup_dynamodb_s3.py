@@ -2,9 +2,10 @@
 import os
 import json
 import unittest
+from decimal import Decimal
 from unittest import mock
 
-from backup_dynamodb_s3.app import lambda_handler
+from backup_dynamodb_s3.app import lambda_handler, decimal_default
 
 def mocked_dynamodb_scan():
   all_contacts = [
@@ -21,6 +22,13 @@ def mocked_dynamodb_scan():
         "CharacterSet": "traditional",
         "DateSubscribed": "3/18/20",
         "Status": "unsubscribed"
+      },
+      # Quiz items carry DynamoDB numeric attributes, returned as Decimal.
+      {
+        "SK": "QUIZ#abc",
+        "Correct answers": Decimal("8"),
+        "Question quantity": Decimal("10"),
+        "Score": Decimal("0.8")
       }
     ]
 
@@ -39,6 +47,21 @@ class BackupDynamoDBS3Test(unittest.TestCase):
 
     self.assertEqual(dynamo_scan_mock.call_count, 1)
     self.assertEqual(s3_put_mock.call_count, 1)
+
+  def test_decimal_default_serializes_dynamodb_numbers(self):
+    # Integral Decimals stay ints; fractional ones become floats.
+    self.assertEqual(decimal_default(Decimal("10")), 10)
+    self.assertIsInstance(decimal_default(Decimal("10")), int)
+    self.assertEqual(decimal_default(Decimal("0.8")), 0.8)
+
+    # The full row payload (including Decimals) must be JSON serializable.
+    encoded = json.dumps(mocked_dynamodb_scan(), default=decimal_default)
+    self.assertIn('"Correct answers": 8', encoded)
+    self.assertIn('"Score": 0.8', encoded)
+
+  def test_decimal_default_rejects_unknown_types(self):
+    with self.assertRaises(TypeError):
+      decimal_default(object())
 
   def scheduled_event(self):
     return {
