@@ -6,6 +6,7 @@ from datetime import datetime
 
 import ksuid_service
 import list_word_service
+import user_service
 import vocab_list_service
 
 eventbridge = boto3.client('events')
@@ -34,9 +35,7 @@ def set_daily_words():
 
     todays_words = {}
 
-    all_lists = vocab_list_service.get_vocab_lists()
-
-    for list in all_lists:
+    for list in get_lists_needing_a_daily_word():
         try:
             all_words = list_word_service.get_words_in_list(list['list_id'])
             random_number = randint(0,len(all_words)-1)
@@ -48,6 +47,35 @@ def set_daily_words():
 
     print('daily words: ', todays_words)
     return todays_words
+
+def get_lists_needing_a_daily_word():
+    """Curated lists, plus user lists that someone is actually subscribed to.
+
+    This job does one full-list query and one write per list in a 128MB/120s
+    function. Curated lists are always included so the public home page and the
+    sample endpoint stay populated even with no subscribers; user-created lists
+    are only worth a daily word once somebody reads them, which keeps the fan-out
+    bounded by demand rather than by how many lists have ever been uploaded.
+    """
+    all_lists = vocab_list_service.get_vocab_lists()
+
+    try:
+        subscribed_list_ids = user_service.get_subscribed_list_ids()
+    except Exception as e:
+        # Degrade to setting a word for every list rather than skipping lists that
+        # may well have subscribers
+        print('Error: Failed to read subscribed lists, falling back to all lists.')
+        print(e)
+        return all_lists
+
+    lists_needing_a_word = [
+        l for l in all_lists
+        if l['created_by'] == vocab_list_service.CREATED_BY_ADMIN
+        or l['list_id'] in subscribed_list_ids
+    ]
+
+    print(f"{len(lists_needing_a_word)} of {len(all_lists)} lists need a word today.")
+    return lists_needing_a_word
 
 def store_words(todays_words):
 

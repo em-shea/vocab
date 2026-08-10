@@ -1,7 +1,7 @@
 import os
 import json
 import boto3
-from boto3.dynamodb.conditions import Key
+from boto3.dynamodb.conditions import Attr, Key
 
 import api_response
 
@@ -29,8 +29,12 @@ def pull_user_sentences(congito_id):
 
     user_key = "USER#" + congito_id
 
+    # set_sentence writes SK as 'DATE#<date>#SENTENCE#<id>', so the sentence marker is
+    # in the middle of the key - begins_with('SENTENCE') could never match. Query the
+    # date range and filter the quizzes back out.
     response = table.query(
-        KeyConditionExpression=Key('PK').eq(user_key) & Key('SK').begins_with('SENTENCE') 
+        KeyConditionExpression=Key('PK').eq(user_key) & Key('SK').begins_with('DATE#'),
+        FilterExpression=Attr('SK').contains('#SENTENCE#')
     )
     print('dynamo response ', response['Items'])
     return response['Items']
@@ -42,7 +46,9 @@ def format_user_sentences(sentences_response):
         sentence_dict = {}
 
         # sentence_dict['cognito_id'] = item['PK'][5:]
-        sentence_dict['sentence_id'] = item['SK'][9:]
+        # Read the stored id rather than slicing the key - the slice assumed the old
+        # 'SENTENCE#<id>' key shape and returns garbage for 'DATE#<date>#SENTENCE#<id>'
+        sentence_dict['sentence_id'] = item['Sentence id']
         sentence_dict['sentence'] = item['Sentence']
         sentence_dict['character_set'] = item['Character set']
         sentence_dict['date_created'] = item['Date created']

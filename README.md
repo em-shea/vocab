@@ -33,6 +33,7 @@ And in this blog post series:
 | Store user quiz results - weekly | |
 | User practice sentences | |
 | User created vocab lists | |
+| Make vocab lists data-driven — move them from the hardcoded `vocab_list_service` into DynamoDB as `LIST#` metadata items so new lists can be added without code changes (prerequisite for 成语 vocab list) | :heavy_check_mark: |
 | 成语 vocab list | |
 | Store user quiz results - daily | :heavy_check_mark: |
 | Add pronunciation audio | :heavy_check_mark: |

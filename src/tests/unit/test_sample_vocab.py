@@ -3,6 +3,8 @@ import json
 import unittest
 from unittest import mock
 
+import pytest
+
 from sample_vocab.app import lambda_handler
 
 def mocked_get_words_in_list(list_id):
@@ -11,6 +13,7 @@ def mocked_get_words_in_list(list_id):
 
   return test_words[list_id]
 
+@pytest.mark.usefixtures("seeded_vocab_lists")
 class SampleVocabTest(unittest.TestCase):
 
   @mock.patch('list_word_service.get_words_in_list', side_effect=mocked_get_words_in_list)
@@ -86,6 +89,26 @@ class SampleVocabTest(unittest.TestCase):
         "stageVarName": "stageVarValue"
       }
     }
+
+@mock.patch('list_word_service.get_words_in_list', side_effect=mocked_get_words_in_list)
+def test_private_user_lists_are_never_sampled(get_words_mock, seeded_vocab_lists, dynamodb_table):
+  """This endpoint backs the anonymous home page - it must only ever see curated lists."""
+  dynamodb_table.put_item(Item={
+    "PK": "LIST#private-list",
+    "SK": "METADATA",
+    "List name": "My private list",
+    "Created by": "USER#abc",
+    "Visibility": "private",
+    "GSI1PK": "LIST",
+    "GSI1SK": "LIST#private-list",
+  })
+
+  response = lambda_handler(SampleVocabTest().apig_event(), "")
+  response_body = json.loads(response["body"])
+
+  assert "private-list" not in response_body
+  assert len(response_body) == len(seeded_vocab_lists)
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -35,17 +35,22 @@ def lambda_handler(event, context):
     # Add words and sentence
     user_activity = {}
     for date in dates:
-        user_activity[date.strftime('%Y-%m-%d')] = {}
-        user_activity[date.strftime('%Y-%m-%d')]['review_words'] = []
+        date_key = date.strftime('%Y-%m-%d')
+        user_activity[date_key] = {}
+        user_activity[date_key]['review_words'] = []
         for word in user_recent_words:
-            if word['date_sent'] == date.strftime('%Y-%m-%d'):
-                user_activity[date.strftime('%Y-%m-%d')]['review_words'].append(word)
+            if word['date_sent'] != date_key:
+                continue
+            # Copy so the sentence is attached to this date's entry only, not to the
+            # shared word from user_recent_words
+            word_entry = dict(word)
             for sentence in user_data.sentences:
-                if sentence.date_created == date.strftime('%Y-%m-%d') and sentence.word.word_id == word['word']['word_id']:
-                    user_activity[date.strftime('%Y-%m-%d')]['review_words']['sentence'] = asdict(sentence)
+                if sentence.date_created == date_key and sentence.word.word_id == word['word']['word_id']:
+                    word_entry['sentence'] = asdict(sentence)
+            user_activity[date_key]['review_words'].append(word_entry)
         for quiz in user_data.quizzes:
-            if quiz.date_created == date.strftime('%Y-%m-%d'):
-                user_activity[date.strftime('%Y-%m-%d')]['quiz'] = asdict(quiz)
+            if quiz.date_created == date_key:
+                user_activity[date_key]['quiz'] = asdict(quiz)
     print('user activity: ', user_activity)
     
     user_data_dict = asdict(user_data)

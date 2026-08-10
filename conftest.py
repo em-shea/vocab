@@ -96,6 +96,27 @@ def dynamodb_table(aws):
 
 
 @pytest.fixture
+def seeded_vocab_lists(dynamodb_table):
+    """Table with the six curated HSK list METADATA items written.
+
+    Uses the same seed file and item builder as ``scripts/seed_vocab_lists.py``, so
+    a change to the deployed item shape shows up here rather than drifting silently.
+    Yields the parsed seed data.
+    """
+    import json
+
+    from seed_vocab_lists import SEED_FILE, build_item
+
+    with open(SEED_FILE) as fh:
+        vocab_lists = json.load(fh)
+
+    for vocab_list in vocab_lists:
+        dynamodb_table.put_item(Item=build_item(vocab_list))
+
+    yield vocab_lists
+
+
+@pytest.fixture
 def idempotency_table(aws):
     """Create the idempotency table (IdempotencyKey/Consumer) and yield the resource.
 

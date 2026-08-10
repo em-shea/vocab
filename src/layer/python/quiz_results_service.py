@@ -3,8 +3,10 @@ import json
 import boto3
 from dataclasses import asdict
 from models import Quiz
-from boto3.dynamodb.conditions import Key
+from boto3.dynamodb.conditions import Attr, Key
 from datetime import datetime, timedelta
+
+import dynamodb_service
 
 import sys
 sys.path.append('../tests/')
@@ -26,31 +28,34 @@ def query_dynamodb(cognito_id, date_range):
 
     # Query for all of the quizzes saved after a given date
     from_date = datetime.today() - timedelta(days=date_range)
-    print(from_date)
 
-    response = table.query(
-        KeyConditionExpression=Key('PK').eq('USER#' + cognito_id) & Key('SK').begins_with('QUIZ#'),
-        FilterExpression='#d >= :val',
-        ExpressionAttributeNames={
-            '#d': 'Date created'
-        },
-        ExpressionAttributeValues={
-            ':val': from_date.isoformat()
-        }
+    # set_quiz_results writes SK as 'DATE#<date>#QUIZ#<id>', so begins_with('QUIZ#')
+    # could never match. The date is in the key, so range over it directly rather
+    # than filtering on the 'Date created' attribute - the old filter also compared
+    # a '%Y-%m-%d' string against an isoformat one, which excluded the boundary day.
+    from_key = 'DATE#' + from_date.strftime('%Y-%m-%d')
+    to_key = 'DATE#' + datetime.today().strftime('%Y-%m-%d') + '#￿'
+
+    items = dynamodb_service.query_all_pages(
+        table,
+        KeyConditionExpression=Key('PK').eq('USER#' + cognito_id) & Key('SK').between(from_key, to_key),
+        FilterExpression=Attr('SK').contains('#QUIZ#')
     )
 
-    return response['Items']
+    return items
 
 def format_quiz_results(quiz_results_item):
 
     formatted_quiz_results_item = Quiz(
-        quiz_id = quiz_results_item['SK'][5:],
-        date_created = quiz_results_item['Date created'],
-        list_id = quiz_results_item['List id'], 
-        character_set = quiz_results_item['Character set'], 
-        question_quantity = int(quiz_results_item['Question quantity']), 
-        correct_answers = int(quiz_results_item['Correct answers']),
-        quiz_data = quiz_results_item['Quiz data']
+        # Read the stored id rather than slicing the key - the slice assumed an
+        # old 'QUIZ#<id>' shape and returns '<date>#QUIZ#<id>' for real items
+        quiz_id = quiz_results_item.get('Quiz id', ''),
+        date_created = quiz_results_item.get('Date created', ''),
+        list_id = quiz_results_item.get('List id', ''),
+        character_set = quiz_results_item.get('Character set', ''),
+        question_quantity = int(quiz_results_item.get('Question quantity', 0)),
+        correct_answers = int(quiz_results_item.get('Correct answers', 0)),
+        quiz_data = quiz_results_item.get('Quiz data', [])
     )
 
     return formatted_quiz_results_item

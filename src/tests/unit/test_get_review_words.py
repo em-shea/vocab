@@ -4,6 +4,8 @@ import json
 import unittest
 from unittest import mock
 
+import pytest
+
 from get_review_words.app import lambda_handler
 
 def mocked_list_id_query(list_id, from_date, todays_date):
@@ -18,6 +20,7 @@ def mocked_no_params_query(list_id, from_date, todays_date):
 
   return [{'SK': 'DATESENT#2020-10-10', 'PK': 'LIST#1ebcad3f-5dfd-6bfe-bda4-acde48001122', 'Word': {'Word id': 'WORD#123456', 'Simplified': '多少', 'Pinyin': 'duō shǎo', 'Definition': 'number; amount; somewhat', 'HSK Level': '1', 'Traditional': '多少', 'Difficulty level': 'Beginner', 'Audio file key': ''}}, {'SK': 'DATESENT#2020-10-11', 'PK': 'LIST#1ebcad3f-5dfd-6bfe-bda4-acde48001122', 'Word': {'Word id': 'WORD#123456', 'Simplified': '怎么', 'Pinyin': 'zěn me', 'Definition': 'how?; what?; why?', 'HSK Level': '1', 'Traditional': '怎麼', 'Difficulty level': 'Beginner', 'Audio file key': ''}}, {'SK': 'DATESENT#2020-10-12', 'PK': 'LIST#1ebcad3f-5dfd-6bfe-bda4-acde48001122', 'Word': {'Word id': 'WORD#123456', 'Simplified': '吗', 'Pinyin': 'ma', 'Definition': '(question tag)', 'HSK Level': '1', 'Traditional': '嗎', 'Difficulty level': 'Beginner', 'Audio file key': ''}}]
 
+@pytest.mark.usefixtures("seeded_vocab_lists")
 class GetReviewWordsTest(unittest.TestCase):
 
   @mock.patch('review_word_service.query_dynamodb', side_effect=mocked_list_id_query)
@@ -121,6 +124,48 @@ class GetReviewWordsTest(unittest.TestCase):
         "stageVarName": "stageVarValue"
       }
     }
+
+@mock.patch('review_word_service.query_dynamodb', side_effect=mocked_no_params_query)
+def test_private_lists_are_not_served_by_the_public_endpoint(query_mock, seeded_vocab_lists, dynamodb_table):
+  """GET /review has no authorizer, so a private list must not be readable here."""
+  dynamodb_table.put_item(Item={
+    "PK": "LIST#private-list",
+    "SK": "METADATA",
+    "List name": "My private list",
+    "Created by": "USER#abc",
+    "Visibility": "private",
+    "GSI1PK": "LIST",
+    "GSI1SK": "LIST#private-list",
+  })
+
+  response = lambda_handler(GetReviewWordsTest().review_apig_event(None), "")
+  body = json.loads(response["body"])
+
+  assert "private-list" not in body
+  assert len(body) == len(seeded_vocab_lists)
+
+
+@mock.patch('review_word_service.query_dynamodb', side_effect=mocked_list_id_query)
+def test_requesting_a_private_list_by_id_returns_nothing(query_mock, seeded_vocab_lists, dynamodb_table):
+  """Knowing the id must not be enough to read someone else's list."""
+  dynamodb_table.put_item(Item={
+    "PK": "LIST#private-list",
+    "SK": "METADATA",
+    "List name": "My private list",
+    "Created by": "USER#abc",
+    "Visibility": "private",
+    "GSI1PK": "LIST",
+    "GSI1SK": "LIST#private-list",
+  })
+
+  response = lambda_handler(
+    GetReviewWordsTest().review_apig_event({'list_id': 'private-list'}), ""
+  )
+  body = json.loads(response["body"])
+
+  assert body == {}
+  assert query_mock.call_count == 0
+
 
 if __name__ == '__main__':
     unittest.main()

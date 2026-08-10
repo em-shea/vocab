@@ -1,11 +1,18 @@
 """Tests for the four Cognito custom-auth trigger lambdas (passwordless OTP flow)."""
+import os
+import time
 import unittest
 from unittest import mock
+
+import jwt
 
 from create_auth_challenge.app import lambda_handler as create_auth_challenge
 from define_auth_challenge.app import lambda_handler as define_auth_challenge
 from pre_sign_up.app import lambda_handler as pre_sign_up
 from verify_auth_challenge_response.app import lambda_handler as verify_auth_challenge
+
+# Set by conftest.py before the handlers import.
+OTP_SECRET = os.environ['OTP_SECRET_KEY']
 
 
 class PreSignUpTest(unittest.TestCase):
@@ -76,6 +83,35 @@ class CreateAuthChallengeTest(unittest.TestCase):
         self.assertNotIn(answer, response["publicChallengeParameters"].values())
 
     @mock.patch('create_auth_challenge.app.send_notification_email')
+    def test_code_carries_an_expiry_and_binds_the_username(self, send_mock):
+        event = create_auth_challenge({
+            "userName": "user1",
+            "request": {"session": [], "userAttributes": {"email": "e@test.com"}},
+            "response": {},
+        }, "")
+        answer = event["response"]["privateChallengeParameters"]["answer"]
+
+        claims = jwt.decode(answer, OTP_SECRET, algorithms=["HS256"])
+        self.assertEqual(claims["u"], "user1")
+        # Regression: the payload used to be a bare {'u': username} with no exp,
+        # so a user's code never changed and never expired.
+        self.assertIn("exp", claims)
+        self.assertEqual(claims["exp"] - claims["iat"], 600)
+
+    @mock.patch('create_auth_challenge.app.send_notification_email')
+    def test_each_sign_in_generates_a_different_code(self, send_mock):
+        def _new_code():
+            event = create_auth_challenge({
+                "userName": "user1",
+                "request": {"session": [], "userAttributes": {"email": "e@test.com"}},
+                "response": {},
+            }, "")
+            return event["response"]["privateChallengeParameters"]["answer"]
+
+        # The nonce is what stops one intercepted code working forever.
+        self.assertNotEqual(_new_code(), _new_code())
+
+    @mock.patch('create_auth_challenge.app.send_notification_email')
     def test_repeat_attempt_reuses_existing_code(self, send_mock):
         event = create_auth_challenge({
             "userName": "user1",
@@ -93,12 +129,22 @@ class CreateAuthChallengeTest(unittest.TestCase):
 
 class VerifyAuthChallengeResponseTest(unittest.TestCase):
 
-    def _event(self, challenge_answer):
+    def _code(self, username="user1", ttl=600, key=None):
+        issued_at = int(time.time())
+        return jwt.encode(
+            {"u": username, "iat": issued_at, "exp": issued_at + ttl, "jti": "nonce"},
+            key or OTP_SECRET,
+            algorithm="HS256",
+        )
+
+    def _event(self, challenge_answer, expected_answer=None, user_name="user1"):
         return {
             "userPoolId": "us-east-1_testpool",
-            "userName": "user1",
+            "userName": user_name,
             "request": {
-                "privateChallengeParameters": {"answer": "EXPECTED"},
+                "privateChallengeParameters": {
+                    "answer": expected_answer if expected_answer is not None else challenge_answer
+                },
                 "challengeAnswer": challenge_answer,
                 "session": [],
             },
@@ -107,14 +153,54 @@ class VerifyAuthChallengeResponseTest(unittest.TestCase):
 
     @mock.patch('verify_auth_challenge_response.app.cognito_client')
     def test_correct_answer_marks_email_verified(self, cognito_mock):
-        event = verify_auth_challenge(self._event("EXPECTED"), "")
+        event = verify_auth_challenge(self._event(self._code()), "")
 
         self.assertTrue(event["response"]["answerCorrect"])
         self.assertEqual(cognito_mock.admin_update_user_attributes.call_count, 1)
 
     @mock.patch('verify_auth_challenge_response.app.cognito_client')
     def test_incorrect_answer_is_rejected(self, cognito_mock):
-        event = verify_auth_challenge(self._event("WRONG"), "")
+        event = verify_auth_challenge(
+            self._event("WRONG", expected_answer=self._code()), ""
+        )
+
+        self.assertFalse(event["response"]["answerCorrect"])
+        self.assertEqual(cognito_mock.admin_update_user_attributes.call_count, 0)
+
+    @mock.patch('verify_auth_challenge_response.app.cognito_client')
+    def test_expired_code_is_rejected(self, cognito_mock):
+        # Matches the challenge exactly, so a plain string compare would accept it.
+        # Only decoding the token catches that it has expired.
+        expired = self._code(ttl=-1)
+
+        event = verify_auth_challenge(self._event(expired), "")
+
+        self.assertFalse(event["response"]["answerCorrect"])
+        self.assertEqual(cognito_mock.admin_update_user_attributes.call_count, 0)
+
+    @mock.patch('verify_auth_challenge_response.app.cognito_client')
+    def test_code_issued_for_another_user_is_rejected(self, cognito_mock):
+        other_users_code = self._code(username="user2")
+
+        event = verify_auth_challenge(
+            self._event(other_users_code, user_name="user1"), ""
+        )
+
+        self.assertFalse(event["response"]["answerCorrect"])
+        self.assertEqual(cognito_mock.admin_update_user_attributes.call_count, 0)
+
+    @mock.patch('verify_auth_challenge_response.app.cognito_client')
+    def test_code_signed_with_the_wrong_key_is_rejected(self, cognito_mock):
+        forged = self._code(key="not-the-real-secret")
+
+        event = verify_auth_challenge(self._event(forged), "")
+
+        self.assertFalse(event["response"]["answerCorrect"])
+        self.assertEqual(cognito_mock.admin_update_user_attributes.call_count, 0)
+
+    @mock.patch('verify_auth_challenge_response.app.cognito_client')
+    def test_empty_answer_is_rejected(self, cognito_mock):
+        event = verify_auth_challenge(self._event("", expected_answer=""), "")
 
         self.assertFalse(event["response"]["answerCorrect"])
         self.assertEqual(cognito_mock.admin_update_user_attributes.call_count, 0)

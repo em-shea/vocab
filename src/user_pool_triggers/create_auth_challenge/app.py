@@ -1,8 +1,13 @@
 import os
 import jwt
+import time
+import uuid
 import boto3
 
 ses_client = boto3.client('ses', region_name=os.environ['AWS_REGION'])
+
+# How long an emailed sign-in code stays valid.
+OTP_TTL_SECONDS = 600
 
 def lambda_handler(event, context):
 
@@ -55,13 +60,21 @@ def generate_login_code(event):
     # user_pool_id = event.get('userPoolId')
     username = event.get('userName')
     key = os.environ['OTP_SECRET_KEY']
+    issued_at = int(time.time())
 
-    encoded = jwt.encode({ 
+    # The payload was previously just {'u': username}, which is constant per user:
+    # every sign-in produced the identical code, and with no exp claim that code
+    # stayed valid forever. The nonce makes each code single-use in practice and
+    # exp bounds its lifetime (enforced in verify_auth_challenge_response).
+    encoded = jwt.encode({
         # 'user_pool_id': user_pool_id,
-        'u' : username 
+        'u' : username,
+        'iat': issued_at,
+        'exp': issued_at + OTP_TTL_SECONDS,
+        'jti': str(uuid.uuid4())
         }, key, algorithm="HS256")
-    
-    print(encoded)
+
+    # Deliberately not logged - this is the secret the user receives by email
     return encoded
 
 def assemble_email_contents(secret_login_code):

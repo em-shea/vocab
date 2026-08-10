@@ -12,14 +12,20 @@ import vocab_list_service
 
 table = boto3.resource('dynamodb', region_name=os.environ['AWS_REGION']).Table(os.environ['TABLE_NAME'])
 
-all_lists = vocab_list_service.get_vocab_lists()
-
-def get_review_words(list_id, date_range):
+def get_review_words(list_id, date_range, vocab_lists=None):
 
     todays_date = format_date(datetime.today())
 
-    filtered_lists = [l for l in all_lists if (list_id is None or l['list_id'] == list_id)]
-    
+    # Read the list set per call rather than once at module import. A module-level
+    # cache is frozen for the life of a warm Lambda container, so a newly created
+    # list would stay invisible until the container recycled.
+    # Callers pass vocab_lists to control visibility (e.g. public-only) and to avoid
+    # re-querying when they already hold the set.
+    if vocab_lists is None:
+        vocab_lists = vocab_list_service.get_vocab_lists()
+
+    filtered_lists = [l for l in vocab_lists if (list_id is None or l['list_id'] == list_id)]
+
     from_date = format_date(datetime.today() - timedelta(days=int(7)))
     if date_range is not None:
         from_date = format_date(datetime.today() - timedelta(days=int(date_range)))
@@ -64,15 +70,18 @@ def format_review_word(word_item):
 def format_word_body(word):
     # print('word: ', word)
 
+    # .get() throughout: user-created lists will not carry every field an HSK word has
+    # (no HSK level, no audio until the pipeline runs, traditional only if supplied or
+    # derived), and a missing attribute must not take down a read path
     word = Word(
-        word_id = word['Word id'],
-        simplified = word['Simplified'],
-        traditional = word['Traditional'],
-        pinyin = word['Pinyin'],
-        definition = word['Definition'],
-        audio_file_key = word['Audio file key'],
-        difficulty_level = word['Difficulty level'],
-        hsk_level = word['HSK Level']
+        word_id = word.get('Word id', ''),
+        simplified = word.get('Simplified', ''),
+        traditional = word.get('Traditional', '') or word.get('Simplified', ''),
+        pinyin = word.get('Pinyin', ''),
+        definition = word.get('Definition', ''),
+        audio_file_key = word.get('Audio file key', ''),
+        difficulty_level = word.get('Difficulty level', ''),
+        hsk_level = word.get('HSK Level', '')
     )
     return word
 

@@ -6,7 +6,9 @@ testpaths = ["src/tests"]
 # Put the function packages (src/) and the shared Lambda layer (src/layer/python)
 # on sys.path so tests import handlers and layer modules the same way the deployed
 # code does — no per-test sys.path.append hacks needed.
-pythonpath = ["src", "src/layer/python", "src/user_pool_triggers"]
+# scripts/ is included so the seeded_vocab_lists fixture can build its items with
+# the same code the real seed script uses.
+pythonpath = ["src", "src/layer/python", "src/user_pool_triggers", "scripts"]
 python_files = ["test_*.py"]
 addopts = "-q"
 
