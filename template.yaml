@@ -740,6 +740,11 @@ Resources:
       CodeUri: src/user_pool_triggers/verify_auth_challenge_response/
       Handler: app.lambda_handler
       Runtime: python3.13
+      # Needed to decode the sign-in code and enforce its exp claim. This function
+      # only string-compared the code before, so it did not read the key.
+      Environment:
+        Variables:
+          OTP_SECRET_KEY: !Ref OTPSecretKey
       Role: !GetAtt VerifyAuthChallengeRole.Arn
   
   # Creatinging a role to attach SetUserAttributesPolicy to
