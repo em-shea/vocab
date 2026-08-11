@@ -10,7 +10,9 @@ def lambda_handler(event, context):
     # Create an empty dictionary that will hold the 5 words for each level
     sample_words_response = {}
 
-    all_lists = vocab_list_service.get_vocab_lists()
+    # Public endpoint backing the anonymous home page - curated lists only, never
+    # a user's uploaded list
+    all_lists = vocab_list_service.get_public_vocab_lists()
 
     for list in all_lists:
         sample_words_response[list['list_id']] = []

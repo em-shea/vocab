@@ -66,8 +66,10 @@ def test_format_review_word_splits_pk_and_sk():
 
 # --- quiz_results_service ----------------------------------------------------
 def test_format_quiz_results_casts_counts_to_int():
+    # Item shape matches what set_quiz_results writes.
     quiz = quiz_results_service.format_quiz_results({
-        "SK": "QUIZ#q1",
+        "SK": "DATE#2021-01-02#QUIZ#q1",
+        "Quiz id": "q1",
         "Date created": "2021-01-02",
         "List id": "123",
         "Character set": "simplified",
@@ -76,6 +78,7 @@ def test_format_quiz_results_casts_counts_to_int():
         "Quiz data": [{"q": 1}],
     })
 
+    # Read from the stored attribute; slicing the SK used to yield '2021-01-02#QUIZ#q1'.
     assert quiz.quiz_id == "q1"
     assert quiz.list_id == "123"
     assert quiz.question_quantity == 10

@@ -9,7 +9,6 @@ from botocore.exceptions import ClientError
 
 import user_service
 import list_word_service
-import vocab_list_service
 import review_word_service
 
 # region_name specified in order to mock in unit tests
@@ -71,8 +70,13 @@ def lambda_handler(event, context):
                 if subscription.status == 'subscribed':
                     active_subscription_count += 1
             if active_subscription_count>0:
-                email_content = assemble_html_content(user, todays_words, todays_announcement)
+                # Assembling content is inside the try alongside the send: a failure
+                # for one user must not stop the loop for everyone else
                 try:
+                    email_content = assemble_html_content(user, todays_words, todays_announcement)
+                    if email_content is None:
+                        print(f"No words for any of this user's lists today, skipping - {user.user_id}.")
+                        continue
                     # print('send emails')
                     response = send_email(user, email_content)
                     email_counter += 1
@@ -113,12 +117,10 @@ def get_announcement():
 
     announcement_file_message = ""
 
+    # An announcement is optional, so any failure here degrades to "no announcement"
+    # rather than taking down the day's send (this function has MaximumRetryAttempts: 0)
     try:
         s3_file = s3.get_object(Bucket=os.environ['ANNOUNCEMENTS_BUCKET'], Key=file_name)
-    except Exception as e:
-        # Return None if file not found or other error
-        return None
-    else:
         s3_file_content = s3_file['Body'].read().decode('utf-8')
         json_content = json.loads(s3_file_content)
         announcement_file_message = json_content['message']
@@ -126,11 +128,14 @@ def get_announcement():
         # We have an html template file packaged with this function's code which we read here
         # To run unit tests for this function, we need to specify an absolute file path
         abs_dir = os.path.dirname(os.path.abspath(__file__))
-        with open(os.path.join(abs_dir, 'announcements_template.html')) as fh:
+        with open(os.path.join(abs_dir, 'announcements.html')) as fh:
             announcement_html = fh.read()
+    except Exception as e:
+        print('No announcement rendered for today: ', e)
+        return None
 
-        announcement_html = announcement_html.replace("{announcement_message}", announcement_file_message)
-        return announcement_html
+    announcement_html = announcement_html.replace("{announcement_message}", announcement_file_message)
+    return announcement_html
 
 def get_daily_words():
     print('getting daily words...')
@@ -146,6 +151,10 @@ def assemble_html_content(user, todays_words, todays_announcement):
     for subscription in user.subscriptions:
         if subscription.status == 'subscribed':
             word_content = word_content + assemble_word_html_content(user.email_address, subscription, todays_words)
+
+    # Every subscribed list came back empty - send nothing rather than an email with no words
+    if word_content == "":
+        return None
 
     # Open HTML template file
     # To run unit tests, we need to specify an absolute file path
@@ -172,7 +181,15 @@ def assemble_word_html_content(user_email, subscription, todays_words):
     print('list subscription: ', subscription)
 
     url = os.environ['URL']
-    word = todays_words[subscription.list_id][0]['word']
+    # A list can legitimately have no word today (SetTodaysWords skipped or failed for
+    # it, or the list was created after the job ran). Omit that list from the email
+    # rather than raising - this loop has no retry.
+    todays_list_words = todays_words.get(subscription.list_id) or []
+    if len(todays_list_words) == 0:
+        print(f"No word set today for list {subscription.list_id}, skipping.")
+        return ""
+
+    word = todays_list_words[0].get('word')
     print('selected word, ', word)
     if word is None:
         return ""

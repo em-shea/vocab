@@ -3,26 +3,88 @@ import json
 import unittest
 from unittest import mock
 
-from get_sentences.app import lambda_handler
+from get_sentences.app import lambda_handler, pull_user_sentences
+from set_sentence.app import update_sentence
 
+
+def test_sentences_written_by_set_sentence_are_readable(dynamodb_table):
+    """Round-trip regression: the read path must match the key shape the write path uses.
+
+    get_sentences queried SK begins_with('SENTENCE') while set_sentence writes
+    'DATE#<date>#SENTENCE#<id>', so this returned nothing no matter how many
+    sentences a user had saved.
+    """
+    body = {
+        "sentence_id": "sentence-1",
+        "sentence": "我喜欢学中文。",
+        "list_id": "123",
+        "character_set": "simplified",
+        "word": {"Word id": "w1", "Simplified": "中文"},
+    }
+    update_sentence("user-1", body, "2021-11-04")
+
+    items = pull_user_sentences("user-1")
+
+    assert len(items) == 1
+    assert items[0]["Sentence"] == "我喜欢学中文。"
+    assert items[0]["Sentence id"] == "sentence-1"
+
+
+def test_quizzes_are_filtered_out_of_the_sentence_query(dynamodb_table):
+    """The query reads the whole DATE# range, so quizzes must be filtered back out."""
+    update_sentence("user-1", {
+        "sentence_id": "sentence-1", "sentence": "我喜欢学中文。", "list_id": "123",
+        "character_set": "simplified", "word": {"Word id": "w1"},
+    }, "2021-11-04")
+    dynamodb_table.put_item(Item={
+        "PK": "USER#user-1",
+        "SK": "DATE#2021-11-04#QUIZ#quiz-1",
+        "Quiz id": "quiz-1",
+    })
+
+    items = pull_user_sentences("user-1")
+
+    assert len(items) == 1
+    assert items[0]["Sentence id"] == "sentence-1"
+
+
+def test_other_users_sentences_are_not_returned(dynamodb_table):
+    update_sentence("user-1", {
+        "sentence_id": "s1", "sentence": "第一句。", "list_id": "123",
+        "character_set": "simplified", "word": {"Word id": "w1"},
+    }, "2021-11-04")
+    update_sentence("user-2", {
+        "sentence_id": "s2", "sentence": "第二句。", "list_id": "123",
+        "character_set": "simplified", "word": {"Word id": "w1"},
+    }, "2021-11-04")
+
+    items = pull_user_sentences("user-1")
+
+    assert len(items) == 1
+    assert items[0]["Sentence id"] == "s1"
+
+# Item shape matches what set_sentence actually writes: the sentence marker sits in
+# the middle of the SK, and the id is stored as its own attribute.
 def mocked_pull_user_sentences(cognito_id):
         example_response = [
             {
-                "GSI1PK":"DATE#2021-11-04T17:33:56.893897",
-                "Date created":"2021-11-04T17:33:56.893897",
+                "GSI1PK":"DATE#2021-11-04",
+                "Date created":"2021-11-04",
                 "Sentence":"我喜欢韩语。",
-                "SK":"SENTENCE#12345-3763-6260-bf4f-6a03d2d3da0b",
-                "GSI1SK":"USER#SENTENCE#12345-3763-6260-bf4f-6a03d2d3da0b",
+                "Sentence id":"12345-3763-6260-bf4f-6a03d2d3da0b",
+                "SK":"DATE#2021-11-04#SENTENCE#12345-3763-6260-bf4f-6a03d2d3da0b",
+                "GSI1SK":"SENTENCE#12345-3763-6260-bf4f-6a03d2d3da0b",
                 "PK":"USER#12345-c759-48cd-97ea-3e8876eedb2d",
                 "List id":"12345",
                 "Character set":"simplified"
             },
             {
-                "GSI1PK":"DATE#2021-11-04T17:35:16.505909",
-                "Date created":"2021-11-04T17:35:16.505909",
+                "GSI1PK":"DATE#2021-11-05",
+                "Date created":"2021-11-05",
                 "Sentence":"我喜欢法语。",
-                "SK":"SENTENCE#12345-2dd9-6886-bf4f-6a03d2d3da0b",
-                "GSI1SK":"USER#SENTENCE#12345-2dd9-6886-bf4f-6a03d2d3da0b",
+                "Sentence id":"12345-2dd9-6886-bf4f-6a03d2d3da0b",
+                "SK":"DATE#2021-11-05#SENTENCE#12345-2dd9-6886-bf4f-6a03d2d3da0b",
+                "GSI1SK":"SENTENCE#12345-2dd9-6886-bf4f-6a03d2d3da0b",
                 "PK":"USER#996ca9a4-c759-48cd-97ea-3e8876eedb2d",
                 "List id":"5678",
                 "Character set":"simplified"

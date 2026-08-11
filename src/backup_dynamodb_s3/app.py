@@ -2,6 +2,15 @@ import os
 import json
 import boto3
 from datetime import datetime
+from decimal import Decimal
+
+
+def decimal_default(obj):
+    # DynamoDB returns numbers as Decimal, which json.dumps can't serialize.
+    # Preserve integers as int; fall back to float for fractional values.
+    if isinstance(obj, Decimal):
+        return int(obj) if obj % 1 == 0 else float(obj)
+    raise TypeError(f'Object of type {obj.__class__.__name__} is not JSON serializable')
 
 s3 = boto3.resource('s3')
 bucket = s3.Bucket(os.environ['BACKUPS_BUCKET_NAME'])
@@ -53,7 +62,7 @@ def convert_to_rows(all_contacts_data, todays_date):
 def write_to_s3(data_rows, todays_date):
     
     response = bucket.put_object(
-        Body = json.dumps(data_rows).encode('UTF-8'),
+        Body = json.dumps(data_rows, default=decimal_default).encode('UTF-8'),
         Key = f'{todays_date}.json'
     )
 
