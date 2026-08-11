@@ -35,7 +35,11 @@ The intended outcome: ship the redesigned, bilingual site first as a standalone 
 
 Fix live problems and unblock prerequisites before adding surface area. This phase grew when the list and progression work was traced through the code — it is no longer a quick pass, and it is the phase where the schemas every later phase depends on get written.
 
-> **Status:** implemented on branch `phase-0-backend-hygiene`. 99 tests green, coverage 86% (floor 70%). Not yet deployed to staging, and the vocab list seed has not been run against any environment.
+> **Status:** SHIPPED to staging and prod on 2026-08-11. 120 tests green, coverage 86% (floor 70%). List metadata seeded in both environments (`scripts/seed_vocab_lists.py`); prod verified with `GET /sample_vocab` and `GET /review` serving six data-driven lists, and `GET /quizzes` / `GET /sentences` live for the first time.
+>
+> **Regression shipped and fixed the same day:** making `VerifyAuthChallengeResponse` decode the sign-in code introduced a read of `os.environ['OTP_SECRET_KEY']`, but that function's template resource had **no `Environment` block at all** — only `CreateAuthChallenge` had ever needed the key, to sign. Every staging sign-in failed with `UserLambdaValidationException: ... 'OTP_SECRET_KEY'`. Unit tests could not catch it: `conftest.py` sets env vars for the whole test process, so the handler passes regardless of what the template provisions. Added `src/tests/unit/test_template_env_vars.py`, which asserts every `os.environ['X']` a function requires — resolved transitively through the layer modules it imports — is declared for that function. Note the failure only reproduces on a *correct* code: the env read sits after the constant-time compare, so a wrong code returns before reaching it.
+>
+> **Prod baseline before the change:** 624 users, 468 active subscriptions, 343 emails in the 2026-08-11 send. The user GSI partition holds 1541 items ≈ 500KB, i.e. **half** the 1MB page cap — so the unpaginated query was not yet dropping anyone, and the pagination fix is headroom rather than a behavioural change. Compare tomorrow's send against 343.
 >
 > **Blocker found and cleared:** every function declared `Runtime: python3.11`, which AWS deprecated on 2026-06-30, with **function updates disabled after 2026-08-31** — nothing in this plan could have deployed after that date. Upgraded to python3.13; see [Runtime upgrade](#runtime-upgrade-blocking-all-deploys).
 >
@@ -73,7 +77,7 @@ Fix live problems and unblock prerequisites before adding surface area. This pha
 
 This was not a lint nit — after **2026-08-31** AWS refuses to update the function code, so `sam deploy` fails and the entire plan is stuck behind it. Unrelated to the redesign, predating it, and the hardest deadline in the project.
 
-**Upgraded to `python3.13`** across all 20 functions, the layer's `CompatibleRuntimes`, and the CI workflow's `python-version`.
+**Upgraded to `python3.13`** across all 20 functions, the layer's `CompatibleRuntimes`, and the CI workflow's `python-version`. Deployed to staging and prod on 2026-08-11 — confirmed all 20 functions in each stack now report `python3.13`, well ahead of the 2026-08-31 cutoff.
 
 Why 3.13 rather than the 3.14 the linter suggests: per cfn-lint's runtime lifecycle data both deprecate on **2029-06-30**, so the newer version buys no extra runway, while 3.13 has broader wheel availability for the dev dependencies CI installs (`moto`, `pytest-cov`). If that changes, moving 3.13 → 3.14 is the same one-line-per-function edit.
 
