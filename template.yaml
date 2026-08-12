@@ -49,8 +49,11 @@ Resources:
       Runtime: python3.13
       CodeUri: src/set_todays_words
       Description: Sets daily word for each vocab list
-      MemorySize: 128
-      Timeout: 120
+      # Observed at 102MB of 128MB in prod for six lists. It pulls a full word list
+      # per list, so both memory and duration grow directly with the number of lists
+      # needing a daily word - exactly what user-created lists will add.
+      MemorySize: 512
+      Timeout: 300
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref DynamoDBTable
@@ -76,7 +79,14 @@ Resources:
       Runtime: python3.13
       CodeUri: src/send_daily_email
       Description: A function that sends a daily email to subscribers with a vocab word for each HSK level
-      Timeout: 120
+      # Sized from observed prod usage: 101MB of 128MB and 57s of 120s to send 343
+      # emails. Both were close enough to their limits that ordinary subscriber
+      # growth would have hit them, and this function has MaximumRetryAttempts: 0 -
+      # exhausting either limit loses that day's send entirely, with no retry.
+      # Memory scales with subscriber count (every user is held in memory at once);
+      # duration is dominated by serial SES calls, so the timeout is the real guard.
+      MemorySize: 512
+      Timeout: 300
       EventInvokeConfig:
         MaximumRetryAttempts: 0
       Policies:
@@ -451,8 +461,11 @@ Resources:
       Runtime: python3.13
       CodeUri: src/backup_dynamodb_s3
       Description: A function that scans the contact list database in DynamoDB and saves a back-up to S3
-      MemorySize: 128
-      Timeout: 120
+      # Observed at 118MB of 128MB in prod - 92%, the tightest in the stack. It scans
+      # the whole table and json.dumps it in memory, so usage grows with every word,
+      # quiz and sentence ever written. An OOM here silently loses the backup.
+      MemorySize: 1024
+      Timeout: 300
       Policies:
         - S3WritePolicy:
             BucketName: !Ref DynamoBackupsS3BucketName
@@ -948,6 +961,119 @@ Resources:
       DatapointsToAlarm: 1
       Threshold: 1
       Period: 120
+      Statistic: Sum
+      TreatMissingData: notBreaching
+
+  # The alarms above watch for the string 'Error' in the logs. They do not fire when
+  # the daily send fails in the ways that actually lose a day's email: a timeout, an
+  # out-of-memory kill, or the schedule simply not firing. None of those necessarily
+  # log 'Error'. The alarms below watch the Lambda service metrics instead.
+
+  # Nothing sent today. TreatMissingData: breaching is the point - no data means the
+  # function never ran, which is exactly the silent failure being guarded against.
+  SendDailyEmailDidNotRunAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub SendDailyEmailDidNotRunAlarm-${Stage}
+      AlarmDescription: SendDailyEmail did not run in the last 24 hours - subscribers received no email.
+      AlarmActions:
+        - !Ref AlarmTopic
+      Namespace: AWS/Lambda
+      MetricName: Invocations
+      Dimensions:
+        - Name: FunctionName
+          Value: !Sub SendDailyEmail-${Stage}
+      ComparisonOperator: LessThanThreshold
+      Threshold: 1
+      EvaluationPeriods: 1
+      DatapointsToAlarm: 1
+      Period: 86400
+      Statistic: Sum
+      TreatMissingData: breaching
+
+  # Catches timeouts, OOM kills and unhandled exceptions, which the log-pattern
+  # filter above can miss entirely.
+  SendDailyEmailFailureAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub SendDailyEmailFailureAlarm-${Stage}
+      AlarmDescription: SendDailyEmail errored. It has MaximumRetryAttempts 0, so that day's send is lost.
+      AlarmActions:
+        - !Ref AlarmTopic
+      Namespace: AWS/Lambda
+      MetricName: Errors
+      Dimensions:
+        - Name: FunctionName
+          Value: !Sub SendDailyEmail-${Stage}
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      Threshold: 1
+      EvaluationPeriods: 1
+      DatapointsToAlarm: 1
+      Period: 3600
+      Statistic: Sum
+      TreatMissingData: notBreaching
+
+  # Early warning well before the timeout is actually hit. 240s of the 300s limit;
+  # the send took 57s for 343 subscribers, so this fires while there is still room
+  # to act rather than after a day's email has already been lost.
+  SendDailyEmailDurationAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub SendDailyEmailDurationAlarm-${Stage}
+      AlarmDescription: SendDailyEmail is approaching its timeout. Raise Timeout/MemorySize or batch the send.
+      AlarmActions:
+        - !Ref AlarmTopic
+      Namespace: AWS/Lambda
+      MetricName: Duration
+      Dimensions:
+        - Name: FunctionName
+          Value: !Sub SendDailyEmail-${Stage}
+      ComparisonOperator: GreaterThanThreshold
+      Threshold: 240000
+      EvaluationPeriods: 1
+      DatapointsToAlarm: 1
+      Period: 86400
+      Statistic: Maximum
+      TreatMissingData: notBreaching
+
+  # No words set means the email has nothing to send even if SendDailyEmail runs.
+  SetTodaysWordsDidNotRunAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub SetTodaysWordsDidNotRunAlarm-${Stage}
+      AlarmDescription: SetTodaysWords did not run in the last 24 hours - no daily words were selected.
+      AlarmActions:
+        - !Ref AlarmTopic
+      Namespace: AWS/Lambda
+      MetricName: Invocations
+      Dimensions:
+        - Name: FunctionName
+          Value: !Sub SetTodaysWords-${Stage}
+      ComparisonOperator: LessThanThreshold
+      Threshold: 1
+      EvaluationPeriods: 1
+      DatapointsToAlarm: 1
+      Period: 86400
+      Statistic: Sum
+      TreatMissingData: breaching
+
+  SetTodaysWordsFailureAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub SetTodaysWordsFailureAlarm-${Stage}
+      AlarmDescription: SetTodaysWords errored - the daily email will have no words to send.
+      AlarmActions:
+        - !Ref AlarmTopic
+      Namespace: AWS/Lambda
+      MetricName: Errors
+      Dimensions:
+        - Name: FunctionName
+          Value: !Sub SetTodaysWords-${Stage}
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      Threshold: 1
+      EvaluationPeriods: 1
+      DatapointsToAlarm: 1
+      Period: 3600
       Statistic: Sum
       TreatMissingData: notBreaching
 
