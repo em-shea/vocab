@@ -69,6 +69,24 @@ Fix live problems and unblock prerequisites before adding surface area. This pha
 
 ---
 
+## Operational state (2026-08-12)
+
+**Function sizing**, set from observed prod usage rather than defaults:
+
+| Function | Was | Observed | Now |
+|---|---|---|---|
+| `SendDailyEmail` | 128MB / 120s | 101MB, 57s for 343 emails | 512MB / 300s |
+| `SetTodaysWords` | 128MB / 120s | 102MB, 6.9s for 6 lists | 512MB / 300s |
+| `BackupDynamoDBToS3` | 128MB / 120s | **118MB (92%)**, 31s | 1024MB / 300s |
+
+Memory on `SendDailyEmail` grows with subscriber count (every user is held in memory at once) and on `BackupDynamoDBToS3` with total table size (it scans and `json.dumps` the whole table). `SetTodaysWords` grows with the number of lists needing a daily word — which is exactly what user-created lists add.
+
+**Alarms.** The pre-existing alarms only match the string `Error` in the logs, which misses the failures that actually lose a day's email: a timeout, an OOM kill, or the schedule not firing. Added service-metric alarms on both scheduled functions — did-not-run (`Invocations < 1` over 24h, `TreatMissingData: breaching`, since missing data *is* the failure), errored (`Errors >= 1`), and a duration warning at 240s of the 300s limit.
+
+> **The alarm topic had zero subscribers in both prod and staging.** The template declares an email subscription, but SNS email subscriptions require clicking a confirmation link and AWS deletes unconfirmed ones after ~3 days, so it lapsed silently long ago — no alarm in this stack, old or new, could ever notify anyone. Re-subscribed on 2026-08-12; **both are `PendingConfirmation` until the link in each email is clicked.** Worth re-checking with `aws sns list-subscriptions-by-topic` periodically, since nothing in the template detects the lapse.
+
+---
+
 ## Runtime upgrade (blocking all deploys) — DONE
 
 `sam validate --lint` reported `E2531` against every function in `template.yaml`:
