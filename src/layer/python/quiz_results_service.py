@@ -3,7 +3,7 @@ import json
 import boto3
 from dataclasses import asdict
 from models import Quiz
-from boto3.dynamodb.conditions import Attr, Key
+from boto3.dynamodb.conditions import Key
 from datetime import datetime, timedelta
 
 import dynamodb_service
@@ -38,11 +38,16 @@ def query_dynamodb(cognito_id, date_range):
 
     items = dynamodb_service.query_all_pages(
         table,
-        KeyConditionExpression=Key('PK').eq('USER#' + cognito_id) & Key('SK').between(from_key, to_key),
-        FilterExpression=Attr('SK').contains('#QUIZ#')
+        KeyConditionExpression=Key('PK').eq('USER#' + cognito_id) & Key('SK').between(from_key, to_key)
     )
 
-    return items
+    # Sentences share this key range, so they have to be filtered out - but NOT with a
+    # DynamoDB FilterExpression. SK is the table's range key, and a filter may only
+    # reference non-key attributes:
+    #   ValidationException: Filter Expression can only contain non-primary key
+    #   attributes: Primary key attribute: SK
+    # moto does not enforce that rule, so this only fails against real DynamoDB.
+    return [item for item in items if '#QUIZ#' in item['SK']]
 
 def format_quiz_results(quiz_results_item):
 
