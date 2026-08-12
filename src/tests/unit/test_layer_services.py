@@ -107,3 +107,16 @@ def test_generate_ksuid_returns_unique_uuids():
     assert isinstance(first, uuid.UUID)
     assert first != second
     assert len(str(first)) == 36
+
+
+# --- api_response --------------------------------------------------------------
+def test_api_response_marks_2xx_successful():
+    assert json.loads(api_response.response(200, "ok")["body"])["success"] is True
+
+
+def test_api_response_marks_error_codes_unsuccessful():
+    # Regression: only 200 and 502 assigned success_status, so any other code
+    # raised UnboundLocalError instead of returning a response.
+    for code in (400, 403, 404, 409, 500, 502):
+        body = json.loads(api_response.response(code, "nope")["body"])
+        assert body["success"] is False, code

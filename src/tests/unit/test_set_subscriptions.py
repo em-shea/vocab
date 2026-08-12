@@ -1,263 +1,132 @@
+"""Tests for the public sign-up endpoint (POST /set_subs).
+
+This endpoint has no Cognito authorizer, so the caller's identity arrives in the
+request body and cannot be verified. It is therefore create-only: it may create a
+user that does not exist, and must refuse to do anything to one that does. It
+previously fell through to modifying an existing user's subscriptions, which meant
+anyone knowing a subscriber's Cognito sub could add or remove their lists.
+"""
 import json
 
-import unittest
-from unittest import mock
+from boto3.dynamodb.conditions import Key
 
 from set_subscriptions.app import lambda_handler
 
-def mocked_create_user(date, cognito_id, email_address, char_set_preference): 
-    return
+LIST_ID = '1ebcad3f-5dfd-6bfe-bda4-acde48001122'   # HSK Level 1, public (seeded)
+LIST_ID_2 = '1ebcad3f-adc0-6f42-b8b1-acde48001122'  # HSK Level 2, public (seeded)
 
-def mocked_subscribe(date, cognito_id, list_data):
-    return
 
-def mocked_unsubscribe(date, cognito_id, list_data):
-    return
+def _event(body):
+    return {
+        'resource': '/set_subs', 'path': '/set_subs', 'httpMethod': 'POST',
+        'headers': {}, 'body': json.dumps(body), 'isBase64Encoded': False,
+    }
 
-def mocked_query_single_user(cognito_id):
-    response = [
-        {
-            "Date subscribed":"2021-06-16T23:06:48.646688",
-            "GSI1PK":"USER",
-            "List name":"HSK Level 6",
-            "SK":"LIST#1ebcad41-197a-123123#TRADITIONAL",
-            "Status":"subscribed",
-            "GSI1SK":"USER#770e2827-7666-123123123#LIST#1ebcad41-197a-123123#TRADITIONAL",
-            "PK":"USER#770e2827-7666-123123123",
-            "Character set":"traditional",
-        },
-        {
-            "GSI1PK":"USER",
-            "Date created":"2021-06-16T23:06:48.467526",
-            "Character set preference":"traditional",
-            "SK":"USER#770e2827-7666-123123123",
-            "Email address":"test@email.com",
-            "GSI1SK":"USER#770e2827-7666-123123123",
-            "PK":"USER#770e2827-7666-123123123",
-            "User alias": "Not set",
-            "User alias pinyin": "Not set",
-            "User alias emoji": "Not set"
-        }
-    ]
-    return response
 
-class SetSubscriptionsTest(unittest.TestCase):
+def _body(cognito_id='user-1', email='me@test.com', subscriptions=None, list_id=LIST_ID):
+    return {
+        'cognito_id': cognito_id,
+        'email': email,
+        'character_set_preference': 'simplified',
+        'subscriptions': subscriptions if subscriptions is not None else [
+            {'list_id': list_id, 'list_name': 'HSK Level 1', 'character_set': 'simplified'}
+        ],
+    }
 
-    @mock.patch('set_subscriptions.app.create_user', side_effect=mocked_create_user)
-    @mock.patch('set_subscriptions.app.subscribe', side_effect=mocked_subscribe)
-    @mock.patch('set_subscriptions.app.unsubscribe', side_effect=mocked_unsubscribe)
-    @mock.patch('user_service.query_single_user', side_effect=mocked_query_single_user)
-    def test_subscribe(self, query_single_user_mock, unsubscribe_mock, subscribe_mock, create_user_mock):
 
-        event_body = {
-            "cognito_id":"123",
-            "email":"me@testemail.com",
-            "character_set_preference":"simplified",
-            "subscriptions": [
-                {
-                    "list_id":"123",
-                    "list_name":"HSK Level 1",
-                    "character_set":"simplified"
-                },
-                {
-                    "list_id":"234",
-                    "list_name":"HSK Level 2",
-                    "character_set":"simplified"
-                }
-            ]
-        }
-        response = lambda_handler(self.sub_apig_event(json.dumps(event_body)), "")
+def _items(table, cognito_id):
+    return table.query(
+        KeyConditionExpression=Key('PK').eq(f'USER#{cognito_id}')
+    )['Items']
 
-        self.assertEqual(create_user_mock.call_count, 1)
-        self.assertEqual(query_single_user_mock.call_count, 1)
-        # One subscribe call per list in the request.
-        self.assertEqual(subscribe_mock.call_count, 2)
-        self.assertEqual(response["statusCode"], 200)
-        self.assertEqual(json.loads(response["body"]), {"success": True})
-    
-    @mock.patch('set_subscriptions.app.create_user', side_effect=mocked_create_user)
-    @mock.patch('set_subscriptions.app.subscribe', side_effect=mocked_subscribe)
-    @mock.patch('set_subscriptions.app.unsubscribe', side_effect=mocked_unsubscribe)
-    @mock.patch('user_service.query_single_user', side_effect=mocked_query_single_user)
-    def test_unsubscribe_all(self, query_single_user_mock, unsubscribe_mock, subscribe_mock, create_user_mock):
 
-        event_body = {
-            "cognito_id":"123",
-            "email":"me@testemail.com",
-            "character_set_preference":"simplified",
-            "subscriptions": []
-        }
-        response = lambda_handler(self.sub_apig_event(json.dumps(event_body)), "")
+def _private_list(table, list_id='private-list', owner='USER#someone-else'):
+    table.put_item(Item={
+        'PK': 'LIST#' + list_id, 'SK': 'METADATA',
+        'List name': 'Private list', 'Created by': owner, 'Visibility': 'private',
+        'GSI1PK': 'LIST', 'GSI1SK': 'LIST#' + list_id,
+    })
+    return list_id
 
-        self.assertEqual(create_user_mock.call_count, 1)
-        self.assertEqual(query_single_user_mock.call_count, 1)
-        # The request sends no subscriptions, so the user's existing subscribed
-        # list is unsubscribed.
-        self.assertEqual(unsubscribe_mock.call_count, 1)
-        self.assertEqual(response["statusCode"], 200)
-        self.assertEqual(json.loads(response["body"]), {"success": True})
 
-    def sub_apig_event(self, event_body):
-        return {
-            "resource":"/set_subs",
-            "path":"/set_subs",
-            "body":event_body,
-            "httpMethod":"POST",
-            "headers":{
-                "Accept":"application/json, text/plain, */*",
-                "accept-encoding":"gzip, deflate, br",
-                "Accept-Language":"en-US,en;q=0.9,zh-CN;q=0.8,zh-HK;q=0.7,zh-MO;q=0.6,zh;q=0.5",
-                "Authorization":"eyJraWQiOiJq1231235fOwKv46JpjurGKzvma17eqCoaw",
-                "CloudFront-Forwarded-Proto":"https",
-                "CloudFront-Is-Desktop-Viewer":"true",
-                "CloudFront-Is-Mobile-Viewer":"false",
-                "CloudFront-Is-SmartTV-Viewer":"false",
-                "CloudFront-Is-Tablet-Viewer":"false",
-                "CloudFront-Viewer-Country":"IE",
-                "Host":"api.haohaotiantian.com",
-                "origin":"http://localhost:8080",
-                "Referer":"http://localhost:8080/",
-                "sec-ch-ua":"\" Not;A Brand\";v=\"99\", \"Google Chrome\";v=\"91\", \"Chromium\";v=\"91\"",
-                "sec-ch-ua-mobile":"?0",
-                "sec-fetch-dest":"empty",
-                "sec-fetch-mode":"cors",
-                "sec-fetch-site":"cross-site",
-                "User-Agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.114 Safari/537.36",
-                "Via":"2.0 f8591238.cloudfront.net (CloudFront)",
-                "X-Amz-Cf-Id":"rex4fmbUq5pvK123fj5bGvpw==",
-                "X-Amzn-Trace-Id":"Root=1-60e123b7e7b70",
-                "X-Forwarded-For":"123",
-                "X-Forwarded-Port":"123",
-                "X-Forwarded-Proto":"https"
-            },
-            "multiValueHeaders":{
-                "Accept":[
-                    "application/json, text/plain, */*"
-                ],
-                "accept-encoding":[
-                    "gzip, deflate, br"
-                ],
-                "Accept-Language":[
-                    "en-US,en;q=0.9,zh-CN;q=0.8,zh-HK;q=0.7,zh-MO;q=0.6,zh;q=0.5"
-                ],
-                "Authorization":[
-                    "eyJraWQiOiJqVmhFdEN4Y123vZ25pdG123GKzvma17eqCoaw"
-                ],
-                "CloudFront-Forwarded-Proto":[
-                    "https"
-                ],
-                "CloudFront-Is-Desktop-Viewer":[
-                    "true"
-                ],
-                "CloudFront-Is-Mobile-Viewer":[
-                    "false"
-                ],
-                "CloudFront-Is-SmartTV-Viewer":[
-                    "false"
-                ],
-                "CloudFront-Is-Tablet-Viewer":[
-                    "false"
-                ],
-                "CloudFront-Viewer-Country":[
-                    "IE"
-                ],
-                "Host":[
-                    "api.haohaotiantian.com"
-                ],
-                "origin":[
-                    "http://localhost:8080"
-                ],
-                "Referer":[
-                    "http://localhost:8080/"
-                ],
-                "sec-ch-ua":[
-                    "\" Not;A Brand\";v=\"99\", \"Google Chrome\";v=\"91\", \"Chromium\";v=\"91\""
-                ],
-                "sec-ch-ua-mobile":[
-                    "?0"
-                ],
-                "sec-fetch-dest":[
-                    "empty"
-                ],
-                "sec-fetch-mode":[
-                    "cors"
-                ],
-                "sec-fetch-site":[
-                    "cross-site"
-                ],
-                "User-Agent":[
-                    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.114 Safari/537.36"
-                ],
-                "Via":[
-                    "2.0 123.cloudfront.net (CloudFront)"
-                ],
-                "X-Amz-Cf-Id":[
-                    "rex4fmbU123BVnGAOV9sfj5bGvpw=="
-                ],
-                "X-Amzn-Trace-Id":[
-                    "Root=1-60e6d123b70"
-                ],
-                "X-Forwarded-For":[
-                    "123"
-                ],
-                "X-Forwarded-Port":[
-                    "443"
-                ],
-                "X-Forwarded-Proto":[
-                    "https"
-                ]
-            },
-            "queryStringParameters":"None",
-            "multiValueQueryStringParameters":"None",
-            "pathParameters":"None",
-            "stageVariables":"None",
-            "requestContext":{
-                "resourceId":"123",
-                "authorizer":{
-                    "claims":{
-                        "sub":"123123123",
-                        "aud":"123123",
-                        "email_verified":"true",
-                        "event_id":"cc6a7b68-e1bc-417b-9344-123",
-                        "token_use":"id",
-                        "auth_time":"1625312024",
-                        "iss":"https://cognito-idp.us-east-1.amazonaws.com/us-east-1_123",
-                        "cognito:username":"123123123",
-                        "exp":"Thu Jul 08 11:38:59 UTC 2021",
-                        "iat":"Thu Jul 08 10:38:59 UTC 2021",
-                        "email":"test@email.com"
-                    }
-                },
-                "resourcePath":"/user_data",
-                "httpMethod":"GET",
-                "extendedRequestId":"CJZWoF123FT_Q=",
-                "requestTime":"08/Jul/2021:10:38:59 +0000",
-                "path":"/user_data",
-                "accountId":"123",
-                "protocol":"HTTP/1.1",
-                "stage":"Prod",
-                "domainPrefix":"api",
-                "requestTimeEpoch":123,
-                "requestId":"11875c1237fec0aab",
-                "identity":{
-                    "cognitoIdentityPoolId":"None",
-                    "accountId":"None",
-                    "cognitoIdentityId":"None",
-                    "caller":"None",
-                    "sourceIp":"54",
-                    "principalOrgId":"None",
-                    "accessKey":"None",
-                    "cognitoAuthenticationType":"None",
-                    "cognitoAuthenticationProvider":"None",
-                    "userArn":"None",
-                    "userAgent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.114 Safari/537.36",
-                    "user":"None"
-                },
-                "domainName":"api.haohaotiantian.com",
-                "apiId":"123"
-            },
-            "isBase64Encoded":False
-            }
+def test_new_user_is_created_with_their_subscription(seeded_vocab_lists, dynamodb_table):
+    response = lambda_handler(_event(_body()), '')
 
-    if __name__ == '__main__':
-        unittest.main()
+    assert response['statusCode'] == 200
+    assert json.loads(response['body'])['success'] is True
+
+    items = _items(dynamodb_table, 'user-1')
+    assert {i['SK'] for i in items} == {
+        'USER#user-1', f'LIST#{LIST_ID}#SIMPLIFIED',
+    }
+    subscription = next(i for i in items if i['SK'].startswith('LIST#'))
+    assert subscription['Status'] == 'subscribed'
+
+
+def test_multiple_initial_subscriptions_are_created(seeded_vocab_lists, dynamodb_table):
+    body = _body(subscriptions=[
+        {'list_id': LIST_ID, 'list_name': 'HSK Level 1', 'character_set': 'simplified'},
+        {'list_id': LIST_ID_2, 'list_name': 'HSK Level 2', 'character_set': 'traditional'},
+    ])
+
+    response = lambda_handler(_event(body), '')
+
+    assert response['statusCode'] == 200
+    subs = [i for i in _items(dynamodb_table, 'user-1') if i['SK'].startswith('LIST#')]
+    assert len(subs) == 2
+
+
+def test_existing_user_is_rejected(seeded_vocab_lists, dynamodb_table):
+    lambda_handler(_event(_body()), '')
+
+    response = lambda_handler(_event(_body(email='attacker@test.com')), '')
+
+    assert response['statusCode'] == 409
+    assert json.loads(response['body'])['success'] is False
+
+
+def test_existing_users_subscriptions_are_left_untouched(seeded_vocab_lists, dynamodb_table):
+    """The security property: an unverifiable caller cannot alter a real user.
+
+    Previously this handler swallowed the 'user exists' condition failure and went
+    on to reconcile subscriptions - so passing an empty subscriptions list for
+    somebody else's cognito_id unsubscribed them from everything.
+    """
+    lambda_handler(_event(_body()), '')
+    before = _items(dynamodb_table, 'user-1')
+
+    # An attacker who knows the sub tries to wipe the victim's subscriptions.
+    response = lambda_handler(_event(_body(subscriptions=[])), '')
+
+    assert response['statusCode'] == 409
+    after = _items(dynamodb_table, 'user-1')
+    assert after == before
+
+    subscription = next(i for i in after if i['SK'].startswith('LIST#'))
+    assert subscription['Status'] == 'subscribed'
+
+
+def test_email_of_existing_user_cannot_be_overwritten(seeded_vocab_lists, dynamodb_table):
+    lambda_handler(_event(_body(email='victim@test.com')), '')
+
+    lambda_handler(_event(_body(email='attacker@test.com')), '')
+
+    metadata = next(i for i in _items(dynamodb_table, 'user-1') if i['SK'].startswith('USER#'))
+    assert metadata['Email address'] == 'victim@test.com'
+
+
+def test_signing_up_to_a_private_list_is_refused(seeded_vocab_lists, dynamodb_table):
+    list_id = _private_list(dynamodb_table)
+
+    response = lambda_handler(_event(_body(list_id=list_id)), '')
+
+    assert response['statusCode'] == 403
+    # No user is created as a side effect of the rejected request.
+    assert _items(dynamodb_table, 'user-1') == []
+
+
+def test_signing_up_to_an_unknown_list_is_refused(seeded_vocab_lists, dynamodb_table):
+    response = lambda_handler(_event(_body(list_id='no-such-list')), '')
+
+    assert response['statusCode'] == 403
+    assert _items(dynamodb_table, 'user-1') == []
