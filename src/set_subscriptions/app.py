@@ -1,74 +1,146 @@
 import os
 import json
+import boto3
 import datetime
+from botocore.exceptions import ClientError
 
-import subscription_service
+import user_service
 
-# Public sign-up endpoint (POST /set_subs) - NO Cognito authorizer.
-#
-# The caller's identity arrives in the request body and cannot be verified, so this
-# handler is deliberately create-only: it will create a user that does not yet exist
-# and give it its initial subscriptions, and it refuses to do anything at all to a
-# user that already exists. Changing an existing user's subscriptions requires the
-# authorized POST /subscriptions endpoint, which reads the identity from verified
-# token claims.
-#
-# This split exists because the endpoint previously trusted event_body['cognito_id']
-# for both jobs, so anyone knowing a subscriber's Cognito sub could add or remove
-# that person's subscriptions.
+table = boto3.resource('dynamodb', region_name=os.environ['AWS_REGION']).Table(os.environ['TABLE_NAME'])
 
-
-def _response(status_code, body):
-    return {
-        'statusCode': status_code,
-        'headers': {
-            'Access-Control-Allow-Methods': 'POST,OPTIONS',
-            'Access-Control-Allow-Origin': '*',
-        },
-        'body': json.dumps(body)
-    }
-
-
+# Set subscriptions (subscribe or unsubscribe) and create user if none exists yet
 def lambda_handler(event, context):
     print(event)
 
     event_body = json.loads(event["body"])
     date = str(datetime.datetime.now().isoformat())
 
-    cognito_id = event_body['cognito_id']
-    subscriptions = event_body.get('subscriptions') or []
-
-    # Anonymous callers may only subscribe to public lists
-    unreadable = subscription_service.reject_unreadable_lists(subscriptions)
-    if unreadable:
-        print(f"Error: Sign-up requested non-public list(s) - {unreadable}.")
-        return _response(403, {"success": False, "message": "Unknown or unavailable vocab list."})
+    error_message = {
+        'statusCode': 502,
+        'headers': {
+            'Access-Control-Allow-Methods': 'POST,OPTIONS',
+            'Access-Control-Allow-Origin': '*',
+        },
+        'body': '{"success" : false}'
+    }
 
     try:
-        subscription_service.create_user(
-            date, cognito_id, event_body['email'], event_body['character_set_preference']
-        )
-    except subscription_service.UserAlreadyExists:
-        # Never fall through to modifying an existing user - that was the hole
-        print(f"Sign-up attempted for an existing user - {cognito_id}.")
-        return _response(409, {
-            "success": False,
-            "message": "User already exists. Sign in to change your subscriptions."
-        })
+        create_user(date, event_body['cognito_id'], event_body['email'], event_body['character_set_preference'])
     except Exception as e:
-        print(f"Error: Failed to create user - {cognito_id}.")
-        print(e)
-        return _response(502, {"success": False})
+        print('error creating user', e)
+        if e.response['Error']['Code'] == "ConditionalCheckFailedException":
+            # User already exists, skip
+            print(f"User already exists- {event_body['email'][5:]}.")
+            pass
+        else: 
+            print(f"Error: Failed to create user - {event_body['email'][5:]}, {event_body['cognito_id']}.")
+            print(e)
+            return error_message
 
-    # A brand new user has no existing subscriptions, so this is a plain create -
-    # no unsubscribe pass is needed or wanted here.
-    for subscription in subscriptions:
+    # Get a list of ids for all lists the user is currently subscribed to
+    user = user_service.get_single_user(event_body['cognito_id'])
+    print(user)
+
+    # API call will pass all of the users current lists
+    # It will call subscribe for all lists and do nothing (ConditionExpression = "attribute_not_exists(PK)")
+    # if the subscription is already stored
+    # It will check if there are any existing lists not in the new list and it will unsubscribe
+    new_subscription_list_ids = []
+    for subscription in event_body['subscriptions']:
+        new_subscription_list_ids.append(subscription['list_id'] + "#" + subscription['character_set'].upper())
+
+    # TODO: Currently making an API call per update. Batch updates?
+    for subscription in event_body['subscriptions']:
         try:
-            subscription_service.subscribe(date, cognito_id, subscription)
+            subscribe(date, event_body['cognito_id'], subscription)
             print(f"sub {subscription['list_id']}, {subscription['character_set']}")
         except Exception as e:
-            print(f"Error: Failed to subscribe new user - {cognito_id}, {subscription['list_id']}.")
-            print(e)
-            return _response(502, {"success": False})
+            print('error subscribing user', e)
+            if e.response['Error']['Code'] == "ConditionalCheckFailedException":
+                # Subscription already exists, skip
+                print(f"Subcription already exists- {event_body['email'][5:]}, {subscription['list_id']}.")
+                pass
+            else: 
+                print(f"Error: Failed to subscribe user - {event_body['email'][5:]}, {subscription['list_id']}.")
+                print(e)
+                return error_message
+    # does existing list check for simplified/traditional?
+    for existing_subscription in user.subscriptions:
+        if existing_subscription.unique_list_id not in new_subscription_list_ids and existing_subscription.status == "subscribed":
+            try:
+                unsubscribe(date, event_body['cognito_id'], existing_subscription)
+                print(f"unsub, {existing_subscription.unique_list_id}")
+            except Exception as e:
+                print('error unsubscribing user', e)
+                print(f"Error: Failed to unsubscribe user - {event_body['email'][5:]}, {existing_subscription.list_id}.")
+                print(e)
+                return error_message
 
-    return _response(200, {"success": True})
+    return {
+            'statusCode': 200,
+            'headers': {
+                'Access-Control-Allow-Methods': 'POST,OPTIONS',
+                'Access-Control-Allow-Origin': '*',
+            },
+            'body': '{"success" : true}'
+        }
+
+# Write new contact to Dynamo if it doesn't already exist
+def create_user(date, cognito_id, email_address, character_set_preference):
+
+    response = table.put_item(
+        Item = {
+                'PK': "USER#" + cognito_id,
+                'SK': "USER#" + cognito_id,
+                'Email address': email_address,
+                'Date created': date,
+                'Last login': date,
+                'Character set preference': character_set_preference,
+                'User alias': "Not set",
+                'User alias pinyin': "Not set",
+                'User alias emoji': "Not set",
+                'GSI1PK': "USER",
+                'GSI1SK': "USER#" + cognito_id
+            },
+            ConditionExpression = "attribute_not_exists(PK)"
+        )
+    return response
+
+def subscribe(date, cognito_id, subscription):
+
+    # PutItem will overwrite an existing item with the same key
+    response = table.put_item(
+        Item={
+                'PK': "USER#" + cognito_id,
+                'SK': "LIST#" + subscription['list_id'] + "#" + subscription['character_set'].upper(),
+                'List name': subscription['list_name'],
+                'Date subscribed': date,
+                'Status': 'subscribed',
+                'Character set': subscription['character_set'],
+                'GSI1PK': "USER",
+                'GSI1SK': "USER#" + cognito_id + "#LIST#" + subscription['list_id'] + "#" + subscription['character_set'].upper()
+        }
+    )
+
+    return response
+
+def unsubscribe(date, cognito_id, subscription):
+
+    response = table.update_item(
+        Key = {
+            "PK": "USER#" + cognito_id,
+            "SK": "LIST#" + subscription.list_id + "#" + subscription.character_set.upper()
+        },
+        UpdateExpression = "set #s = :status, #d = :date",
+        ExpressionAttributeValues = {
+            ":status": "unsubscribed",
+            ":date": date
+        },
+        ExpressionAttributeNames = {
+            "#s": "Status",
+            "#d": "Date unsubscribed"
+        },
+        ReturnValues = "UPDATED_NEW"
+        )
+
+    return response
