@@ -174,7 +174,19 @@ Neither `list_word_service.get_words_in_list` (`:51`, single `table.query`, no `
 
 ---
 
-## Phase 1 — Vue 3 + Vite scaffold and design system
+## Phase 1 — Vue 3 + Vite scaffold and design system — IMPLEMENTED
+
+> **Status:** shipped to both branches 2026-08-13, in `vocab-frontend-vue/v2/`. The Vue 2 app is untouched and still builds and deploys; nothing about the live site changed.
+>
+> **Bundle:** 245 KB of JS against the Vue 2 app's 1 792 KB. Fonts total 1.2 MB on disk but load selectively — Latin faces keep Google's `unicode-range` split, and only the weights a page uses are fetched.
+>
+> **Font subsetting is a maintained artefact, not a one-off.** `v2/scripts/build-fonts.mjs` regenerates the Ma Shan Zheng display subset (78 characters). It must be re-run when brush copy gains a character, otherwise that character silently falls back to the serif — which happened during this phase with 印 in `PrintFrame` and was only caught by looking at the rendered page.
+>
+> **Vite needed `define: { global: 'globalThis' }`.** `amazon-cognito-identity-js` pulls in `buffer`, which expects Node's `global`. Webpack shimmed it automatically; without it the app renders a blank page with `ReferenceError: global is not defined`. Worth knowing before porting any other Node-flavoured dependency.
+>
+> **Verification harness:** `v2/scripts/shoot.mjs` (Playwright) screenshots at 390 and 1120 and fails on horizontal overflow. Phase 4 needs exactly this to diff ported screens against the current-state screenshot set, so it is a script rather than ad hoc browser steps.
+>
+> **Still open for Phase 2:** the design mockup. `Haohaotiantian Redesign.dc.html` has not been dropped into `vocab-frontend-vue/v2/design/`, so token values are from the written brief and have not been matched against the real design.
 
 Stand up the new app alongside the old one so the old site keeps serving until cutover.
 
