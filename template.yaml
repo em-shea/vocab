@@ -166,7 +166,11 @@ Resources:
       Handler: app.lambda_handler
       Runtime: python3.13
       CodeUri: src/set_subscriptions
-      Description: A function that creates, updates, or deletes users' list subscription
+      # Public sign-up only. Deliberately has no authorizer, because at sign-up the
+      # user has no token yet - so it is create-only and cannot touch an existing
+      # user. Changes to an existing user's subscriptions go through
+      # UpdateSubscriptions below, which verifies identity from token claims.
+      Description: A function that signs up a new user with their initial list subscriptions
       Timeout: 120
       Policies:
         - DynamoDBCrudPolicy:
@@ -181,6 +185,34 @@ Resources:
             RestApiId: !Ref VocabAppApi
             Path: /set_subs
             Method: POST
+      Layers:
+      - !Ref Layer
+
+  UpdateSubscriptions:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      FunctionName: !Sub UpdateSubscriptions-${Stage}
+      Handler: app.lambda_handler
+      Runtime: python3.13
+      CodeUri: src/update_subscriptions
+      Description: A function that updates a signed-in user's list subscriptions
+      MemorySize: 128
+      Timeout: 120
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref DynamoDBTable
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref DynamoDBTable
+      Events:
+        UpdateSubscriptionsApi:
+          Type: Api
+          Properties:
+            RestApiId: !Ref VocabAppApi
+            Path: /subscriptions
+            Method: POST
+            Auth:
+              Authorizer: CognitoAuthorizer
       Layers:
       - !Ref Layer
 
@@ -884,6 +916,48 @@ Resources:
       Statistic: Sum
       TreatMissingData: notBreaching
   
+  # UpdateSubscriptions took over half of SetSubscriptions' job, so it gets the same
+  # error coverage - otherwise splitting the endpoint would quietly halve it.
+  UpdateSubscriptionsLogGroup:
+    Type: AWS::Logs::LogGroup
+    DependsOn:
+      - UpdateSubscriptions
+    Properties:
+      RetentionInDays: 90
+      LogGroupName:
+        !Join [
+          '',
+          ['/aws/lambda/', !Sub 'UpdateSubscriptions-${Stage}']
+        ]
+
+  UpdateSubscriptionsErrorMetricFilter:
+    Type: AWS::Logs::MetricFilter
+    DependsOn: UpdateSubscriptionsLogGroup
+    Properties:
+      LogGroupName: !Ref UpdateSubscriptionsLogGroup
+      FilterPattern: 'Error'
+      MetricTransformations:
+        - MetricValue: "1"
+          MetricNamespace: !Sub "VocabFunctionErrors-${Stage}"
+          MetricName: !Sub "UpdateSubscriptionsErrorMetrics-${Stage}"
+
+  UpdateSubscriptionsErrorAlarm:
+    Type: AWS::CloudWatch::Alarm
+    DependsOn: UpdateSubscriptionsErrorMetricFilter
+    Properties:
+      AlarmName: !Sub UpdateSubscriptionsErrorAlarm-${Stage}
+      AlarmActions:
+        - !Ref AlarmTopic
+      MetricName: !Sub UpdateSubscriptionsErrorMetrics-${Stage}
+      Namespace: !Sub VocabFunctionErrors-${Stage}
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      EvaluationPeriods: 1
+      DatapointsToAlarm: 1
+      Threshold: 1
+      Period: 120
+      Statistic: Sum
+      TreatMissingData: notBreaching
+
   UnsubscribeLogGroup:
     Type: AWS::Logs::LogGroup
     DependsOn:
