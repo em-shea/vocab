@@ -25,6 +25,8 @@ The intended outcome: ship the redesigned, bilingual site first as a standalone 
 
 **The frontend toolchain is dead.** Vue 2.6, Vue CLI 3, eslint 5, Amplify v3, axios 0.19 loaded from a CDN, Bootstrap 4 from a CDN, ~22 open dependabot branches. The redesign rewrites every template anyway, so the decision is a **Vue 3 + Vite rewrite** in the existing repo — reusing its S3/CloudFront deploy workflow rather than doing the same template work twice on an EOL stack.
 
+> **Frontend deploys were broken and are now fixed (2026-08-13).** `master` could not be built at all: its 2023 lockfile pinned `node-sass ^6.0.1`, which needs native compilation and does not support Node 18, so `npm install` failed. The CircleCI → GitHub Actions migration had been made on `staging` and never merged, so pushing to `master` triggered nothing — prod's `index.html` in S3 was dated 2023-11-14. `staging` was merged into `master` (keeping master's `.env.production`, which alone had the correct prod Cognito pool), and the deploy workflow now fails the build if the bundle carries the wrong pool or API URL for its branch. Phase 4's cutover depends on this pipeline working.
+
 **The design mockup is not yet in hand.** `Haohaotiantian Redesign.dc.html` was not available when this plan was written. The upstream brief is `design-handoff-shuihuzhuan.md` and a 25-shot current-state screenshot set exists for regression comparison. This plan is built from the written redesign notes, which carry the full palette, type stack, and section flow. **Before Phase 2 starts, drop the `.dc.html` into `vocab-frontend-vue/design/` so token values and section markup can be matched exactly.**
 
 **The collection layer ships to a beta cohort, not to everyone.** Progression is a year-long time-based mechanic against a live subscriber base. It deploys to prod dark behind a per-user flag rather than to a third AWS environment — see [Rollout and isolation strategy](#rollout-and-isolation-strategy-applies-to-phases-68). This keeps the redesign (Phases 0–5) on a normal cutover, unblocked by the risky part.
@@ -69,6 +71,18 @@ Fix live problems and unblock prerequisites before adding surface area. This pha
 
 ---
 
+## Decisions taken (2026-08-13)
+
+| Decision | Status | Notes |
+|---|---|---|
+| **Practice sentences UI** | **Off** | Backend is live in prod; the UI ships but is gated by `SENTENCES_ENABLED` in `vocab-frontend-vue/src/featureFlags.js`. Profile shows the previous placeholder card and `/sentences` redirects to `/profile`. Flip one boolean to enable. |
+| **Email verification** | **Stays auto-confirm** | `pre_sign_up` continues to auto-confirm, so no verification email is sent and anyone can subscribe another person's address. Accepted for now; revisit in Phase 3 with the subscribe-flow redesign. |
+| **Subscription endpoints** | **Split, shipped** | `POST /set_subs` is public sign-up only and rejects existing users; `POST /subscriptions` is Cognito-authorized and takes identity from token claims. Both enforce list visibility. |
+
+Because email verification stays as-is, the argument in [User-created vocab lists](#user-created-vocab-lists-decisions) holds: the split is the right shape, since there is no email round-trip to piggyback on. If double opt-in is adopted later, revisit whether `/set_subs` needs to stay public at all.
+
+---
+
 ## Operational state (2026-08-12)
 
 **Function sizing**, set from observed prod usage rather than defaults:
@@ -83,7 +97,9 @@ Memory on `SendDailyEmail` grows with subscriber count (every user is held in me
 
 **Alarms.** The pre-existing alarms only match the string `Error` in the logs, which misses the failures that actually lose a day's email: a timeout, an OOM kill, or the schedule not firing. Added service-metric alarms on both scheduled functions — did-not-run (`Invocations < 1` over 24h, `TreatMissingData: breaching`, since missing data *is* the failure), errored (`Errors >= 1`), and a duration warning at 240s of the 300s limit.
 
-> **The alarm topic had zero subscribers in both prod and staging.** The template declares an email subscription, but SNS email subscriptions require clicking a confirmation link and AWS deletes unconfirmed ones after ~3 days, so it lapsed silently long ago — no alarm in this stack, old or new, could ever notify anyone. Re-subscribed on 2026-08-12; **both are `PendingConfirmation` until the link in each email is clicked.** Worth re-checking with `aws sns list-subscriptions-by-topic` periodically, since nothing in the template detects the lapse.
+> **The alarm topic had zero subscribers in both prod and staging.** The template declares an email subscription, but SNS email subscriptions require clicking a confirmation link and AWS deletes unconfirmed ones after ~3 days, so it lapsed silently long ago — no alarm in this stack, old or new, could notify anyone. Re-subscribed 2026-08-12 and **confirmed 2026-08-13**; both topics now show a confirmed email subscription. Nothing in the template detects a future lapse, so it is worth re-checking with `aws sns list-subscriptions-by-topic` occasionally.
+
+**First run of the new daily pipeline (2026-08-12, 20:00 UTC):** 344 emails against a 343 baseline, 47.1s (down from 56.4s), 114MB of the new 512MB limit. No errors. Confirms the data-driven list path and `get_subscribed_list_ids()` work against 468 real subscriptions.
 
 ---
 
