@@ -63,10 +63,16 @@ class Sentence:
 class User:
     email_address: str
     user_id: str
+    # How study content renders: 'simplified' or 'traditional'.
     character_set_preference: str
     user_alias: str
     user_alias_pinyin: str
     user_alias_emoji: str
+    # Which language the interface is written in: 'en' or 'cn'. A separate axis
+    # from character_set_preference - a learner can read an English interface
+    # while studying traditional characters. Defaults for records written before
+    # the field existed.
+    language_preference: str = 'en'
     subscriptions: Optional [List[Subscription]] = None
     quizzes: Optional [List[Quiz]] = None
     sentences: Optional [List[Sentence]] = None

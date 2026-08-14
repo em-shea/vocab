@@ -3,9 +3,105 @@ import json
 import unittest
 from unittest import mock
 
-from set_user_data.app import lambda_handler
+from boto3.dynamodb.conditions import Key
+
+from set_user_data.app import lambda_handler, update_user_data, NothingToUpdate
+
+
+def _user_item(uid='u1', **overrides):
+    item = {
+        'PK': f'USER#{uid}', 'SK': f'USER#{uid}',
+        'GSI1PK': 'USER', 'GSI1SK': f'USER#{uid}',
+        'Email address': f'{uid}@test.com',
+        'Character set preference': 'simplified',
+        'Date created': '2026-01-01T00:00:00',
+        'User alias': 'Not set', 'User alias pinyin': 'Not set',
+        'User alias emoji': 'Not set',
+    }
+    item.update(overrides)
+    return item
+
+
+def _read(table, uid='u1'):
+    return table.query(KeyConditionExpression=Key('PK').eq(f'USER#{uid}'))['Items'][0]
+
+
+def test_updates_only_the_fields_supplied(dynamodb_table):
+    """The preferences switch sends language and character set alone.
+
+    This used to require all four profile fields and raised KeyError otherwise,
+    so it could only be called by the full profile form.
+    """
+    dynamodb_table.put_item(Item=_user_item())
+
+    update_user_data('u1', {'character_set_preference': 'traditional',
+                            'language_preference': 'cn'})
+
+    item = _read(dynamodb_table)
+    assert item['Character set preference'] == 'traditional'
+    assert item['Language preference'] == 'cn'
+    # Untouched fields are left alone rather than blanked.
+    assert item['User alias'] == 'Not set'
+    assert item['Email address'] == 'u1@test.com'
+
+
+def test_updates_the_full_profile(dynamodb_table):
+    dynamodb_table.put_item(Item=_user_item())
+
+    update_user_data('u1', {
+        'user_alias': '小王 📙', 'user_alias_pinyin': 'xiǎo wáng',
+        'user_alias_emoji': '📙', 'character_set_preference': 'traditional',
+    })
+
+    item = _read(dynamodb_table)
+    assert item['User alias'] == '小王 📙'
+    assert item['User alias emoji'] == '📙'
+    assert item['Character set preference'] == 'traditional'
+
+
+def test_unknown_fields_are_ignored(dynamodb_table):
+    """A caller must not be able to write arbitrary attributes onto a user."""
+    dynamodb_table.put_item(Item=_user_item())
+
+    update_user_data('u1', {'language_preference': 'cn', 'Email address': 'attacker@x.com',
+                            'GSI1PK': 'nonsense'})
+
+    item = _read(dynamodb_table)
+    assert item['Language preference'] == 'cn'
+    assert item['Email address'] == 'u1@test.com'
+    assert item['GSI1PK'] == 'USER'
+
+
+def test_invalid_preference_values_are_ignored(dynamodb_table):
+    dynamodb_table.put_item(Item=_user_item())
+
+    update_user_data('u1', {'language_preference': 'fr',
+                            'character_set_preference': 'traditional'})
+
+    item = _read(dynamodb_table)
+    assert 'Language preference' not in item
+    assert item['Character set preference'] == 'traditional'
+
+
+def test_no_recognised_fields_raises(dynamodb_table):
+    dynamodb_table.put_item(Item=_user_item())
+
+    try:
+        update_user_data('u1', {'nothing': 'useful'})
+    except NothingToUpdate:
+        pass
+    else:
+        raise AssertionError('expected NothingToUpdate')
+
 
 class SetUserDataTest(unittest.TestCase):
+
+    @mock.patch('set_user_data.app.update_user_data', side_effect=NothingToUpdate())
+    def test_request_with_no_known_fields_returns_400(self, update_mock):
+        response = lambda_handler(self.sub_apig_event(json.dumps({'nope': 1})), "")
+
+        self.assertEqual(response["statusCode"], 400)
+        self.assertFalse(json.loads(response["body"])["success"])
 
     @mock.patch('set_user_data.app.update_user_data')
     def test_build(self, update_user_data_mock):

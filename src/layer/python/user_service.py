@@ -123,11 +123,12 @@ def _format_user_data(user_data):
 
     user = User(
         email_address = '',
-        user_id = '', 
+        user_id = '',
         character_set_preference = '',
-        user_alias = '', 
-        user_alias_pinyin = '', 
+        user_alias = '',
+        user_alias_pinyin = '',
         user_alias_emoji = '',
+        language_preference = 'en',
         subscriptions = [],
         quizzes = [],
         sentences = []
@@ -148,6 +149,9 @@ def _format_user_data(user_data):
             user.email_address = item.get('Email address', '')
             user.user_id = item['PK'][5:]
             user.character_set_preference = item.get('Character set preference', 'simplified')
+            # Records written before the interface language existed have no such
+            # attribute; those users see English until they choose otherwise.
+            user.language_preference = item.get('Language preference', 'en')
             user.date_created = item.get('Date created')
             user.user_alias = item.get('User alias', 'Not set')
             user.user_alias_pinyin = item.get('User alias pinyin', 'Not set')

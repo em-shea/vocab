@@ -152,3 +152,22 @@ def test_quizzes_and_sentences_are_dispatched_by_key_shape(dynamodb_table):
     # Missing word attributes fall back rather than raising.
     assert user.sentences[0].word.simplified == "中文"
     assert user.sentences[0].word.hsk_level == ""
+
+
+def test_language_preference_is_read_from_the_record(dynamodb_table):
+    dynamodb_table.put_item(Item=_user_item("abc", **{"Language preference": "cn"}))
+
+    user = user_service.get_single_user("abc")
+
+    assert user.language_preference == "cn"
+    # The two preferences are independent axes.
+    assert user.character_set_preference == "simplified"
+
+
+def test_language_preference_defaults_for_older_records(dynamodb_table):
+    """Every user predates this field; they must load and see English."""
+    dynamodb_table.put_item(Item=_user_item("abc"))
+
+    user = user_service.get_single_user("abc")
+
+    assert user.language_preference == "en"
