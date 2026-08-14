@@ -204,7 +204,19 @@ Stand up the new app alongside the old one so the old site keeps serving until c
 
 ---
 
-## Phase 2 — Bilingual i18n
+## Phase 2 — Bilingual i18n — IMPLEMENTED
+
+> **Status:** shipped to both branches 2026-08-14. 175 backend tests green, coverage 87%.
+>
+> **The copy did not need writing.** The design file defines its own `en` and `cn` objects — 73 keys each, matching exactly — so both languages are extracted verbatim and the keys keep the design's names. Any string traces back to the mockup that specified it.
+>
+> **Preference order is link → account → localStorage.** `?lang=` / `?char=` on an emailed link wins, a signed-in user's record is adopted on load, and later changes sync back to it.
+>
+> **`set_user_data` had to become a partial update.** It previously required all four profile fields and raised `KeyError` otherwise, so only the full profile form could call it. It now updates whichever known fields a request carries, ignores unknown ones rather than writing them, and validates the two preference values against their allowed sets.
+>
+> **Bug found while verifying:** `route.query` is empty in the root component's `onMounted` because the router's first navigation has not resolved, so `?lang=` on a link was silently ignored. `main.js` now waits for `router.isReady()` before mounting. Worth remembering for Phase 4 — every ported screen reading query params depends on this.
+>
+> The styleguide's sample word changed from 前面 to 爱护/愛護: 前面 is identical in both character sets, so it could not demonstrate the axis it was there to demonstrate.
 
 Do this **before** porting screens, so every ported string is keyed on first write rather than retrofitted.
 
