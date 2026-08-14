@@ -229,7 +229,19 @@ Do this **before** porting screens, so every ported string is keyed on first wri
 
 ---
 
-## Phase 3 — Home page (5a) and subscribe flow
+## Phase 3 — Home page (5a) and subscribe flow — IMPLEMENTED
+
+> **Status:** shipped to both branches 2026-08-14. All seven sections built with the design's own copy in both languages, running on live data. Verified at 390 and 1120 in both languages: no overflow, no console errors.
+>
+> **Real data, not fixtures.** `GET /sample_vocab` drives the level tabs and every word card, and the featured daily word is a real sample from whichever level is open.
+>
+> **Pronunciation button added to the word card.** Plays from `audio_file_key`, with playing and error states, and stops on unmount. Words with no recording render *no button* — the Vue 2 app rendered one regardless on `practiceSentenceCard.vue` and `UserProfile.vue`, so those clicked and did nothing. Every word in prod currently has audio, so the empty case is only reachable from the styleguide, where all three states are shown.
+>
+> **Subscribe flow** does what the current site does — Cognito sign-up, then `POST /set_subs`. Because `/set_subs` is now create-only, a repeat address surfaces as `UsernameExistsException` and the form points at sign-in rather than appearing to succeed.
+>
+> Two defects found only by looking at the rendered page: the level select was empty because the lists load asynchronously and nothing chose a default, and long HSK definitions stretched one sample card far past its neighbours.
+>
+> **Still placeholder:** the woodblock prints and the heroes board are `PrintFrame` stand-ins pending real artwork — see [Open dependencies](#open-dependencies-not-solvable-in-code). The "upload my own list" button points at `/manage-lists` and needs the `POST /lists` endpoint from [User-created vocab lists](#user-created-vocab-lists-decisions).
 
 Build the seven sections in order, prints and text alternating sides:
 
