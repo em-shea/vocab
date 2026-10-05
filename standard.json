@@ -1,0 +1,7 @@
+{
+    "standard": "hsk-2010",
+    "applies_to": [
+        "hsk_vocab.csv"
+    ],
+    "$comment": "hsk_vocab.csv follows the original 2009-10 HSK word lists (levels 1-6). Hanban revised them in late 2012, and the HSK 3.0 exam that launches on 13 December 2026 follows the 2025 syllabus, which places about half of the words they share at a different level."
+}
