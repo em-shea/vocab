@@ -10,6 +10,7 @@ from botocore.exceptions import ClientError
 import user_service
 import list_word_service
 import review_word_service
+from email_message import send_html_email
 
 # region_name specified in order to mock in unit tests
 ses_client = boto3.client('ses', region_name=os.environ['AWS_REGION'])
@@ -225,25 +226,12 @@ def assemble_word_html_content(user_email, subscription, todays_words):
 
 def send_email(user, email_content):
 
-    response = ses_client.send_email(
-        Source = "Haohaotiantian <vocab@haohaotiantian.com>",
-        Destination = {
-            "ToAddresses" : [
-            user.email_address
-            ]
-        },
-        Message = {
-            "Subject": {
-            "Charset": "UTF-8",
-            "Data": "Daily vocab word - " + datetime.today().strftime('%b. %d, %Y')
-            },
-            "Body": {
-                "Html": {
-                    "Charset": "UTF-8",
-                    "Data": email_content
-                }
-            }
-        }
+    subject = "Daily vocab word - " + datetime.today().strftime('%b. %d, %Y')
+    return send_html_email(
+        ses_client,
+        "Haohaotiantian <vocab@haohaotiantian.com>",
+        user.email_address,
+        subject,
+        email_content,
+        bulk=True,
     )
-
-    return response
