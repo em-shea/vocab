@@ -92,6 +92,12 @@ Resources:
       Policies:
         - SESCrudPolicy:
             IdentityName: haohaotiantian.com
+        # Emails are sent raw so they can carry headers that stop out-of-office replies.
+        - Statement:
+          - Effect: Allow
+            Action:
+            - ses:SendRawEmail
+            Resource: "*"
         - S3ReadPolicy:
             BucketName: !Ref VocabAnnouncementsBucket
         - DynamoDBCrudPolicy:
@@ -513,6 +519,59 @@ Resources:
           Properties:
             Schedule: cron(0 16 ? * FRI *)
 
+  # SES publishes bounces and complaints for haohaotiantian.com to this topic, which
+  # lets email feedback forwarding be switched off (no more bounce emails in the inbox).
+  # Wiring the identity to the topic is a one-off CLI step: see docs/email-feedback.md.
+  EmailFeedbackTopic:
+    Type: AWS::SNS::Topic
+
+  EmailFeedbackTopicPolicy:
+    Type: AWS::SNS::TopicPolicy
+    Properties:
+      Topics:
+        - !Ref EmailFeedbackTopic
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ses.amazonaws.com
+            Action: sns:Publish
+            Resource: !Ref EmailFeedbackTopic
+            Condition:
+              StringEquals:
+                AWS:SourceAccount: !Ref AWS::AccountId
+
+  HandleEmailFeedback:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      FunctionName: !Sub HandleEmailFeedback-${Stage}
+      Handler: app.lambda_handler
+      Runtime: python3.13
+      CodeUri: src/handle_email_feedback
+      Description: Unsubscribes addresses that hard-bounce or complain.
+      MemorySize: 128
+      Timeout: 30
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref DynamoDBTable
+        - Statement:
+          - Effect: Allow
+            Action:
+            - cognito-idp:AdminGetUser
+            Resource: !GetAtt UserPool.Arn
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref DynamoDBTable
+          USER_POOL_ID: !Ref UserPool
+      Events:
+        Feedback:
+          Type: SNS
+          Properties:
+            Topic: !Ref EmailFeedbackTopic
+      Layers:
+      - !Ref Layer
+
   Layer:
     Type: 'AWS::Serverless::LayerVersion'
     Properties:
@@ -777,7 +836,10 @@ Resources:
             - Effect: Allow
               Action:
                 - ses:SendEmail
+                - ses:SendRawEmail
               Resource: "*"
+      Layers:
+      - !Ref Layer
   
   VerifyAuthChallengeResponse:
     Type: AWS::Serverless::Function
@@ -1156,6 +1218,9 @@ Resources:
 ####################################################################################################
 
 Outputs:
+  EmailFeedbackTopicArn:
+    Description: SNS topic to set as the haohaotiantian.com SES identity's bounce and complaint topic
+    Value: !Ref EmailFeedbackTopic
   UserPoolId:
     Description: ID of the User Pool
     Value: !Ref UserPool
