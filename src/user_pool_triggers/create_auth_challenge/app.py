@@ -4,6 +4,8 @@ import time
 import uuid
 import boto3
 
+from email_message import send_html_email
+
 ses_client = boto3.client('ses', region_name=os.environ['AWS_REGION'])
 
 # How long an emailed sign-in code stays valid.
@@ -98,29 +100,10 @@ def assemble_email_contents(secret_login_code):
 def send_notification_email(user_email, email_content):
 
     subject_line = "Follow this link to sign in to Haohaotiantian."
-    
-    payload = ses_client.send_email(
-        Source = "Haohaotiantian <signin@haohaotiantian.com>",
-        Destination = {
-            "ToAddresses" : [
-            user_email
-            ]
-        },
-        Message = {
-            "Subject": {
-                "Charset": "UTF-8",
-                "Data": subject_line
-                },
-            "Body": {
-                "Html": {
-                    "Charset": "UTF-8",
-                    "Data": email_content
-                }
-            }
-        }
+    return send_html_email(
+        ses_client,
+        "Haohaotiantian <signin@haohaotiantian.com>",
+        user_email,
+        subject_line,
+        email_content,
     )
-
-
-
-
-
