@@ -3,7 +3,10 @@ import json
 import unittest
 from unittest import mock
 
-from unsubscribe.app import lambda_handler
+from botocore.exceptions import ClientError
+
+import unsubscribe.app
+from unsubscribe.app import UserNotFound, lambda_handler, look_up_cognito_id
 
 def mocked_unsubscribe_single_list(date, cognito_id, list_data):
     return
@@ -94,6 +97,84 @@ class UnsubscribeTest(unittest.TestCase):
         self.assertEqual(response["statusCode"], 200)
         self.assertEqual(json.loads(response["body"]), {"success": True})
     
+    @mock.patch('unsubscribe.app.unsubscribe_single_list', side_effect=mocked_unsubscribe_single_list)
+    @mock.patch('unsubscribe.app.look_up_cognito_id', side_effect=UserNotFound('nobody@testemail.com'))
+    @mock.patch('user_service.query_single_user', side_effect=mocked_query_single_user)
+    def test_unknown_email_looks_like_a_successful_unsubscribe(
+        self, query_single_user_mock, look_up_cognito_id_mock, unsubscribe_single_list_mock
+    ):
+
+        event_body = {
+            "cognito_id":"",
+            "email":"nobody@testemail.com",
+            "character_set_preference":"simplified",
+            "list": ""
+        }
+        response = lambda_handler(self.apig_event(json.dumps(event_body)), "")
+
+        # An address nobody is subscribed at is routine traffic on a public form, not a
+        # failure. The response is the identical object a real unsubscribe returns (see
+        # test_unsubscribe_all), so an anonymous caller cannot use the reply to test
+        # whether a given email belongs to a subscriber.
+        self.assertEqual(response["statusCode"], 200)
+        self.assertEqual(json.loads(response["body"]), {"success": True})
+        # Nothing was written for a user that does not exist.
+        self.assertEqual(unsubscribe_single_list_mock.call_count, 0)
+
+    @mock.patch('unsubscribe.app.unsubscribe_single_list', side_effect=mocked_unsubscribe_single_list)
+    @mock.patch('unsubscribe.app.look_up_cognito_id', side_effect=Exception('Cognito is down'))
+    def test_cognito_failure_still_returns_an_error(self, look_up_cognito_id_mock, unsubscribe_single_list_mock):
+
+        event_body = {
+            "cognito_id":"",
+            "email":"me@testemail.com",
+            "character_set_preference":"simplified",
+            "list": ""
+        }
+        response = lambda_handler(self.apig_event(json.dumps(event_body)), "")
+
+        # A genuine failure is still a 502 - only the not-found case was reclassified.
+        self.assertEqual(response["statusCode"], 502)
+        self.assertEqual(json.loads(response["body"]), {"success": False})
+        self.assertEqual(unsubscribe_single_list_mock.call_count, 0)
+
+    def test_look_up_cognito_id_raises_user_not_found(self):
+        error = ClientError(
+            {"Error": {"Code": "UserNotFoundException", "Message": "User does not exist."}},
+            "AdminGetUser",
+        )
+        with mock.patch.object(unsubscribe.app.cognito_client, 'admin_get_user', side_effect=error):
+            with self.assertRaises(UserNotFound):
+                look_up_cognito_id({"email": "nobody@testemail.com"})
+
+    def test_look_up_cognito_id_reraises_other_client_errors(self):
+        error = ClientError(
+            {"Error": {"Code": "TooManyRequestsException", "Message": "Slow down."}},
+            "AdminGetUser",
+        )
+        with mock.patch.object(unsubscribe.app.cognito_client, 'admin_get_user', side_effect=error):
+            # Anything that is not "no such user" is a real fault and must not be swallowed.
+            with self.assertRaises(ClientError):
+                look_up_cognito_id({"email": "me@testemail.com"})
+
+    @mock.patch('unsubscribe.app.unsubscribe_single_list', side_effect=mocked_unsubscribe_single_list)
+    @mock.patch('unsubscribe.app.look_up_cognito_id', side_effect=mocked_look_up_cognito_id)
+    @mock.patch('user_service.query_single_user', side_effect=mocked_query_single_user)
+    def test_email_only_unsubscribes_every_list(
+        self, query_single_user_mock, look_up_cognito_id_mock, unsubscribe_single_list_mock
+    ):
+
+        # The bounce handler in receive-ses-email knows an address and nothing else. It is
+        # a generic tool and should not have to learn this app's cognito_id/list fields, so
+        # a bare email means look the user up and unsubscribe them from everything.
+        event_body = {"email":"me@testemail.com"}
+        response = lambda_handler(self.apig_event(json.dumps(event_body)), "")
+
+        self.assertEqual(response["statusCode"], 200)
+        self.assertEqual(json.loads(response["body"]), {"success": True})
+        self.assertEqual(look_up_cognito_id_mock.call_count, 1)
+        self.assertEqual(unsubscribe_single_list_mock.call_count, 2)
+
     def apig_event(self, event_body):
         return {
             "resource":"/unsub",
