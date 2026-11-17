@@ -2,7 +2,7 @@
 
 A serverless app that sends a Chinese word as a daily email message, along with links to example sentences and auto-generated quizzes.
 
-Chinese learners can subscribe to daily vocab words to build their vocabulary. The vocabulary by level (1-6) is from the Hanyu Shuiping Kaoshi (HSK), China's standardized Mandarin testing levels.
+Chinese learners can subscribe to daily vocab words to build their vocabulary. The vocabulary by level (1-6) is from the original 2009–10 word lists of the Hanyu Shuiping Kaoshi (HSK), China's standardized Mandarin testing levels (see `standard.json`).
 
 To subscribe, visit https://haohaotiantian.com, where you can preview sample words for each level, see past daily words, and learn more.
 
