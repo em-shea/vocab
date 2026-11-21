@@ -3,7 +3,9 @@ import json
 import unittest
 from unittest import mock
 
-from set_sentence.app import lambda_handler
+from datetime import date, timedelta, timezone, datetime
+
+from set_sentence.app import lambda_handler, sentence_date, MAX_DAYS_BACK
 
 def mocked_update_sentence(cognito_id, body, date):
     return
@@ -46,6 +48,45 @@ class SetSentenceTest(unittest.TestCase):
         saved_body = update_sentence_mock.call_args.args[1]
         self.assertEqual(saved_body["sentence_id"], "123")
 
+
+    @mock.patch('set_sentence.app.update_sentence', side_effect=mocked_update_sentence)
+    def test_past_word_is_filed_under_its_own_date(self, update_sentence_mock):
+        # get_user_activity pairs a sentence with its word by date and word id,
+        # so a sentence for an earlier word must carry that word's date.
+        word_date = (datetime.now(timezone.utc).date() - timedelta(days=3)).isoformat()
+        event_body = {"list_id": "123", "character_set": "simplified", "sentence": "我喜欢学习汉语。",
+                      "sentence_id": "abc", "date": word_date}
+        response = lambda_handler(self.sub_apig_event(json.dumps(event_body)), "")
+        body = json.loads(response["body"])
+
+        self.assertEqual(response["statusCode"], 200)
+        self.assertEqual(update_sentence_mock.call_args.args[2], word_date)
+        self.assertEqual(body["data"], {"sentence_id": "abc", "date": word_date})
+
+    @mock.patch('set_sentence.app.update_sentence', side_effect=mocked_update_sentence)
+    def test_no_date_means_today(self, update_sentence_mock):
+        event_body = {"list_id": "123", "character_set": "simplified", "sentence": "好。", "sentence_id": "abc"}
+        lambda_handler(self.sub_apig_event(json.dumps(event_body)), "")
+        self.assertEqual(update_sentence_mock.call_args.args[2], datetime.now(timezone.utc).date().isoformat())
+
+    @mock.patch('set_sentence.app.update_sentence', side_effect=mocked_update_sentence)
+    def test_bad_dates_are_refused_and_nothing_is_saved(self, update_sentence_mock):
+        today = datetime.now(timezone.utc).date()
+        for bad in [(today + timedelta(days=1)).isoformat(),
+                    (today - timedelta(days=MAX_DAYS_BACK + 1)).isoformat(),
+                    "21/11/2026", "yesterday"]:
+            event_body = {"list_id": "123", "character_set": "simplified", "sentence": "好。", "sentence_id": "abc", "date": bad}
+            response = lambda_handler(self.sub_apig_event(json.dumps(event_body)), "")
+            self.assertEqual(response["statusCode"], 400, bad)
+        self.assertEqual(update_sentence_mock.call_count, 0)
+
+    def test_sentence_date_limits(self):
+        today = date(2026, 11, 21)
+        self.assertEqual(sentence_date(None, today), "2026-11-21")
+        self.assertEqual(sentence_date("2026-11-21", today), "2026-11-21")
+        self.assertEqual(sentence_date("2026-10-22", today), "2026-10-22")
+        with self.assertRaises(ValueError):
+            sentence_date("2026-10-21", today)
 
     def sub_apig_event(self, event_body):
         return {
