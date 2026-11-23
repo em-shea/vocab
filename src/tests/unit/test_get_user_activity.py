@@ -4,7 +4,7 @@ import unittest
 from datetime import datetime
 from unittest import mock
 
-from models import User, Subscription, Sentence, Word
+from models import User, Subscription, Sentence, Word, Writing
 from get_user_activity.app import lambda_handler
 
 
@@ -124,6 +124,37 @@ class GetUserActivityTest(unittest.TestCase):
 
         todays_words = body["activity"][today]["review_words"]
         self.assertNotIn("sentence", todays_words[0])
+
+    @mock.patch('review_word_service.get_review_words')
+    @mock.patch('user_service.get_single_user_with_activity')
+    def test_writing_practice_marks_its_word(self, get_user_mock, get_review_words_mock):
+        today = datetime.today().strftime('%Y-%m-%d')
+        user = _user()
+        user.writings = [Writing(list_id="123", word_id="WORD#1", date_created=today)]
+        get_user_mock.return_value = user
+        get_review_words_mock.return_value = {"123": [_review_word(today)]}
+
+        body = json.loads(lambda_handler(self.apig_event(), "")["body"])
+
+        self.assertTrue(body["activity"][today]["review_words"][0]["written"])
+        self.assertNotIn("writings", body)
+
+    @mock.patch('review_word_service.get_review_words')
+    @mock.patch('user_service.get_single_user_with_activity')
+    def test_writing_for_another_word_list_or_day_does_not_count(self, get_user_mock, get_review_words_mock):
+        today = datetime.today().strftime('%Y-%m-%d')
+        user = _user()
+        user.writings = [
+            Writing(list_id="123", word_id="WORD#other", date_created=today),
+            Writing(list_id="999", word_id="WORD#1", date_created=today),
+            Writing(list_id="123", word_id="WORD#1", date_created="2000-01-01"),
+        ]
+        get_user_mock.return_value = user
+        get_review_words_mock.return_value = {"123": [_review_word(today)]}
+
+        body = json.loads(lambda_handler(self.apig_event(), "")["body"])
+
+        self.assertFalse(body["activity"][today]["review_words"][0]["written"])
 
     def apig_event(self):
         return {

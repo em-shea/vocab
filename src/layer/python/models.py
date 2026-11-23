@@ -60,6 +60,14 @@ class Sentence:
     word: Dict[str, Word]
 
 @dataclass
+class Writing:
+    # A word whose characters the user practised writing on the site.
+    list_id: str
+    word_id: str
+    date_created: str
+    character_set: str = ''
+
+@dataclass
 class User:
     email_address: str
     user_id: str
@@ -76,4 +84,5 @@ class User:
     subscriptions: Optional [List[Subscription]] = None
     quizzes: Optional [List[Quiz]] = None
     sentences: Optional [List[Sentence]] = None
+    writings: Optional [List[Writing]] = None
     date_created: Optional [datetime.datetime] = None
