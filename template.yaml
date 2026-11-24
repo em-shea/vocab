@@ -113,6 +113,73 @@ Resources:
       Layers:
       - !Ref Layer
 
+  SendDailyPush:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      FunctionName: !Sub SendDailyPush-${Stage}
+      Handler: app.lambda_handler
+      Runtime: python3.13
+      CodeUri: src/send_daily_push
+      Description: Sends today's word as a web push notification to devices that opted in
+      # Separate from SendDailyEmail on purpose: a push failure must never affect
+      # the email. Same trigger (todays-words-set), same no-retry rule.
+      MemorySize: 512
+      Timeout: 300
+      EventInvokeConfig:
+        MaximumRetryAttempts: 0
+      Policies:
+        # Reads users, words and PUSH# items; deletes a PUSH# item only when its
+        # push service reports the device gone (404/410).
+        - DynamoDBCrudPolicy:
+            TableName: !Ref DynamoDBTable
+        - DynamoDBCrudPolicy:
+            TableName: !Ref IdempotencyTable
+        - SSMParameterReadPolicy:
+            ParameterName: !Sub vocab/${Stage}/vapid-private-key
+        - Statement:
+          - Effect: Allow
+            Action: kms:Decrypt
+            Resource: "*"
+            Condition:
+              StringEquals:
+                kms:ViaService: !Sub ssm.${AWS::Region}.amazonaws.com
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref DynamoDBTable
+          IDEMPOTENCY_TABLE: !Ref IdempotencyTable
+          VAPID_KEY_PARAM: !Sub /vocab/${Stage}/vapid-private-key
+          SITE_URL: !Ref DomainName
+      Layers:
+      - !Ref Layer
+
+  SetPush:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      FunctionName: !Sub SetPush-${Stage}
+      Handler: app.lambda_handler
+      Runtime: python3.13
+      CodeUri: src/set_push
+      Description: Turns daily word notifications on or off for one of the user's devices
+      MemorySize: 128
+      Timeout: 30
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref DynamoDBTable
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref DynamoDBTable
+      Events:
+        SetPushApi:
+          Type: Api
+          Properties:
+            RestApiId: !Ref VocabAppApi
+            Path: /push
+            Method: POST
+            Auth:
+              Authorizer: CognitoAuthorizer
+      Layers:
+      - !Ref Layer
+
   SampleVocab:
     Type: 'AWS::Serverless::Function'
     Properties:
@@ -746,11 +813,21 @@ Resources:
       Targets:
         - Arn: !GetAtt SendDailyEmail.Arn
           Id: SendDailyEmailFunction
+        - Arn: !GetAtt SendDailyPush.Arn
+          Id: SendDailyPushFunction
 
   EventsToInvokeLambdaPolicyEmail:
     Type: AWS::Lambda::Permission
     Properties:
       FunctionName: !Ref SendDailyEmail
+      Action: "lambda:InvokeFunction"
+      Principal: "events.amazonaws.com"
+      SourceArn: !GetAtt TodaysWordsSetEventRule.Arn
+
+  EventsToInvokeLambdaPolicyPush:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref SendDailyPush
       Action: "lambda:InvokeFunction"
       Principal: "events.amazonaws.com"
       SourceArn: !GetAtt TodaysWordsSetEventRule.Arn
