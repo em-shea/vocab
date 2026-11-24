@@ -9,8 +9,13 @@ For each list the user is subscribed to (either character set):
 
 Proficient (Emily, 2026-11-23): the word has been asked in quizzes at least
 MIN_QUIZ_ANSWERS times with at least MIN_ACCURACY of those answers right,
-and the user has written at least one sentence with it and practised its
+and the user has written at least one sentence with it and practiced its
 stroke order at least once.
+
+Words last sent before FULL_RULE_FROM count on quizzes alone (Emily,
+2026-11-23): sentences and stroke order can only be recorded within 30 days
+of a word being sent, and stroke order is new, so older words could never
+meet the full rule.
 """
 from datetime import datetime, timezone
 from collections import defaultdict
@@ -21,12 +26,16 @@ import dynamodb_service
 
 MIN_QUIZ_ANSWERS = 2
 MIN_ACCURACY = 0.8
+# Stroke order practice was built on this date; words last sent before it
+# count on quizzes alone.
+FULL_RULE_FROM = '2026-11-23'
 
 PROFICIENT = {
     "min_quiz_answers": MIN_QUIZ_ANSWERS,
     "min_quiz_accuracy": MIN_ACCURACY,
     "sentence": True,
     "stroke_order": True,
+    "quizzes_only_before": FULL_RULE_FROM,
 }
 
 
@@ -65,18 +74,20 @@ def tally(activity_items):
     return stats
 
 
-def is_proficient(s):
-    return (
-        s["asked"] >= MIN_QUIZ_ANSWERS
-        and s["right"] / s["asked"] >= MIN_ACCURACY
-        and s["sentence"]
-        and s["stroke"]
-    )
+EMPTY = {"asked": 0, "right": 0, "sentence": False, "stroke": False}
 
 
-def list_progress(list_id, total, seen_word_ids, stats):
-    proficient = sum(1 for word_id in seen_word_ids if is_proficient(stats.get((list_id, word_id), {"asked": 0, "right": 0, "sentence": False, "stroke": False})))
-    return {"list_id": list_id, "total": total, "seen": len(seen_word_ids), "proficient": proficient}
+def is_proficient(s, last_sent=''):
+    quizzes = s["asked"] >= MIN_QUIZ_ANSWERS and s["right"] / s["asked"] >= MIN_ACCURACY
+    if last_sent and last_sent < FULL_RULE_FROM:
+        return quizzes
+    return quizzes and s["sentence"] and s["stroke"]
+
+
+def list_progress(list_id, total, seen, stats):
+    """seen: {word id: the date it was last sent}."""
+    proficient = sum(1 for word_id, last_sent in seen.items() if is_proficient(stats.get((list_id, word_id), EMPTY), last_sent))
+    return {"list_id": list_id, "total": total, "seen": len(seen), "proficient": proficient}
 
 
 # ---- queries --------------------------------------------------------------
@@ -91,16 +102,24 @@ def count_words(table, list_id):
 
 
 def sent_word_ids(table, list_id, since):
-    """Distinct ids of the list's words sent from `since` (YYYY-MM-DD, or '' for all) to today."""
+    """{word id: last date sent} for the list's words sent from `since` (YYYY-MM-DD, or '' for all) to today."""
     today = datetime.now(timezone.utc).strftime('%Y-%m-%d')
     start = 'DATESENT#' + (since or '0000-00-00')
     items = dynamodb_service.query_all_pages(
         table,
         KeyConditionExpression=Key('PK').eq('LIST#' + list_id) & Key('SK').between(start, 'DATESENT#' + today + '~'),
-        ProjectionExpression='#w',
+        ProjectionExpression='SK, #w',
         ExpressionAttributeNames={'#w': 'Word'},
     )
-    return {item['Word'].get('Word id') for item in items if isinstance(item.get('Word'), dict) and item['Word'].get('Word id')}
+    last = {}
+    for item in items:
+        word = item.get('Word')
+        if not isinstance(word, dict) or not word.get('Word id'):
+            continue
+        date = item.get('SK', '').split('#')[1] if '#' in item.get('SK', '') else ''
+        if date > last.get(word['Word id'], ''):
+            last[word['Word id']] = date
+    return last
 
 
 def activity_items(table, cognito_id):

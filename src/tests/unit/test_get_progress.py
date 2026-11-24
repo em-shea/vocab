@@ -60,7 +60,9 @@ def test_words_sent_before_subscribing_are_not_seen(seeded_vocab_lists, dynamodb
     assert _body(lambda_handler(_event(), ''))['lists'][0]['seen'] == 2  # sent 1 and 2 days ago, not 3
 
 
-def test_proficient_needs_quiz_accuracy_a_sentence_and_stroke_practice(seeded_vocab_lists, dynamodb_table):
+def test_proficient_needs_quiz_accuracy_a_sentence_and_stroke_practice(seeded_vocab_lists, dynamodb_table, monkeypatch):
+    # Every word here is recent enough for the full rule.
+    monkeypatch.setattr(progress_service, 'FULL_RULE_FROM', '0000-00-00')
     _seed(dynamodb_table)
     # W1: 2 of 2 right, sentence, strokes -> proficient
     # W2: 4 of 5 right (80%), sentence, strokes -> proficient
@@ -73,7 +75,8 @@ def test_proficient_needs_quiz_accuracy_a_sentence_and_stroke_practice(seeded_vo
                                   'Sentence': '好。', 'Word': {'word_id': 'W3'}})
     body = _body(lambda_handler(_event(), ''))
     assert body['lists'][0]['proficient'] == 2
-    assert body['proficient_rule'] == {'min_quiz_answers': 2, 'min_quiz_accuracy': 0.8, 'sentence': True, 'stroke_order': True}
+    assert body['proficient_rule'] == {'min_quiz_answers': 2, 'min_quiz_accuracy': 0.8, 'sentence': True,
+                                       'stroke_order': True, 'quizzes_only_before': '2026-11-23'}
 
 
 def test_one_right_answer_or_low_accuracy_is_not_enough():
@@ -99,3 +102,16 @@ def test_no_subscriptions_means_no_rows(seeded_vocab_lists, dynamodb_table):
                                UpdateExpression='SET #s = :u', ExpressionAttributeNames={'#s': 'Status'},
                                ExpressionAttributeValues={':u': 'unsubscribed'})
     assert _body(lambda_handler(_event(), ''))['lists'] == []
+
+
+def test_words_last_sent_before_stroke_order_existed_count_on_quizzes_alone():
+    quizzed = {'asked': 3, 'right': 3, 'sentence': False, 'stroke': False}
+    assert progress_service.is_proficient(quizzed, '2026-10-01')
+    assert not progress_service.is_proficient(quizzed, progress_service.FULL_RULE_FROM)
+    assert not progress_service.is_proficient({'asked': 3, 'right': 2, 'sentence': False, 'stroke': False}, '2026-10-01')
+
+
+def test_a_word_sent_again_later_needs_the_full_rule():
+    stats = {('L', 'W'): {'asked': 2, 'right': 2, 'sentence': False, 'stroke': False}}
+    assert progress_service.list_progress('L', 10, {'W': '2026-10-01'}, stats)['proficient'] == 1
+    assert progress_service.list_progress('L', 10, {'W': '2099-01-01'}, stats)['proficient'] == 0
