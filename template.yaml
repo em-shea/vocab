@@ -416,6 +416,34 @@ Resources:
       Layers:
       - !Ref Layer
 
+  SetWriting:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      FunctionName: !Sub SetWriting-${Stage}
+      Handler: app.lambda_handler
+      Runtime: python3.13
+      CodeUri: src/set_writing
+      Description: A function that records a user's handwriting practice for a word
+      MemorySize: 128
+      Timeout: 30
+      Policies:
+        - DynamoDBWritePolicy:
+           TableName: !Ref DynamoDBTable
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref DynamoDBTable
+      Events:
+        SetWritingApi:
+          Type: Api
+          Properties:
+            RestApiId: !Ref VocabAppApi
+            Path: /writing
+            Method: POST
+            Auth:
+              Authorizer: CognitoAuthorizer
+      Layers:
+      - !Ref Layer
+
   GetSentences:
     Type: 'AWS::Serverless::Function'
     Properties:

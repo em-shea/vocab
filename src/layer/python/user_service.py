@@ -2,7 +2,7 @@ import os
 import boto3
 from datetime import datetime, timedelta
 from boto3.dynamodb.conditions import Key
-from models import User, Subscription, Quiz, Sentence
+from models import User, Subscription, Quiz, Sentence, Writing
 from review_word_service import format_word_body
 from quiz_results_service import format_quiz_results
 
@@ -20,6 +20,7 @@ SK_LIST_PREFIX = 'LIST#'
 SK_DATE_PREFIX = 'DATE#'
 SK_QUIZ_MARKER = '#QUIZ#'
 SK_SENTENCE_MARKER = '#SENTENCE#'
+SK_WRITING_MARKER = '#WRITING#'
 
 # Upper bound for a user's items - sorts after every SK we write under USER#<sub>.
 SK_UPPER_BOUND = 'USER#￿'
@@ -131,7 +132,8 @@ def _format_user_data(user_data):
         language_preference = 'en',
         subscriptions = [],
         quizzes = [],
-        sentences = []
+        sentences = [],
+        writings = []
     )
 
     #  Loop through all users and subs
@@ -195,6 +197,14 @@ def _format_user_data(user_data):
                 word = format_word_body(item.get('Word', {}))
             )
             user.sentences.append(sentence)
+
+        elif sk.startswith(SK_DATE_PREFIX) and SK_WRITING_MARKER in sk:
+            user.writings.append(Writing(
+                list_id = item.get('List id', ''),
+                word_id = item.get('Word id', ''),
+                date_created = item.get('Date created', ''),
+                character_set = item.get('Character set', '')
+            ))
 
         else:
             print('Item does not match expected type - user, list, quiz, sentences. Item: ', item)

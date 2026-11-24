@@ -47,6 +47,11 @@ def lambda_handler(event, context):
             for sentence in user_data.sentences:
                 if sentence.date_created == date_key and sentence.word.word_id == word['word']['word_id']:
                     word_entry['sentence'] = asdict(sentence)
+            # Handwriting practice: true once the word's characters were practised.
+            word_entry['written'] = any(
+                w.date_created == date_key and w.word_id == word['word']['word_id'] and w.list_id == word.get('list_id')
+                for w in (user_data.writings or [])
+            )
             user_activity[date_key]['review_words'].append(word_entry)
         for quiz in user_data.quizzes:
             if quiz.date_created == date_key:
@@ -59,6 +64,7 @@ def lambda_handler(event, context):
     # Remove quizzes and sentences from user_data_dict
     user_data_dict.pop('quizzes')
     user_data_dict.pop('sentences')
+    user_data_dict.pop('writings', None)
 
     print('user: ', user_data_dict)
     return {
