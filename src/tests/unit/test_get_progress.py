@@ -115,3 +115,8 @@ def test_a_word_sent_again_later_needs_the_full_rule():
     stats = {('L', 'W'): {'asked': 2, 'right': 2, 'sentence': False, 'stroke': False}}
     assert progress_service.list_progress('L', 10, {'W': '2026-10-01'}, stats)['proficient'] == 1
     assert progress_service.list_progress('L', 10, {'W': '2099-01-01'}, stats)['proficient'] == 0
+
+
+def test_progress_includes_the_streak(seeded_vocab_lists, dynamodb_table):
+    body = _body(lambda_handler(_event(), ''))
+    assert set(body['streak']) >= {'current', 'best', 'buffer', 'buffer_max', 'today_done', 'recent'}

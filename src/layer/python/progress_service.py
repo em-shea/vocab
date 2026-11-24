@@ -130,8 +130,9 @@ def activity_items(table, cognito_id):
     )
 
 
-def get_progress(table, cognito_id, subscriptions):
-    """subscriptions: the user's Subscription records (any status)."""
+def get_progress(table, cognito_id, subscriptions, items=None):
+    """subscriptions: the user's Subscription records (any status). items: the
+    user's activity items, if already read."""
     # One row per list; the earliest subscription date across its character sets.
     since = {}
     for sub in subscriptions:
@@ -142,7 +143,7 @@ def get_progress(table, cognito_id, subscriptions):
             since[sub.list_id] = date
     if not since:
         return []
-    stats = tally(activity_items(table, cognito_id))
+    stats = tally(items if items is not None else activity_items(table, cognito_id))
     return [
         list_progress(list_id, count_words(table, list_id), sent_word_ids(table, list_id, date), stats)
         for list_id, date in since.items()
