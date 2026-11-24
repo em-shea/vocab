@@ -416,6 +416,34 @@ Resources:
       Layers:
       - !Ref Layer
 
+  GetProgress:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      FunctionName: !Sub GetProgress-${Stage}
+      Handler: app.lambda_handler
+      Runtime: python3.13
+      CodeUri: src/get_progress
+      Description: Read-only. Words seen and words proficient per list for the signed-in user
+      MemorySize: 256
+      Timeout: 30
+      Policies:
+        - DynamoDBReadPolicy:
+           TableName: !Ref DynamoDBTable
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref DynamoDBTable
+      Events:
+        GetProgressApi:
+          Type: Api
+          Properties:
+            RestApiId: !Ref VocabAppApi
+            Path: /progress
+            Method: GET
+            Auth:
+              Authorizer: CognitoAuthorizer
+      Layers:
+      - !Ref Layer
+
   SetWriting:
     Type: 'AWS::Serverless::Function'
     Properties:

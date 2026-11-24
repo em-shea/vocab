@@ -52,18 +52,29 @@ def create_user(date, cognito_id, email_address, character_set_preference):
 
 def subscribe(date, cognito_id, subscription):
 
-    # PutItem will overwrite an existing item with the same key
-    response = table.put_item(
-        Item={
-                'PK': "USER#" + cognito_id,
-                'SK': "LIST#" + subscription['list_id'] + "#" + subscription['character_set'].upper(),
-                'List name': subscription['list_name'],
-                'Date subscribed': date,
-                'Status': 'subscribed',
-                'Character set': subscription['character_set'],
-                'GSI1PK': "USER",
-                'GSI1SK': "USER#" + cognito_id + "#LIST#" + subscription['list_id'] + "#" + subscription['character_set'].upper()
-        }
+    # Creates the subscription, or re-subscribes an existing one. 'Date subscribed'
+    # is kept from the first time (if_not_exists): saving the whole set of lists
+    # from Manage lists used to reset it to today for every list, which would make
+    # "words seen since you subscribed" (GET /progress) start over. Other fields
+    # are set as before; nothing is removed.
+    unique = subscription['list_id'] + "#" + subscription['character_set'].upper()
+    response = table.update_item(
+        Key={'PK': "USER#" + cognito_id, 'SK': "LIST#" + unique},
+        UpdateExpression=(
+            "SET #ln = :ln, #st = :st, #cs = :cs, GSI1PK = :g1pk, GSI1SK = :g1sk, "
+            "#ds = if_not_exists(#ds, :date)"
+        ),
+        ExpressionAttributeNames={
+            '#ln': 'List name', '#st': 'Status', '#cs': 'Character set', '#ds': 'Date subscribed',
+        },
+        ExpressionAttributeValues={
+            ':ln': subscription['list_name'],
+            ':st': 'subscribed',
+            ':cs': subscription['character_set'],
+            ':g1pk': "USER",
+            ':g1sk': "USER#" + cognito_id + "#LIST#" + unique,
+            ':date': date,
+        },
     )
 
     return response

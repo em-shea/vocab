@@ -127,3 +127,19 @@ def test_user_may_not_subscribe_to_someone_elses_private_list(seeded_vocab_lists
 
     assert response['statusCode'] == 403
     assert _subs(dynamodb_table, 'user-1') == {}
+
+
+def test_resaving_lists_keeps_the_original_subscription_date(seeded_vocab_lists, dynamodb_table):
+    # Manage lists sends the whole set each time; the first date must survive
+    # (GET /progress counts words seen since then).
+    _seed_user(dynamodb_table, 'user-1')
+
+    lambda_handler(_event('user-1', {'subscriptions': [_subscription(), _subscription(LIST_ID_2, 'HSK Level 2')]}), '')
+
+    items = {i['SK']: i for i in dynamodb_table.query(KeyConditionExpression=Key('PK').eq('USER#user-1'))['Items']}
+    kept = items[f'LIST#{LIST_ID}#SIMPLIFIED']
+    assert kept['Date subscribed'] == '2026-01-01T00:00:00'
+    assert kept['Status'] == 'subscribed' and kept['List name'] == 'HSK Level 1'
+    new = items[f'LIST#{LIST_ID_2}#SIMPLIFIED']
+    assert new['Date subscribed'] != '2026-01-01T00:00:00'
+    assert new['GSI1SK'] == f'USER#user-1#LIST#{LIST_ID_2}#SIMPLIFIED'
