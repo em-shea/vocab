@@ -1,0 +1,184 @@
+"""Opt-in public profiles, badges and the weekly leaderboard (Emily, 2026-11-25).
+
+Nothing is public unless the user switches it on in profile settings.
+
+Items written (new, nothing existing is replaced or deleted):
+- On the user item (PK = SK = USER#<sub>): 'Public profile' (bool) and
+  'Public handle' (random, set once and kept).
+- A pointer item PK = SK = PUBLIC#<handle> with 'Cognito id' and 'Public profile',
+  and GSI1PK = 'PUBLIC' so the leaderboard can list every public profile through
+  the existing GSI1 index. Turning the profile off sets 'Public profile' false
+  on both; the items stay.
+- 'Founding tester' on the user item is set only by scripts/grant_founding_tester.py.
+
+What a public page shows: profile name (the chosen name, never the email), the
+month they joined, streak, badges and this week's activity. Badges are worked
+out on read from activity, so there is nothing else to store.
+"""
+import secrets
+from datetime import datetime, timedelta, timezone
+
+from boto3.dynamodb.conditions import Key
+
+import dynamodb_service
+import progress_service
+import streak_service
+
+HANDLE_ALPHABET = 'abcdefghjkmnpqrstuvwxyz23456789'  # no 0/o, 1/l/i
+HANDLE_LENGTH = 8
+LEADERBOARD_SIZE = 50
+
+# Order is the order shown on the page.
+BADGES = [
+    'founding_tester',
+    'first_quiz',
+    'first_sentence',
+    'first_stroke_order',
+    'streak_7',
+    'streak_30',
+    'streak_100',
+]
+
+
+def new_handle():
+    return ''.join(secrets.choice(HANDLE_ALPHABET) for _ in range(HANDLE_LENGTH))
+
+
+def _user_item(table, cognito_id):
+    key = 'USER#' + cognito_id
+    return table.get_item(Key={'PK': key, 'SK': key}).get('Item')
+
+
+def _pointer_key(handle):
+    return {'PK': 'PUBLIC#' + handle, 'SK': 'PUBLIC#' + handle}
+
+
+def set_public(table, cognito_id, public):
+    """Switch the user's public profile on or off. Returns {'public', 'handle'}."""
+    user = _user_item(table, cognito_id)
+    if not user:
+        raise LookupError(cognito_id)
+
+    handle = user.get('Public handle')
+    for _ in range(5):
+        candidate = handle or new_handle()
+        try:
+            # Claim (or update our own) pointer; never take over someone else's handle.
+            table.update_item(
+                Key=_pointer_key(candidate),
+                UpdateExpression='SET #c = :c, #p = :p, GSI1PK = :g, GSI1SK = :gs',
+                ConditionExpression='attribute_not_exists(PK) OR #c = :c',
+                ExpressionAttributeNames={'#c': 'Cognito id', '#p': 'Public profile'},
+                ExpressionAttributeValues={':c': cognito_id, ':p': bool(public),
+                                           ':g': 'PUBLIC', ':gs': 'PUBLIC#' + candidate},
+            )
+            handle = candidate
+            break
+        except table.meta.client.exceptions.ConditionalCheckFailedException:
+            if handle:  # our stored handle belongs to someone else: should never happen
+                raise
+    else:
+        raise RuntimeError('Could not find a free handle')
+
+    table.update_item(
+        Key={'PK': 'USER#' + cognito_id, 'SK': 'USER#' + cognito_id},
+        UpdateExpression='SET #p = :p, #h = if_not_exists(#h, :h)',
+        ConditionExpression='attribute_exists(PK)',
+        ExpressionAttributeNames={'#p': 'Public profile', '#h': 'Public handle'},
+        ExpressionAttributeValues={':p': bool(public), ':h': handle},
+    )
+    return {'public': bool(public), 'handle': handle}
+
+
+def badges(user_item, items, best_streak):
+    kinds = set()
+    for item in items:
+        sk = item.get('SK', '')
+        if '#QUIZ#' in sk:
+            kinds.add('quiz')
+        elif '#SENTENCE#' in sk and str(item.get('Sentence', '')).strip():
+            kinds.add('sentence')
+        elif '#WRITING#' in sk:
+            kinds.add('writing')
+    earned = {
+        'founding_tester': bool(user_item.get('Founding tester')),
+        'first_quiz': 'quiz' in kinds,
+        'first_sentence': 'sentence' in kinds,
+        'first_stroke_order': 'writing' in kinds,
+        'streak_7': best_streak >= 7,
+        'streak_30': best_streak >= 30,
+        'streak_100': best_streak >= 100,
+    }
+    return [b for b in BADGES if earned[b]]
+
+
+def week_start(today):
+    """Monday of today's week (UTC)."""
+    return today - timedelta(days=today.weekday())
+
+
+def week_activity(items, today):
+    start = week_start(today).isoformat()
+    end = today.isoformat()
+    counts = streak_service.actions_per_day(items)
+    days = {d: n for d, n in counts.items() if start <= d <= end}
+    return {'active_days': len(days), 'actions': sum(days.values())}
+
+
+def _name(user_item):
+    alias = user_item.get('User alias', 'Not set')
+    pinyin = user_item.get('User alias pinyin', 'Not set')
+    return (None if alias in ('', 'Not set') else alias,
+            None if pinyin in ('', 'Not set') else pinyin)
+
+
+def summary(table, handle, cognito_id, today):
+    user = _user_item(table, cognito_id)
+    if not user or not user.get('Public profile'):
+        return None
+    items = progress_service.activity_items(table, cognito_id)
+    streak = streak_service.get_streak(items, today)
+    name, pinyin = _name(user)
+    return {
+        'handle': handle,
+        'name': name,
+        'name_pinyin': pinyin,
+        'joined': str(user.get('Date created') or '')[:7] or None,
+        'streak': {'current': streak['current'], 'best': streak['best']},
+        'badges': badges(user, items, streak['best']),
+        'week': week_activity(items, today),
+    }
+
+
+def get_public_profile(table, handle, today=None):
+    """The public view of one profile, or None if it doesn't exist or isn't public."""
+    today = today or datetime.now(timezone.utc).date()
+    if not handle or len(handle) > 32:
+        return None
+    pointer = table.get_item(Key=_pointer_key(handle)).get('Item')
+    if not pointer or not pointer.get('Public profile'):
+        return None
+    return summary(table, handle, pointer['Cognito id'], today)
+
+
+def get_leaderboard(table, today=None):
+    """Every public profile ranked for this week (Monday to today, UTC): active
+    days, then activities, then current streak. Read-only."""
+    today = today or datetime.now(timezone.utc).date()
+    pointers = dynamodb_service.query_all_pages(
+        table, IndexName='GSI1', KeyConditionExpression=Key('GSI1PK').eq('PUBLIC'),
+    )
+    rows = []
+    for p in pointers:
+        if not p.get('Public profile'):
+            continue
+        handle = p.get('GSI1SK', '')[len('PUBLIC#'):]
+        row = summary(table, handle, p['Cognito id'], today)
+        if row:
+            rows.append(row)
+    rows.sort(key=lambda r: (-r['week']['active_days'], -r['week']['actions'],
+                             -r['streak']['current'], r['handle']))
+    rows = rows[:LEADERBOARD_SIZE]
+    for i, row in enumerate(rows, 1):
+        row['rank'] = i
+    return {'week_start': week_start(today).isoformat(), 'today': today.isoformat(), 'entries': rows}
