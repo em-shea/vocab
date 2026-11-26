@@ -109,3 +109,20 @@ def test_user_data_includes_own_public_settings(dynamodb_table):
     svc.set_public(dynamodb_table, 'u1', True)
     user = user_service.get_single_user('u1')
     assert user.public_profile is True and user.public_handle
+
+
+def test_last_week_top_three(dynamodb_table):
+    for uid in ('a', 'b', 'c', 'd'):
+        _user(dynamodb_table, uid)
+        svc.set_public(dynamodb_table, uid, True)
+    last_monday = date(2026, 11, 16)
+    for i in range(4):
+        _act(dynamodb_table, 'a', last_monday + timedelta(days=i))
+    for i in range(2):
+        _act(dynamodb_table, 'b', last_monday + timedelta(days=i))
+    _act(dynamodb_table, 'c', last_monday + timedelta(days=6))     # Sunday counts
+    _act(dynamodb_table, 'd', TODAY)                                # this week only
+    board = svc.get_leaderboard(dynamodb_table, TODAY)
+    assert board['last_week_start'] == '2026-11-16'
+    assert [(e['rank'], e['week']['active_days']) for e in board['last_week']] == [(1, 4), (2, 2), (3, 1)]
+    assert all('_last_week' not in e for e in board['entries'] + board['last_week'])

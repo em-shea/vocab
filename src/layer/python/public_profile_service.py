@@ -117,8 +117,9 @@ def week_start(today):
     return today - timedelta(days=today.weekday())
 
 
-def week_activity(items, today):
-    start = week_start(today).isoformat()
+def week_activity(items, today, start=None):
+    """Active days and activities from start (default: this Monday) to today."""
+    start = (start or week_start(today)).isoformat()
     end = today.isoformat()
     counts = streak_service.actions_per_day(items)
     days = {d: n for d, n in counts.items() if start <= d <= end}
@@ -147,6 +148,9 @@ def summary(table, handle, cognito_id, today):
         'streak': {'current': streak['current'], 'best': streak['best']},
         'badges': badges(user, items, streak['best']),
         'week': week_activity(items, today),
+        # Monday to Sunday before this week; used for last week's top 3.
+        '_last_week': week_activity(items, week_start(today) - timedelta(days=1),
+                                    week_start(today) - timedelta(days=7)),
     }
 
 
@@ -158,12 +162,23 @@ def get_public_profile(table, handle, today=None):
     pointer = table.get_item(Key=_pointer_key(handle)).get('Item')
     if not pointer or not pointer.get('Public profile'):
         return None
-    return summary(table, handle, pointer['Cognito id'], today)
+    profile = summary(table, handle, pointer['Cognito id'], today)
+    if profile:
+        profile.pop('_last_week', None)
+    return profile
+
+
+def _rank(rows, week_key):
+    rows = [r for r in rows if r[week_key]['active_days'] > 0] if week_key == '_last_week' else list(rows)
+    rows.sort(key=lambda r: (-r[week_key]['active_days'], -r[week_key]['actions'],
+                             -r['streak']['current'], r['handle']))
+    return rows
 
 
 def get_leaderboard(table, today=None):
     """Every public profile ranked for this week (Monday to today, UTC): active
-    days, then activities, then current streak. Read-only."""
+    days, then activities, then current streak. Also last week's top 3
+    (Monday to Sunday before), for showing on Mondays. Read-only."""
     today = today or datetime.now(timezone.utc).date()
     pointers = dynamodb_service.query_all_pages(
         table, IndexName='GSI1', KeyConditionExpression=Key('GSI1PK').eq('PUBLIC'),
@@ -176,9 +191,19 @@ def get_leaderboard(table, today=None):
         row = summary(table, handle, p['Cognito id'], today)
         if row:
             rows.append(row)
-    rows.sort(key=lambda r: (-r['week']['active_days'], -r['week']['actions'],
-                             -r['streak']['current'], r['handle']))
-    rows = rows[:LEADERBOARD_SIZE]
-    for i, row in enumerate(rows, 1):
+
+    last_week = []
+    for i, row in enumerate(_rank(rows, '_last_week')[:3], 1):
+        entry = {k: v for k, v in row.items() if k not in ('week', '_last_week')}
+        last_week.append({**entry, 'week': row['_last_week'], 'rank': i})
+
+    ranked = _rank(rows, 'week')[:LEADERBOARD_SIZE]
+    entries = []
+    for i, row in enumerate(ranked, 1):
+        row = {k: v for k, v in row.items() if k != '_last_week'}
         row['rank'] = i
-    return {'week_start': week_start(today).isoformat(), 'today': today.isoformat(), 'entries': rows}
+        entries.append(row)
+    start = week_start(today)
+    return {'week_start': start.isoformat(), 'today': today.isoformat(),
+            'last_week_start': (start - timedelta(days=7)).isoformat(),
+            'entries': entries, 'last_week': last_week}
