@@ -10,6 +10,10 @@ from botocore.exceptions import ClientError
 import user_service
 import list_word_service
 import review_word_service
+import progress_service
+import streak_service
+import public_profile_service
+import email_v2
 from email_message import send_html_email
 
 # region_name specified in order to mock in unit tests
@@ -60,7 +64,13 @@ def lambda_handler(event, context):
             return
         
         print('Send emails here')
-        todays_announcement = get_announcement()
+        # EMAIL_DESIGN 'v2' is the redesign (email_v2.py); staging only until cutover.
+        v2 = os.environ.get('EMAIL_DESIGN') == 'v2'
+        if v2:
+            announcement_data = get_announcement_data()
+            ranks = get_weekly_ranks()
+        else:
+            todays_announcement = get_announcement()
 
         user_list = user_service.get_all_users()
 
@@ -74,7 +84,10 @@ def lambda_handler(event, context):
                 # Assembling content is inside the try alongside the send: a failure
                 # for one user must not stop the loop for everyone else
                 try:
-                    email_content = assemble_html_content(user, todays_words, todays_announcement)
+                    if v2:
+                        email_content = assemble_v2_content(user, todays_words, announcement_data, ranks)
+                    else:
+                        email_content = assemble_html_content(user, todays_words, todays_announcement)
                     if email_content is None:
                         print(f"No words for any of this user's lists today, skipping - {user.user_id}.")
                         continue
@@ -137,6 +150,70 @@ def get_announcement():
 
     announcement_html = announcement_html.replace("{announcement_message}", announcement_file_message)
     return announcement_html
+
+def get_announcement_data():
+    """The day's announcement JSON for the v2 email: 'message' and optionally
+    'title', 'button_text', 'button_url' (a /path on the site) and 'campaign'."""
+    file_name = datetime.today().strftime('%Y-%m-%d') + ".json"
+    try:
+        s3_file = boto3.client('s3').get_object(Bucket=os.environ['ANNOUNCEMENTS_BUCKET'], Key=file_name)
+        data = json.loads(s3_file['Body'].read().decode('utf-8'))
+        return data if data.get('message') else None
+    except Exception as e:
+        print('No announcement for today: ', e)
+        return None
+
+def get_weekly_ranks():
+    """handle -> rank on this week's leaderboard; empty under the 3-person minimum.
+    Read-only, once per send."""
+    try:
+        entries = public_profile_service.get_leaderboard(table)['entries']
+    except Exception as e:
+        print('Leaderboard unavailable for the email: ', e)
+        return {}
+    if len(entries) < 3:
+        return {}
+    return {e['handle']: e['rank'] for e in entries}
+
+def pick_word(subscription, todays_words):
+    """Today's word for a subscription and its example-sentence link, or None."""
+    todays_list_words = todays_words.get(subscription.list_id) or []
+    if len(todays_list_words) == 0:
+        print(f"No word set today for list {subscription.list_id}, skipping.")
+        return None
+    word = todays_list_words[0].get('word')
+    if word is None:
+        return None
+    selected = word["simplified"] if subscription.character_set == "simplified" else word["traditional"]
+    if subscription.list_name in ['HSK Level 1', 'HSK Level 2', 'HSK Level 3']:
+        example_link = "https://www.yellowbridge.com/chinese/sentsearch.php?word=" + selected
+    else:
+        example_link = "https://fanyi.baidu.com/#zh/en/" + selected
+    return word, example_link
+
+def assemble_v2_content(user, todays_words, announcement, ranks):
+    site = os.environ['URL']
+    cards = []
+    for subscription in user.subscriptions:
+        if subscription.status != 'subscribed':
+            continue
+        picked = pick_word(subscription, todays_words)
+        if picked:
+            cards.append(email_v2.word_card(site, subscription, *picked))
+    if not cards:
+        return None
+
+    items = progress_service.activity_items(table, user.user_id)
+    streak = streak_service.get_streak(items) if items else None
+    badges = public_profile_service.badges({'Founding tester': user.founding_tester}, items,
+                                           streak['best'] if streak else 0)
+    rank = ranks.get(user.public_handle) if user.public_profile and user.public_handle else None
+
+    first = user.subscriptions[0]
+    unsubscribe = (f"{site}/unsub?list={first.list_id}&char={first.character_set}"
+                   f"&email={urllib.parse.quote_plus(user.email_address)}")
+    return email_v2.build(site, datetime.utcnow().date(), user, cards, unsubscribe,
+                          announcement=announcement, streak=streak, rank=rank, badges=badges)
 
 def get_daily_words():
     print('getting daily words...')

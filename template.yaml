@@ -17,6 +17,9 @@ Parameters:
   Stage:
     Type: String
 
+Conditions:
+  IsStaging: !Equals [!Ref Stage, staging]
+
 Resources:
 
 ####################################################################################################
@@ -110,6 +113,8 @@ Resources:
           TABLE_NAME: !Ref DynamoDBTable
           IDEMPOTENCY_TABLE: !Ref IdempotencyTable
           URL: !Ref DomainName
+          # The redesigned email (email_v2.py) on staging; prod keeps v1 until cutover.
+          EMAIL_DESIGN: !If [IsStaging, v2, v1]
       Layers:
       - !Ref Layer
 
