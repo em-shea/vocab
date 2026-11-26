@@ -69,9 +69,8 @@ def test_badges():
     items = [{'SK': 'DATE#2026-11-20#QUIZ#a'},
              {'SK': 'DATE#2026-11-20#SENTENCE#b', 'Sentence': ''},       # empty: no badge
              {'SK': 'DATE#2026-11-21#WRITING#L#W'}]
-    assert svc.badges({'Founding tester': True}, items, 7) == \
-        ['founding_tester', 'first_quiz', 'first_stroke_order', 'streak_7']
-    assert svc.badges({}, [], 100) == ['streak_7', 'streak_30', 'streak_100']
+    assert svc.badges({}, items, 7) == ['new_user', 'first_quiz', 'first_stroke_order']
+    assert svc.badges({}, [], 100) == ['new_user']
 
 
 def test_week_counts_monday_to_today_only():

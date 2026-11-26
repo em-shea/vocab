@@ -9,7 +9,6 @@ Items written (new, nothing existing is replaced or deleted):
   and GSI1PK = 'PUBLIC' so the leaderboard can list every public profile through
   the existing GSI1 index. Turning the profile off sets 'Public profile' false
   on both; the items stay.
-- 'Founding tester' on the user item is set only by scripts/grant_founding_tester.py.
 
 What a public page shows: profile name (the chosen name, never the email), the
 month they joined, streak, badges and this week's activity. Badges are worked
@@ -28,15 +27,12 @@ HANDLE_ALPHABET = 'abcdefghjkmnpqrstuvwxyz23456789'  # no 0/o, 1/l/i
 HANDLE_LENGTH = 8
 LEADERBOARD_SIZE = 50
 
-# Order is the order shown on the page.
+# Order is the order shown on the page (Emily, 2026-11-25: four badges).
 BADGES = [
-    'founding_tester',
+    'new_user',
     'first_quiz',
     'first_sentence',
     'first_stroke_order',
-    'streak_7',
-    'streak_30',
-    'streak_100',
 ]
 
 
@@ -101,13 +97,10 @@ def badges(user_item, items, best_streak):
         elif '#WRITING#' in sk:
             kinds.add('writing')
     earned = {
-        'founding_tester': bool(user_item.get('Founding tester')),
+        'new_user': True,
         'first_quiz': 'quiz' in kinds,
         'first_sentence': 'sentence' in kinds,
         'first_stroke_order': 'writing' in kinds,
-        'streak_7': best_streak >= 7,
-        'streak_30': best_streak >= 30,
-        'streak_100': best_streak >= 100,
     }
     return [b for b in BADGES if earned[b]]
 
