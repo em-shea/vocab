@@ -71,6 +71,7 @@ def test_badges():
              {'SK': 'DATE#2026-11-21#WRITING#L#W'}]
     assert svc.badges({}, items, 7) == ['new_user', 'first_quiz', 'first_stroke_order']
     assert svc.badges({}, [], 100) == ['new_user']
+    assert svc.badges({'Founding tester': True}, [], 0) == ['founding_tester', 'new_user']
 
 
 def test_week_counts_monday_to_today_only():
