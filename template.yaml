@@ -511,6 +511,86 @@ Resources:
       Layers:
       - !Ref Layer
 
+  SetPublicProfile:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      FunctionName: !Sub SetPublicProfile-${Stage}
+      Handler: app.lambda_handler
+      Runtime: python3.13
+      CodeUri: src/set_public_profile
+      Description: Switches the signed-in user public profile on or off (writes only Public profile/handle and the PUBLIC pointer)
+      MemorySize: 256
+      Timeout: 30
+      Policies:
+        - DynamoDBCrudPolicy:
+           TableName: !Ref DynamoDBTable
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref DynamoDBTable
+      Events:
+        SetPublicProfileApi:
+          Type: Api
+          Properties:
+            RestApiId: !Ref VocabAppApi
+            Path: /public_profile
+            Method: POST
+            Auth:
+              Authorizer: CognitoAuthorizer
+      Layers:
+      - !Ref Layer
+
+  GetPublicProfile:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      FunctionName: !Sub GetPublicProfile-${Stage}
+      Handler: app.lambda_handler
+      Runtime: python3.13
+      CodeUri: src/get_public_profile
+      Description: Read-only. One public profile by handle, no sign-in
+      MemorySize: 256
+      Timeout: 30
+      Policies:
+        - DynamoDBReadPolicy:
+           TableName: !Ref DynamoDBTable
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref DynamoDBTable
+      Events:
+        GetPublicProfileApi:
+          Type: Api
+          Properties:
+            RestApiId: !Ref VocabAppApi
+            Path: /public_profile
+            Method: GET
+      Layers:
+      - !Ref Layer
+
+  GetLeaderboard:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      FunctionName: !Sub GetLeaderboard-${Stage}
+      Handler: app.lambda_handler
+      Runtime: python3.13
+      CodeUri: src/get_leaderboard
+      Description: Read-only. This week leaderboard of public profiles, no sign-in
+      MemorySize: 256
+      Timeout: 30
+      Policies:
+        - DynamoDBReadPolicy:
+           TableName: !Ref DynamoDBTable
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref DynamoDBTable
+      Events:
+        GetLeaderboardApi:
+          Type: Api
+          Properties:
+            RestApiId: !Ref VocabAppApi
+            Path: /leaderboard
+            Method: GET
+      Layers:
+      - !Ref Layer
+
   SetWriting:
     Type: 'AWS::Serverless::Function'
     Properties:
