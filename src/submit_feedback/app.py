@@ -1,8 +1,9 @@
 """POST /feedback {"message": "..."}: a signed-in user sends feedback.
 
 The message is emailed to nihao@haohaotiantian.com with Reply-To set to the
-user's address, so Emily can answer by replying. Reads the user's own item to
-get their email and name; writes nothing to DynamoDB.
+user's address, so Emily can answer by replying. The user then gets a short
+confirmation email with a copy of their message (Reply-To nihao@). Reads the
+user's own item to get their email and name; writes nothing to DynamoDB.
 """
 import os
 import json
@@ -17,6 +18,8 @@ from email_message import send_html_email
 MAX_LENGTH = 2000
 INBOX = 'nihao@haohaotiantian.com'
 SENDER = 'Haohaotiantian feedback <vocab@haohaotiantian.com>'
+CONFIRM_SENDER = 'Haohaotiantian <vocab@haohaotiantian.com>'
+CONFIRM_SUBJECT = 'We got your feedback'
 
 ses_client = boto3.client('ses', region_name=os.environ['AWS_REGION'])
 
@@ -49,6 +52,15 @@ def lambda_handler(event, context):
         print(f"Error: failed to send feedback from {cognito_id}")
         print(e)
         return api_response.response(502, "Failed to send feedback.")
+
+    # The feedback has arrived; a failed confirmation must not report failure
+    # (the learner would send it again).
+    try:
+        send_html_email(ses_client, CONFIRM_SENDER, user.email_address, CONFIRM_SUBJECT,
+                        confirmation_html(user, message), reply_to=INBOX)
+    except Exception as e:
+        print(f"Error: failed to send feedback confirmation to {cognito_id}")
+        print(e)
     return api_response.response(200, "Feedback sent.")
 
 
@@ -71,3 +83,18 @@ def email_html(user, message, page):
         lines.append(f'<p style="font-family: Arial, sans-serif; font-size: 13px; color: #5F6276;">Sent from {html.escape(page)}</p>')
     lines.append('<p style="font-family: Arial, sans-serif; font-size: 13px; color: #5F6276;">Reply to this email to answer them.</p>')
     return ''.join(lines)
+
+
+def confirmation_html(user, message):
+    name = _name(user)
+    greeting = f'Hi {html.escape(name)},' if name else 'Hi,'
+    text = 'font-family: Arial, sans-serif; font-size: 15px; line-height: 1.5; color: #3E4257;'
+    return (f'<div style="background: #FAF5EA; padding: 24px;">'
+            f'<p style="{text}">{greeting}</p>'
+            f'<p style="{text}">Thanks for your feedback. It helps us keep improving Haohaotiantian. '
+            f'We read every message, and if we have questions we\'ll reply to this email.</p>'
+            f'<p style="{text} margin-bottom: 4px;">You wrote:</p>'
+            f'<p style="{text} white-space: pre-wrap; border-left: 3px solid #C93F1F; padding-left: 12px; margin-top: 0;">'
+            f'{html.escape(message)}</p>'
+            f'<p style="{text}">Haohaotiantian</p>'
+            f'</div>')
