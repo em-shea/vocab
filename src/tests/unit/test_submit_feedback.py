@@ -60,6 +60,7 @@ def test_learner_gets_a_confirmation_with_their_message():
     assert msg['Reply-To'] == 'nihao@haohaotiantian.com'
     body = msg.get_payload(decode=True).decode()
     assert 'Hi 小安,' in body and 'Could quizzes have audio?' in body
+    assert '谢谢，<br>The Haohaotiantian team' in body
 
 
 def test_a_failed_confirmation_still_reports_success():

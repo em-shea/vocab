@@ -96,5 +96,5 @@ def confirmation_html(user, message):
             f'<p style="{text} margin-bottom: 4px;">You wrote:</p>'
             f'<p style="{text} white-space: pre-wrap; border-left: 3px solid #C93F1F; padding-left: 12px; margin-top: 0;">'
             f'{html.escape(message)}</p>'
-            f'<p style="{text}">Haohaotiantian</p>'
+            f'<p style="{text}">谢谢，<br>The Haohaotiantian team</p>'
             f'</div>')
