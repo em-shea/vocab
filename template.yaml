@@ -115,6 +115,8 @@ Resources:
           URL: !Ref DomainName
           # The redesigned email (email_v2.py) on staging; prod keeps v1 until cutover.
           EMAIL_DESIGN: !If [IsStaging, v2, v1]
+          # Click tracking (staging only); empty on prod, which sends without one.
+          SES_CONFIGURATION_SET: !If [IsStaging, !Ref EmailConfigurationSet, '']
       Layers:
       - !Ref Layer
 
@@ -749,6 +751,96 @@ Resources:
             Condition:
               StringEquals:
                 AWS:SourceAccount: !Ref AWS::AccountId
+
+  # Click tracking for the daily email. Staging only until cutover: prod's
+  # emails go out unchanged, with no configuration set and no rewritten links.
+  EmailConfigurationSet:
+    Type: AWS::SES::ConfigurationSet
+    Condition: IsStaging
+    Properties:
+      Name: !Sub vocab-daily-email-${Stage}
+
+  EmailClickTopic:
+    Type: AWS::SNS::Topic
+    Condition: IsStaging
+
+  EmailClickTopicPolicy:
+    Type: AWS::SNS::TopicPolicy
+    Condition: IsStaging
+    Properties:
+      Topics:
+        - !Ref EmailClickTopic
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ses.amazonaws.com
+            Action: sns:Publish
+            Resource: !Ref EmailClickTopic
+            Condition:
+              StringEquals:
+                AWS:SourceAccount: !Ref AWS::AccountId
+
+  EmailClickDestination:
+    Type: AWS::SES::ConfigurationSetEventDestination
+    Condition: IsStaging
+    DependsOn: EmailClickTopicPolicy
+    Properties:
+      ConfigurationSetName: !Ref EmailConfigurationSet
+      EventDestination:
+        Name: clicks-to-sns
+        Enabled: true
+        MatchingEventTypes:
+          - click
+        SnsDestination:
+          TopicARN: !Ref EmailClickTopic
+
+  # A table of its own, so click records never mix with user data.
+  EmailClicksTable:
+    Type: AWS::DynamoDB::Table
+    Condition: IsStaging
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      TableName: !Sub VocabEmailClicks-${Stage}
+      AttributeDefinitions:
+        - AttributeName: Email
+          AttributeType: S
+        - AttributeName: ClickedAt
+          AttributeType: S
+      KeySchema:
+        - AttributeName: Email
+          KeyType: HASH
+        - AttributeName: ClickedAt
+          KeyType: RANGE
+      BillingMode: PAY_PER_REQUEST
+
+  RecordEmailClick:
+    Type: 'AWS::Serverless::Function'
+    Condition: IsStaging
+    Properties:
+      FunctionName: !Sub RecordEmailClick-${Stage}
+      Handler: app.lambda_handler
+      Runtime: python3.13
+      CodeUri: src/record_email_click
+      Description: Records clicks on links in the daily email (SES click events).
+      MemorySize: 128
+      Timeout: 30
+      Policies:
+        - Statement:
+          - Effect: Allow
+            Action:
+            - dynamodb:PutItem
+            Resource: !GetAtt EmailClicksTable.Arn
+      Environment:
+        Variables:
+          CLICKS_TABLE: !Ref EmailClicksTable
+      Events:
+        Click:
+          Type: SNS
+          Properties:
+            Topic: !Ref EmailClickTopic
 
   HandleEmailFeedback:
     Type: 'AWS::Serverless::Function'

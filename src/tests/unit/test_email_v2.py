@@ -86,3 +86,13 @@ def test_assemble_v2_reads_activity_and_rank(dynamodb_table):
     assert 'streak' in html and '2nd this week' in html and 'badges/founding_tester' in html
     with mock.patch.object(app, 'table', dynamodb_table):
         assert app.assemble_v2_content(_user(subscriptions=[_sub(status='unsubscribed')]), {}, None, {}) is None
+
+
+def test_links_carry_ses_tags_and_unsubscribe_is_not_tracked():
+    import email_v2
+    html_out = email_v2.footer('https://example.com', 'https://example.com/unsub?x=1')
+    assert 'ses:no-track href="https://example.com/unsub?x=1"' in html_out
+    assert 'ses:tags="link:manage_lists"' in html_out
+    card = email_v2.announcement_card('https://example.com', {'title': 'T', 'message': 'M', 'button_text': 'Try it now', 'button_url': '/profile', 'campaign': 'new-features'})
+    assert 'ses:tags="link:announcement"' in card
+    assert 'c=new-features' in card

@@ -92,7 +92,8 @@ def lambda_handler(event, context):
                         print(f"No words for any of this user's lists today, skipping - {user.user_id}.")
                         continue
                     # print('send emails')
-                    response = send_email(user, email_content)
+                    campaign = ((announcement_data or {}).get('campaign') or 'daily') if v2 else None
+                    response = send_email(user, email_content, campaign)
                     email_counter += 1
                 except Exception as e:
                     print(f"Error: Failed to send email - {user.user_id}.")
@@ -301,7 +302,7 @@ def assemble_word_html_content(user_email, subscription, todays_words):
 
     return word_contents
 
-def send_email(user, email_content):
+def send_email(user, email_content, campaign=None):
 
     subject = "Daily vocab word - " + datetime.today().strftime('%b. %d, %Y')
     return send_html_email(
@@ -311,4 +312,6 @@ def send_email(user, email_content):
         subject,
         email_content,
         bulk=True,
+        configuration_set=os.environ.get('SES_CONFIGURATION_SET') or None,
+        campaign=campaign,
     )
