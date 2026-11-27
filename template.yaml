@@ -516,6 +516,34 @@ Resources:
       Layers:
       - !Ref Layer
 
+  JoinTesters:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      FunctionName: !Sub JoinTesters-${Stage}
+      Handler: app.lambda_handler
+      Runtime: python3.13
+      CodeUri: src/join_testers
+      Description: Signed-in user joins the early testers (writes only Founding tester, Tester since, Tester answer on their user item)
+      MemorySize: 256
+      Timeout: 30
+      Policies:
+        - DynamoDBCrudPolicy:
+           TableName: !Ref DynamoDBTable
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref DynamoDBTable
+      Events:
+        JoinTestersApi:
+          Type: Api
+          Properties:
+            RestApiId: !Ref VocabAppApi
+            Path: /testers
+            Method: POST
+            Auth:
+              Authorizer: CognitoAuthorizer
+      Layers:
+      - !Ref Layer
+
   SetPublicProfile:
     Type: 'AWS::Serverless::Function'
     Properties:

@@ -26,7 +26,7 @@ HANZI_TC = "'PingFang TC', 'Hiragino Sans CNS', 'Microsoft JhengHei', 'Noto Sans
 # Rarest first; the email shows up to three.
 BADGE_RARITY = ['founding_tester', 'first_stroke_order', 'first_sentence', 'first_quiz', 'new_user']
 BADGE_NAMES = {
-    'founding_tester': 'Founding Tester',
+    'founding_tester': 'Early Tester',
     'first_stroke_order': 'First stroke order',
     'first_sentence': 'First sentence',
     'first_quiz': 'First quiz',

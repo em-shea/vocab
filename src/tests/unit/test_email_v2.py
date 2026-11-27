@@ -46,11 +46,11 @@ def test_full_email_with_everything():
     card = email_v2.word_card(SITE, _sub(), WORD, 'https://example.org/x')
     html = email_v2.build(SITE, TODAY, _user(), [card], SITE + '/unsub?x=1',
                           announcement={'title': 'Help shape the new Haohaotiantian', 'message': 'Lots more planned.',
-                                        'button_text': 'Become a founding tester', 'button_url': '/founding-testers',
-                                        'campaign': 'founding'},
+                                        'button_text': 'Become an early tester', 'button_url': '/testers',
+                                        'campaign': 'testers'},
                           streak=STREAK, rank=4, badges=['new_user', 'first_quiz', 'founding_tester', 'first_sentence'])
     assert 'Thursday, November 26' in html
-    assert '/founding-testers?from=email&amp;c=founding' in html
+    assert '/testers?from=email&amp;c=testers' in html
     assert '12-day streak' in html and 'Best: 21 days · 2 buffer days' in html
     assert '4th this week' in html and '/leaderboard?from=email' in html
     # three rarest badges, rarest first
