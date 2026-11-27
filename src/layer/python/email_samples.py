@@ -70,7 +70,7 @@ def samples(site, announcement=ANNOUNCEMENT):
                             streak=_streak(5, 21, buffer=2), rank=2,
                             badges=['new_user', 'first_quiz', 'founding_tester', 'first_sentence', 'first_stroke_order']),
         'new-subscriber': build(_user(alias='Not set'), [card(_sub(), WORDS['simplified'])]),
-        'not-on-leaderboard': build(_user(alias='Anonymous learner with a long name'),
+        'not-on-leaderboard': build(_user(alias='小黄'),
                                     [card(_sub(), WORDS['simplified'])],
                                     streak=_streak(1, 1), rank=None, badges=['new_user']),
         'two-lists-traditional': build(_user(subs=[_sub('traditional', 'HSK Level 1'), _sub('simplified', 'HSK Level 6')]),

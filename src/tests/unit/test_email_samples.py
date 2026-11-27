@@ -9,7 +9,7 @@ def test_all_samples_build():
     assert set(emails) == {'everything', 'new-subscriber', 'not-on-leaderboard', 'two-lists-traditional', 'no-announcement'}
     for name, html in emails.items():
         assert html and html.startswith('<!doctype html>'), name
-        assert 'This app uses AI.' in html and 'ses:no-track' in html, name
+        assert 'This app uses AI.' not in html and 'ses:no-track' in html, name
 
 
 def test_samples_cover_the_cases():

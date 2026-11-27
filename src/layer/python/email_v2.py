@@ -113,7 +113,8 @@ def _stamp(day):
     letter = date.fromisoformat(day['date']).strftime('%a')[0]
     status = day['status']
     if status == 'done':
-        style = f'background: {PAPER}; color: {INK};'
+        # Practiced days are red seals, so even a single one reads as part of the streak.
+        style = f'background: {RED}; color: {WHITE};'
     elif status == 'saved':
         style = f'border: 2px solid {PAPER}; color: {PAPER};'
     elif status == 'open':
@@ -205,7 +206,6 @@ def footer(site, unsubscribe_link):
   <img src="{site}/email/print-strip.jpg" width="548" alt="" style="display: block; width: 100%; max-width: 548px; height: auto; border: 2px solid {INK};">
 </td></tr>
 <tr><td align="center" style="padding: 20px 24px 32px; font-family: {SANS}; font-size: 13px; line-height: 1.6; color: {MUTED};">
-  <p style="margin: 0 0 10px;">This app uses AI. Spot a mistake? Reply to this email or write to <a href="mailto:nihao@haohaotiantian.com" style="color: {RED};">nihao@haohaotiantian.com</a>.</p>
   <p style="margin: 0;">A Chinese vocabulary word a day from <a href="{esc(tag(site + '/'))}"{_link_tag('footer_site')} style="color: {RED};">haohaotiantian.com</a></p>
   <p style="margin: 0;"><a href="{esc(tag(site + '/profile'))}"{_link_tag('footer_profile')} style="color: {RED};">Your profile</a> · <a href="{esc(tag(site + '/manage-lists'))}"{_link_tag('manage_lists')} style="color: {RED};">Manage your lists</a> · <a ses:no-track href="{esc(unsubscribe_link)}" style="color: {RED};">Unsubscribe</a></p>
 </td></tr>'''

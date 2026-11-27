@@ -56,7 +56,7 @@ def test_full_email_with_everything():
     # three rarest badges, rarest first
     assert html.index('badges/founding_tester') < html.index('badges/first_sentence') < html.index('badges/first_quiz')
     assert 'badges/new_user' not in html
-    assert '小陈' in html and 'This app uses AI.' in html and '/unsub?x=1' in html
+    assert '小陈' in html and 'This app uses AI.' not in html and '/unsub?x=1' in html
 
 
 def test_no_streak_card_without_practice_and_join_prompt_without_rank():
