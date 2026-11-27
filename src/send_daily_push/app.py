@@ -97,7 +97,7 @@ def build_message(user, todays_words):
     return {
         'title': text['title'] if len(lines) == 1 else text['title_many'],
         'body': '\n'.join(lines),
-        'url': SITE + '/profile',
+        'url': SITE + '/profile#today',  # today's words section (Emily, 2026-11-27)
         'tag': 'daily-word',
     }
 
