@@ -14,10 +14,12 @@ from email.message import EmailMessage
 from email.policy import SMTP
 
 
-def build_raw_email(sender, recipient, subject, html, bulk=False):
+def build_raw_email(sender, recipient, subject, html, bulk=False, reply_to=None):
     message = EmailMessage(policy=SMTP)
     message['From'] = sender
     message['To'] = recipient
+    if reply_to:
+        message['Reply-To'] = reply_to
     message['Subject'] = subject
     message['Auto-Submitted'] = 'auto-generated'
     message['X-Auto-Response-Suppress'] = 'All'
@@ -27,9 +29,9 @@ def build_raw_email(sender, recipient, subject, html, bulk=False):
     return message.as_bytes()
 
 
-def send_html_email(ses_client, sender, recipient, subject, html, bulk=False):
+def send_html_email(ses_client, sender, recipient, subject, html, bulk=False, reply_to=None):
     return ses_client.send_raw_email(
         Source=sender,
         Destinations=[recipient],
-        RawMessage={'Data': build_raw_email(sender, recipient, subject, html, bulk)},
+        RawMessage={'Data': build_raw_email(sender, recipient, subject, html, bulk, reply_to)},
     )

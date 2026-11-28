@@ -1,0 +1,100 @@
+"""POST /feedback {"message": "..."}: a signed-in user sends feedback.
+
+The message is emailed to nihao@haohaotiantian.com with Reply-To set to the
+user's address, so Emily can answer by replying. The user then gets a short
+confirmation email with a copy of their message (Reply-To nihao@). Reads the
+user's own item to get their email and name; writes nothing to DynamoDB.
+"""
+import os
+import json
+import html
+
+import boto3
+
+import api_response
+import user_service
+from email_message import send_html_email
+
+MAX_LENGTH = 2000
+INBOX = 'nihao@haohaotiantian.com'
+SENDER = 'Haohaotiantian feedback <vocab@haohaotiantian.com>'
+CONFIRM_SENDER = 'Haohaotiantian <vocab@haohaotiantian.com>'
+CONFIRM_SUBJECT = 'We got your feedback'
+
+ses_client = boto3.client('ses', region_name=os.environ['AWS_REGION'])
+
+
+def lambda_handler(event, context):
+    cognito_id = event['requestContext']['authorizer']['claims']['sub']
+    try:
+        body = json.loads(event.get('body') or '{}')
+    except ValueError:
+        return api_response.response(400, "Body must be JSON.")
+    message = body.get('message')
+    if not isinstance(message, str) or not message.strip():
+        return api_response.response(400, "'message' is required.")
+    message = message.strip()
+    if len(message) > MAX_LENGTH:
+        return api_response.response(400, f"'message' must be {MAX_LENGTH} characters or fewer.")
+    page = body.get('page') if isinstance(body.get('page'), str) else ''
+
+    try:
+        user = user_service.get_single_user(cognito_id)
+    except Exception as e:
+        print(f"Error: failed to look up user {cognito_id}")
+        print(e)
+        return api_response.response(404, "User not found.")
+
+    try:
+        send_html_email(ses_client, SENDER, INBOX, subject(user), email_html(user, message, page[:200]),
+                        reply_to=user.email_address)
+    except Exception as e:
+        print(f"Error: failed to send feedback from {cognito_id}")
+        print(e)
+        return api_response.response(502, "Failed to send feedback.")
+
+    # The feedback has arrived; a failed confirmation must not report failure
+    # (the learner would send it again).
+    try:
+        send_html_email(ses_client, CONFIRM_SENDER, user.email_address, CONFIRM_SUBJECT,
+                        confirmation_html(user, message), reply_to=INBOX)
+    except Exception as e:
+        print(f"Error: failed to send feedback confirmation to {cognito_id}")
+        print(e)
+    return api_response.response(200, "Feedback sent.")
+
+
+def _name(user):
+    alias = getattr(user, 'user_alias', None)
+    return alias if alias not in (None, '', 'Not set') else None
+
+
+def subject(user):
+    name = _name(user)
+    return f"Feedback from {name} ({user.email_address})" if name else f"Feedback from {user.email_address}"
+
+
+def email_html(user, message, page):
+    lines = [f'<p style="white-space: pre-wrap; font-family: Arial, sans-serif; font-size: 15px;">{html.escape(message)}</p>',
+             '<hr>',
+             f'<p style="font-family: Arial, sans-serif; font-size: 13px; color: #5F6276;">From {html.escape(user.email_address)}'
+             + (f' ({html.escape(_name(user))})' if _name(user) else '') + '</p>']
+    if page:
+        lines.append(f'<p style="font-family: Arial, sans-serif; font-size: 13px; color: #5F6276;">Sent from {html.escape(page)}</p>')
+    lines.append('<p style="font-family: Arial, sans-serif; font-size: 13px; color: #5F6276;">Reply to this email to answer them.</p>')
+    return ''.join(lines)
+
+
+def confirmation_html(user, message):
+    name = _name(user)
+    greeting = f'Hi {html.escape(name)},' if name else 'Hi,'
+    text = 'font-family: Arial, sans-serif; font-size: 15px; line-height: 1.5; color: #3E4257;'
+    return (f'<div style="background: #FAF5EA; padding: 24px;">'
+            f'<p style="{text}">{greeting}</p>'
+            f'<p style="{text}">Thanks for your feedback. It helps us keep improving Haohaotiantian. '
+            f'We read every message, and if we have questions we\'ll reply to this email.</p>'
+            f'<p style="{text} margin-bottom: 4px;">You wrote:</p>'
+            f'<p style="{text} white-space: pre-wrap; border-left: 3px solid #C93F1F; padding-left: 12px; margin-top: 0;">'
+            f'{html.escape(message)}</p>'
+            f'<p style="{text}">谢谢，<br>The Haohaotiantian team</p>'
+            f'</div>')
