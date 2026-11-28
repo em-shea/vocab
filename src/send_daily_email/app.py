@@ -165,14 +165,13 @@ def get_announcement_data():
         return None
 
 def get_weekly_ranks():
-    """handle -> rank on this week's leaderboard; empty under the 3-person minimum.
-    Read-only, once per send."""
+    """handle -> rank on this week's leaderboard, for everyone on it (no
+    3-person minimum in the email: early opt-ins see their rank). Read-only,
+    once per send."""
     try:
         entries = public_profile_service.get_leaderboard(table)['entries']
     except Exception as e:
         print('Leaderboard unavailable for the email: ', e)
-        return {}
-    if len(entries) < 3:
         return {}
     return {e['handle']: e['rank'] for e in entries}
 

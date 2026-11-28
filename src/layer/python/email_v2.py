@@ -112,11 +112,12 @@ def announcement_card(site, announcement):
 def _stamp(day):
     letter = date.fromisoformat(day['date']).strftime('%a')[0]
     status = day['status']
+    if status == 'saved':
+        # A day covered by a buffer day looks like a practiced one (Emily, 2026-11-27).
+        status = 'done'
     if status == 'done':
         # Practiced days are red seals, so even a single one reads as part of the streak.
         style = f'background: {RED}; color: {WHITE};'
-    elif status == 'saved':
-        style = f'border: 2px solid {PAPER}; color: {PAPER};'
     elif status == 'open':
         style = f'border: 2px dashed {PAPER}; color: {PAPER};'
     else:
