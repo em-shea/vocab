@@ -546,6 +546,39 @@ Resources:
       Layers:
       - !Ref Layer
 
+  SubmitFeedback:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      FunctionName: !Sub SubmitFeedback-${Stage}
+      Handler: app.lambda_handler
+      Runtime: python3.13
+      CodeUri: src/submit_feedback
+      Description: Emails a signed-in user's feedback to nihao@ with Reply-To set to them (reads the user item; writes nothing)
+      MemorySize: 256
+      Timeout: 30
+      Policies:
+        - DynamoDBReadPolicy:
+           TableName: !Ref DynamoDBTable
+        - Statement:
+          - Effect: Allow
+            Action:
+            - ses:SendRawEmail
+            Resource: "*"
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref DynamoDBTable
+      Events:
+        SubmitFeedbackApi:
+          Type: Api
+          Properties:
+            RestApiId: !Ref VocabAppApi
+            Path: /feedback
+            Method: POST
+            Auth:
+              Authorizer: CognitoAuthorizer
+      Layers:
+      - !Ref Layer
+
   GetPublicProfile:
     Type: 'AWS::Serverless::Function'
     Properties:

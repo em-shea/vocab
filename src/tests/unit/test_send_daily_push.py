@@ -32,7 +32,7 @@ def test_message_has_a_line_per_list_in_the_users_set_and_language(app):
     message = app.build_message(user, WORDS)
     assert message['title'] == '今日词语'
     assert message['body'] == '爱护 ài hù · to cherish\n幫助 bāng zhù · to help'
-    assert message['url'].endswith('/profile')
+    assert message['url'].endswith('/profile#today')
 
 
 def test_no_message_without_words_or_active_lists(app):
