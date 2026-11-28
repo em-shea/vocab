@@ -89,3 +89,4 @@ class User:
     # Opt-in public profile and leaderboard entry (public_profile_service).
     public_profile: bool = False
     public_handle: Optional [str] = None
+    founding_tester: bool = False

@@ -160,6 +160,7 @@ def _format_user_data(user_data):
             user.user_alias_emoji = item.get('User alias emoji', 'Not set')
             user.public_profile = bool(item.get('Public profile', False))
             user.public_handle = item.get('Public handle')
+            user.founding_tester = bool(item.get('Founding tester', False))
 
         # If Dynamo item is a list subscription, add the list to the user's lists dict
         elif sk.startswith(SK_LIST_PREFIX):

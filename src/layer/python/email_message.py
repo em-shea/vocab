@@ -29,9 +29,18 @@ def build_raw_email(sender, recipient, subject, html, bulk=False, reply_to=None)
     return message.as_bytes()
 
 
-def send_html_email(ses_client, sender, recipient, subject, html, bulk=False, reply_to=None):
+def send_html_email(ses_client, sender, recipient, subject, html, bulk=False, reply_to=None,
+                    configuration_set=None, campaign=None):
+    """configuration_set turns on SES click tracking (see record_email_click);
+    campaign is sent as the message's 'campaign' tag so clicks can be grouped."""
+    kwargs = {}
+    if configuration_set:
+        kwargs['ConfigurationSetName'] = configuration_set
+        if campaign:
+            kwargs['Tags'] = [{'Name': 'campaign', 'Value': campaign}]
     return ses_client.send_raw_email(
         Source=sender,
         Destinations=[recipient],
         RawMessage={'Data': build_raw_email(sender, recipient, subject, html, bulk, reply_to)},
+        **kwargs,
     )
