@@ -96,3 +96,18 @@ def test_links_carry_ses_tags_and_unsubscribe_is_not_tracked():
     card = email_v2.announcement_card('https://example.com', {'title': 'T', 'message': 'M', 'button_text': 'Try it now', 'button_url': '/profile', 'campaign': 'new-features'})
     assert 'ses:tags="link:announcement"' in card
     assert 'c=new-features' in card
+
+
+def test_weekly_ranks_include_a_board_of_one():
+    # No 3-person minimum in the email (Emily, 2026-11-27).
+    from send_daily_email import app
+    board = {'entries': [{'handle': 'abcd1234', 'rank': 1}]}
+    with mock.patch.object(app.public_profile_service, 'get_leaderboard', return_value=board):
+        assert app.get_weekly_ranks() == {'abcd1234': 1}
+
+
+def test_buffer_day_stamp_looks_like_a_practiced_day():
+    import email_v2
+    done = email_v2._stamp({'date': '2026-11-25', 'status': 'done'})
+    saved = email_v2._stamp({'date': '2026-11-25', 'status': 'saved'})
+    assert saved == done
